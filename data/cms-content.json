@@ -1,0 +1,124 @@
+{
+  "hero": {
+    "badge": "Updated Badge",
+    "headline": "Test",
+    "headlineAccent": "Light.",
+    "subheadline": "Sub",
+    "stats": [],
+    "trustStripLabel": "Trust"
+  },
+  "projects": [
+    {
+      "id": "proj_mqctyjbn_yj9vto",
+      "title": "Lumière Lounge",
+      "industry": "Hospitality",
+      "city": "Casablanca",
+      "country": "Morocco",
+      "description": "A 8-meter pink and purple neon feature wall for a 400-seat premium rooftop bar.",
+      "installationSize": "8m Feature Wall",
+      "completedDate": "September 2025",
+      "image": "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1400&q=85&auto=format&fit=crop",
+      "imageAlt": "Neon-lit rooftop bar interior at Lumière Lounge",
+      "accent": "neon-pink",
+      "featured": true
+    },
+    {
+      "id": "proj_mqctyjbn_zgolbq",
+      "title": "Atlas Fitness",
+      "industry": "Fitness & Wellness",
+      "city": "Rabat",
+      "country": "Morocco",
+      "description": "Bold blue neon logo installation across three flagship gym locations.",
+      "installationSize": "4m Logo Sign",
+      "completedDate": "June 2025",
+      "image": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&q=85&auto=format&fit=crop",
+      "imageAlt": "Atlas Fitness gym with custom neon logo",
+      "accent": "neon-blue",
+      "featured": false
+    }
+  ],
+  "testimonials": [
+    {
+      "id": "test_mqctyjbn_bio4ej",
+      "quote": "Neon Bright transformed our restaurant entrance into an Instagram magnet.",
+      "author": "Yasmine El Amrani",
+      "role": "Owner, Lumière Lounge",
+      "location": "Casablanca, Morocco"
+    },
+    {
+      "id": "test_mqctyjbn_semmaa",
+      "quote": "They handled design, production, and international shipping flawlessly.",
+      "author": "Marcus Chen",
+      "role": "Creative Director, Maison Éclat",
+      "location": "Dubai, UAE"
+    }
+  ],
+  "partners": [
+    {
+      "id": "partner_mqctyjbn_rfg0g1",
+      "name": "Marriott",
+      "logoUrl": ""
+    },
+    {
+      "id": "partner_mqctyjbn_anqw6p",
+      "name": "Sofitel",
+      "logoUrl": ""
+    },
+    {
+      "id": "partner_mqctyjbn_c7z1p1",
+      "name": "WeWork",
+      "logoUrl": ""
+    },
+    {
+      "id": "partner_mqctyjbn_brba8b",
+      "name": "Virgin",
+      "logoUrl": ""
+    }
+  ],
+  "services": [
+    {
+      "id": "svc_mqctyjbn_c7jzkq",
+      "title": "Handcrafted Quality",
+      "description": "Every sign is precision-built with premium LED flex neon and commercial-grade materials.",
+      "icon": "✦"
+    },
+    {
+      "id": "svc_mqctyjbn_a75aj2",
+      "title": "Custom Design",
+      "description": "Our designers bring your vision to life with pixel-perfect accuracy.",
+      "icon": "◈"
+    },
+    {
+      "id": "svc_mqctyjbn_40eu3d",
+      "title": "Global Shipping",
+      "description": "Based in Morocco, trusted worldwide with white-glove delivery.",
+      "icon": "◎"
+    }
+  ],
+  "company": {
+    "name": "Neon Bright",
+    "tagline": "Premium Custom LED Neon Signs",
+    "description": "Premium custom LED neon signs crafted in Morocco, delivered worldwide.",
+    "commercialHighlight": "€2M+",
+    "commercialSubtext": "in delivered installations across 15+ countries"
+  },
+  "contact": {
+    "address": "Casablanca, Morocco",
+    "email": "hello@neonbright.ma",
+    "phone": "+212 600 000 000"
+  },
+  "social": {
+    "instagram": "",
+    "linkedin": "",
+    "pinterest": "",
+    "facebook": "",
+    "twitter": ""
+  },
+  "seo": {
+    "title": "Neon Bright | Premium Custom LED Neon Signs",
+    "description": "Premium custom LED neon signs designed for businesses that want to stand out.",
+    "keywords": "LED neon signs, custom neon, business signage, Morocco",
+    "ogImage": ""
+  },
+  "updatedAt": "2026-06-13T20:54:40.177Z"
+}

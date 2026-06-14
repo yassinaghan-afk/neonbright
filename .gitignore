@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# admin credentials (password hashes)
+/data/admin-users.json
+
+# operational data
+/data/orders.json
