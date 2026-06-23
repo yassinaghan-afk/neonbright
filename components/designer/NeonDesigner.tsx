@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuote } from "@/components/quote/QuoteProvider";
 import { Button } from "@/components/ui/Button";
 import { downloadBlob } from "@/lib/designer/exportPreview";
@@ -22,6 +22,7 @@ export function NeonDesigner() {
   const { openQuoteWithDesigner } = useQuote();
   const [exporting, setExporting] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const exportRef = useRef<HTMLDivElement>(null);
 
   useDesignerKeyboard();
   const livePrice = useMemo(() => estimateEditorPrice(state), [state]);
@@ -31,6 +32,17 @@ export function NeonDesigner() {
       void applyWallPreset(state.wallPresetId);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!exportOpen) return;
+    const onPointer = (e: PointerEvent) => {
+      if (exportRef.current && !exportRef.current.contains(e.target as Node)) {
+        setExportOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", onPointer);
+    return () => document.removeEventListener("pointerdown", onPointer);
+  }, [exportOpen]);
 
   const exportPreview = async (format: "png" | "jpeg") => {
     const stage = stageRef.current;
@@ -83,19 +95,32 @@ export function NeonDesigner() {
             </p>
           </div>
 
-          <div className="relative hidden sm:block">
+          <div ref={exportRef} className="relative">
             <Button
               variant="secondary"
               size="sm"
               disabled={exporting}
               onClick={() => setExportOpen((v) => !v)}
             >
-              Export
+              <span className="hidden sm:inline">Export</span>
+              <span className="sm:hidden">↓</span>
             </Button>
             {exportOpen && (
               <div className="absolute right-0 top-full z-50 mt-1 min-w-[110px] rounded-xl border border-white/10 bg-[#111] py-1 shadow-xl">
-                <button type="button" className="block w-full px-4 py-2.5 text-left text-sm text-white/70 hover:bg-white/5" onClick={() => handleExport("png")}>PNG</button>
-                <button type="button" className="block w-full px-4 py-2.5 text-left text-sm text-white/70 hover:bg-white/5" onClick={() => handleExport("jpeg")}>JPG</button>
+                <button
+                  type="button"
+                  className="block w-full px-4 py-2.5 text-left text-sm text-white/70 hover:bg-white/5"
+                  onClick={() => handleExport("png")}
+                >
+                  PNG
+                </button>
+                <button
+                  type="button"
+                  className="block w-full px-4 py-2.5 text-left text-sm text-white/70 hover:bg-white/5"
+                  onClick={() => handleExport("jpeg")}
+                >
+                  JPG
+                </button>
               </div>
             )}
           </div>

@@ -100,7 +100,7 @@ export function EditorWorkspace({ livePrice }: Props) {
                 </span>
               </>
             ) : (
-              <span className="text-white/35">Add text to see size</span>
+              <span className="text-white/35">Select a layer to see size</span>
             )}
           </div>
           <div className="flex items-center gap-2 text-[10px] text-white/35 sm:text-xs">

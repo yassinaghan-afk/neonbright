@@ -6,6 +6,7 @@ import { DISPLAY_MODES, TUBE_STYLE_DEFAULT, type DisplayMode } from "@/lib/desig
 import { useDesigner } from "./DesignerContext";
 import { DesignerHistoryControls } from "./DesignerHistoryControls";
 import { DesignerZoomControls } from "./DesignerZoomControls";
+import { LayerActions } from "./editor/LayerActions";
 import type { PanelId } from "./editor/EditorPanels";
 import type { NeonLayer } from "@/lib/designer/editor/types";
 
@@ -75,10 +76,12 @@ export function DesignerToolbar({ onOpenPanel, mobile }: Props) {
 
   if (mobile) {
     return (
-      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-white/8 bg-[#0a0a0a] px-2 py-1.5">
-        <DesignerHistoryControls compact />
-        <span className="truncate text-[10px] text-white/35">Tap text to edit · Double-tap to type</span>
-        <DesignerZoomControls className="flex shrink-0" compact />
+      <div className="flex shrink-0 flex-col gap-1.5 border-b border-white/8 bg-[#0a0a0a] px-2 py-1.5">
+        <div className="flex items-center justify-between gap-2">
+          <DesignerHistoryControls compact />
+          <DesignerZoomControls className="flex shrink-0" compact />
+        </div>
+        <LayerActions compact />
       </div>
     );
   }
@@ -86,6 +89,7 @@ export function DesignerToolbar({ onOpenPanel, mobile }: Props) {
   return (
     <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-white/8 bg-[#0a0a0a] px-3 py-2">
       <DesignerHistoryControls />
+      <LayerActions />
       <div className="hidden h-5 w-px bg-white/10 sm:block" />
       <DesignerZoomControls className="hidden sm:flex" />
 

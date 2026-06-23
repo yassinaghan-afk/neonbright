@@ -74,6 +74,16 @@ export function DesignerZoomControls({
         Fit
       </button>
       )}
+      {compact && (
+        <button
+          type="button"
+          onClick={fitToScreen}
+          title="Fit to screen"
+          className="rounded-md px-1.5 py-0.5 text-[9px] text-white/50 hover:bg-white/5 hover:text-white"
+        >
+          Fit
+        </button>
+      )}
 
       {open && (
         <div className="absolute left-0 top-full z-50 mt-1 min-w-[120px] rounded-xl border border-white/10 bg-[#111] py-1 shadow-xl">

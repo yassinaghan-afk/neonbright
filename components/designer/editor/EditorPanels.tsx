@@ -23,10 +23,13 @@ import { WallScenePicker } from "./WallScenePicker";
 import { BackboardPicker } from "./BackboardPicker";
 import { NeonFontCard } from "./NeonFontCard";
 import { DesignerHistoryControls } from "../DesignerHistoryControls";
+import { LayersPanel } from "./LayersPanel";
+import { TextLayoutControls } from "./TextLayoutControls";
 
-export type PanelId = "text" | "fonts" | "colors" | "wall" | "support" | "size";
+export type PanelId = "layers" | "text" | "fonts" | "colors" | "wall" | "support" | "size";
 
 const PANELS: { id: PanelId; label: string; icon: string }[] = [
+  { id: "layers",  label: "Layers",  icon: "☰" },
   { id: "text",    label: "Text",    icon: "T" },
   { id: "fonts",   label: "Fonts",   icon: "Aa" },
   { id: "colors",  label: "Colors",  icon: "◉" },
@@ -106,6 +109,10 @@ function PanelText({ active, patch }: { active: NeonLayer | null; patch: (p: Par
             isRtl && "text-right"
           )}
         />
+      )}
+
+      {active?.type === "text" && (
+        <TextLayoutControls layer={active} onChange={patch} />
       )}
 
       <p className="text-[10px] leading-relaxed text-white/30">
@@ -289,7 +296,22 @@ function PanelColors({ active, patch }: { active: NeonLayer | null; patch: (p: P
 }
 
 function PanelSize({ active, patch }: { active: NeonLayer | null; patch: (p: Partial<NeonLayer>) => void }) {
-  const dims = active ? measureTextLayer(active) : null;
+  const dims = active && active.type === "text" ? measureTextLayer(active) : null;
+
+  if (!active) {
+    return <p className="text-center text-xs text-white/35">Select a layer to see size.</p>;
+  }
+
+  if (active.type === "logo") {
+    return (
+      <div className="space-y-3">
+        <p className="text-center text-xs text-white/50">
+          Resize the logo with the corner handles on the canvas.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-5 gap-1.5">
@@ -420,7 +442,7 @@ type Props = {
 
 export function EditorPanels({ className, variant = "sidebar", openPanel, onOpenPanelConsumed }: Props) {
   const { state, updateLayer, applyWallPreset, setWallImage, setBackboardType, zoomIn, zoomOut } = useDesigner();
-  const [open, setOpen] = useState<PanelId | null>("text");
+  const [open, setOpen] = useState<PanelId | null>("layers");
   const wallRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -464,6 +486,7 @@ export function EditorPanels({ className, variant = "sidebar", openPanel, onOpen
                 ✕
               </button>
             </div>
+            {open === "layers" && <LayersPanel embedded />}
             {open === "text" && <PanelText active={active} patch={patch} />}
             {open === "fonts" && <PanelFonts active={active} patch={patch} />}
             {open === "colors" && <PanelColors active={active} patch={patch} />}
@@ -559,6 +582,7 @@ export function EditorPanels({ className, variant = "sidebar", openPanel, onOpen
             </button>
           </div>
           <div className="flex-1 overflow-y-auto p-3">
+            {open === "layers" && <LayersPanel embedded />}
             {open === "text" && <PanelText active={active} patch={patch} />}
             {open === "fonts" && <PanelFonts active={active} patch={patch} />}
             {open === "colors" && <PanelColors active={active} patch={patch} />}

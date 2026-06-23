@@ -10,30 +10,57 @@ function isEditableTarget(target: EventTarget | null): boolean {
 }
 
 export function useDesignerKeyboard() {
-  const { undo, redo, canUndo, canRedo } = useDesigner();
+  const {
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    deleteSelected,
+    duplicateSelected,
+    state,
+  } = useDesigner();
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (isEditableTarget(e.target)) return;
 
       const mod = e.metaKey || e.ctrlKey;
-      if (!mod) return;
 
-      if (e.key === "z" && !e.shiftKey && canUndo) {
+      if (mod && e.key === "z" && !e.shiftKey && canUndo) {
         e.preventDefault();
         undo();
         return;
       }
 
-      if ((e.key === "z" && e.shiftKey) || e.key === "Z") {
+      if (mod && ((e.key === "z" && e.shiftKey) || e.key === "y" || e.key === "Y")) {
         if (canRedo) {
           e.preventDefault();
           redo();
         }
+        return;
+      }
+
+      if (mod && (e.key === "d" || e.key === "D") && state.selectedId) {
+        e.preventDefault();
+        duplicateSelected();
+        return;
+      }
+
+      if ((e.key === "Delete" || e.key === "Backspace") && state.selectedId) {
+        e.preventDefault();
+        deleteSelected();
       }
     };
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [undo, redo, canUndo, canRedo]);
+  }, [
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    deleteSelected,
+    duplicateSelected,
+    state.selectedId,
+  ]);
 }

@@ -9,10 +9,10 @@ const LAYOUTS: {
   label: string;
   example: string;
 }[] = [
-  { id: "single", label: "Une ligne", example: "YASSIN" },
-  { id: "multiline", label: "Multi-lignes", example: "YASSIN\nAGADIR" },
-  { id: "auto-wrap", label: "Retour auto", example: "YASSIN\nAGADIR" },
-  { id: "manual", label: "Sauts manuels", example: "YASSIN\nAGADIR" },
+  { id: "single", label: "Single line", example: "NEON" },
+  { id: "multiline", label: "Multi-line", example: "NEON\nBRIGHT" },
+  { id: "auto-wrap", label: "Auto wrap", example: "NEON\nBRIGHT" },
+  { id: "manual", label: "Manual breaks", example: "NEON\nBRIGHT" },
 ];
 
 type Props = {
@@ -28,8 +28,8 @@ export function TextLayoutControls({ layer, onChange }: Props) {
 
   return (
     <div className="space-y-2">
-      <p className="text-[11px] font-medium uppercase tracking-wide text-white/50">Disposition du texte</p>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <p className="text-[11px] font-medium uppercase tracking-wide text-white/50">Text layout</p>
+      <div className="grid grid-cols-2 gap-2">
         {LAYOUTS.map((l) => (
           <button
             key={l.id}
@@ -52,7 +52,7 @@ export function TextLayoutControls({ layer, onChange }: Props) {
 
       {(layer.textLayout === "auto-wrap" || layer.textLayout === "manual") && (
         <div className="flex items-center gap-2">
-          <span className="shrink-0 text-[10px] text-white/45">Largeur wrap</span>
+          <span className="shrink-0 text-[10px] text-white/45">Wrap width</span>
           <input
             type="range"
             min={120}
@@ -67,7 +67,7 @@ export function TextLayoutControls({ layer, onChange }: Props) {
 
       {layer.textLayout === "manual" && (
         <p className="text-[10px] text-white/40">
-          Double-cliquez sur le texte pour éditer. Utilisez Entrée pour un saut de ligne.
+          Double-click the text on canvas to edit. Press Enter for a line break.
         </p>
       )}
     </div>

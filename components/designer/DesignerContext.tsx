@@ -263,6 +263,23 @@ export function DesignerProvider({ children }: { children: ReactNode }) {
       const src = p.layers.find((l) => l.id === p.selectedId);
       if (!src) return p;
       const maxZ = Math.max(...p.layers.map((l) => l.zIndex));
+      if (src.type === "logo" && src.file) {
+        const url = URL.createObjectURL(src.file);
+        const copy = createLogoLayer(url, src.fileName ?? "logo.png", src.file, {
+          name: `${src.name} copy`,
+          x: src.x + 24,
+          y: src.y + 24,
+          zIndex: maxZ + 1,
+          rotation: src.rotation,
+          scaleX: src.scaleX,
+          scaleY: src.scaleY,
+          opacity: src.opacity,
+          color: src.color,
+          glow: src.glow,
+          brightness: src.brightness,
+        });
+        return { ...p, layers: [...p.layers, copy], selectedId: copy.id };
+      }
       const copy: NeonLayer = {
         ...src,
         id: `${src.type}-${Date.now()}`,
