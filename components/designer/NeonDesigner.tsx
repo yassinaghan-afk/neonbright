@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuote } from "@/components/quote/QuoteProvider";
 import { Button } from "@/components/ui/Button";
 import { downloadBlob } from "@/lib/designer/exportPreview";
 import { exportStageAs, editorToSnapshot, estimateEditorPrice } from "@/lib/designer/editor/snapshot";
+import { formatPrice } from "@/lib/designer/pricing";
 import type { DesignerQuotePayload } from "@/lib/designer/types";
-import { EditorToolbar } from "./editor/EditorToolbar";
-import { LayersPanel } from "./editor/LayersPanel";
-import { WallCanvas } from "./WallCanvas";
+import { EditorWorkspace } from "./editor/EditorWorkspace";
 import { useDesigner } from "./DesignerContext";
+import { useDesignerKeyboard } from "./useDesignerKeyboard";
+import { isTransparentWall } from "@/lib/designer/wallPresets";
 import { Logo } from "@/components/Logo";
 
 async function wallFileFromPreview(blob: Blob): Promise<File> {
@@ -22,9 +23,12 @@ export function NeonDesigner() {
   const [exporting, setExporting] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
 
+  useDesignerKeyboard();
+  const livePrice = useMemo(() => estimateEditorPrice(state), [state]);
+
   useEffect(() => {
-    if (!state.wallPreviewUrl) {
-      applyWallPreset("black-wall");
+    if (!state.wallPreviewUrl && state.wallPresetId && !isTransparentWall(state.wallPresetId)) {
+      void applyWallPreset(state.wallPresetId);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -65,41 +69,50 @@ export function NeonDesigner() {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[#050505]">
-      <header className="z-50 flex items-center justify-between gap-3 border-b border-white/10 px-3 py-2.5 sm:px-4">
-        <div className="flex items-center gap-3">
+    <div className="flex h-dvh flex-col overflow-hidden bg-[#050505]">
+      <header className="z-50 flex shrink-0 items-center justify-between gap-2 border-b border-white/10 bg-[#080808] px-3 py-2 sm:px-4">
+        <div className="flex items-center gap-2">
           <Logo href="/" variant="compact" />
-          <span className="hidden text-xs text-white/30 sm:inline">Design Editor</span>
         </div>
-        <div className="relative flex items-center gap-2">
+
+        <div className="flex items-center gap-2">
+          <div className="rounded-lg border border-neon-pink/25 bg-neon-pink/8 px-2.5 py-1 sm:px-3">
+            <p className="text-[9px] uppercase tracking-wider text-white/40 sm:text-[10px]">Est. price</p>
+            <p className="font-mono text-sm font-bold leading-tight text-neon-pink sm:text-base">
+              {formatPrice(livePrice)}
+            </p>
+          </div>
+
+          <div className="relative hidden sm:block">
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={exporting}
+              onClick={() => setExportOpen((v) => !v)}
+            >
+              Export
+            </Button>
+            {exportOpen && (
+              <div className="absolute right-0 top-full z-50 mt-1 min-w-[110px] rounded-xl border border-white/10 bg-[#111] py-1 shadow-xl">
+                <button type="button" className="block w-full px-4 py-2.5 text-left text-sm text-white/70 hover:bg-white/5" onClick={() => handleExport("png")}>PNG</button>
+                <button type="button" className="block w-full px-4 py-2.5 text-left text-sm text-white/70 hover:bg-white/5" onClick={() => handleExport("jpeg")}>JPG</button>
+              </div>
+            )}
+          </div>
+
           <Button
-            variant="secondary"
             size="sm"
+            onClick={handleQuote}
             disabled={exporting}
-            onClick={() => setExportOpen((v) => !v)}
+            className="shadow-[0_0_14px_rgba(255,45,149,0.35)]"
           >
-            Export
-          </Button>
-          {exportOpen && (
-            <div className="absolute right-0 top-full z-50 mt-1 min-w-[120px] rounded-xl border border-white/10 bg-[#111] py-1 shadow-xl">
-              <button type="button" className="block w-full px-4 py-2 text-left text-sm text-white/70 hover:bg-white/5" onClick={() => handleExport("png")}>PNG</button>
-              <button type="button" className="block w-full px-4 py-2 text-left text-sm text-white/70 hover:bg-white/5" onClick={() => handleExport("jpeg")}>JPG</button>
-            </div>
-          )}
-          <Button size="sm" onClick={handleQuote} disabled={exporting}>
-            Request Quote
+            {exporting ? "…" : <span className="hidden sm:inline">Get a Quote</span>}
+            {exporting ? null : <span className="sm:hidden">Quote</span>}
           </Button>
         </div>
       </header>
 
-      <EditorToolbar />
-
-      <div className="flex flex-1 flex-col gap-2 p-2 sm:flex-row sm:gap-3 sm:p-3">
-        <LayersPanel />
-        <div className="min-h-[55dvh] flex-1">
-          <WallCanvas />
-        </div>
-      </div>
+      <EditorWorkspace livePrice={livePrice} />
     </div>
   );
 }

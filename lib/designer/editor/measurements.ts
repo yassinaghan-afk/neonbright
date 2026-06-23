@@ -1,5 +1,8 @@
 import { PX_PER_CM } from "../sizes";
-import { resolveFontFamily } from "../fonts";
+import { ACRYLIC_OFFSET_CM } from "../backboards";
+import { resolveFontFamily, resolveFontWeight } from "../fonts";
+import { measureTextBoundsLocal } from "./textMetrics";
+import { textForKonva } from "./textLayout";
 import type { NeonLayer } from "./types";
 
 export type LayerDimensions = {
@@ -14,12 +17,10 @@ export function pxToCm(px: number): number {
 }
 
 export function measureTextLayer(layer: NeonLayer): LayerDimensions {
-  const len = Math.max(layer.text.length, 1);
-  const spacing = layer.letterSpacing;
-  const widthPx =
-    (len * layer.fontSize * 0.55 + spacing * Math.max(len - 1, 0)) *
-    layer.scaleX;
-  const heightPx = layer.fontSize * layer.lineHeight * layer.scaleY;
+  const local = measureTextBoundsLocal(layer);
+  const widthPx = local.width * layer.scaleX;
+  const heightPx = local.height * layer.scaleY;
+
   return {
     widthPx,
     heightPx,
@@ -51,3 +52,22 @@ export function glowBlur(intensity: number): number {
 export function layerFontFamily(layer: NeonLayer): string {
   return resolveFontFamily(layer.fontId);
 }
+
+export function layerFontStyle(layer: NeonLayer): string {
+  return resolveFontWeight(layer.fontId);
+}
+
+/** Support panel size: full text bounds + 2 cm margin on every side */
+export function supportPanelSize(
+  layer: NeonLayer,
+  scaleX: number,
+  scaleY: number
+): { w: number; h: number; halfW: number; halfH: number } {
+  const local = measureTextBoundsLocal(layer);
+  const marginPx = ACRYLIC_OFFSET_CM * PX_PER_CM;
+  const w = local.width + marginPx * 2;
+  const h = local.height + marginPx * 2;
+  return { w, h, halfW: w / 2, halfH: h / 2 };
+}
+
+export { measureTextBoundsLocal };

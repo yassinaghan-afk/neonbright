@@ -28,5 +28,7 @@ export const GLOW_MIN = 0;
 export const GLOW_MAX = 100;
 export const ZOOM_MIN = 0.5;
 export const ZOOM_MAX = 2;
+export const ZOOM_STEP = 0.05;
+export const ZOOM_PRESETS = [0.5, 0.75, 1, 1.5, 2] as const;
 export const SCALE_MIN = 0.3;
 export const SCALE_MAX = 3;

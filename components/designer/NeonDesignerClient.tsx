@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { DesignerErrorBoundary } from "./DesignerErrorBoundary";
 
 const NeonDesigner = dynamic(
   () => import("./NeonDesigner").then((m) => m.NeonDesigner),
@@ -15,5 +16,9 @@ const NeonDesigner = dynamic(
 );
 
 export function NeonDesignerClient() {
-  return <NeonDesigner />;
+  return (
+    <DesignerErrorBoundary>
+      <NeonDesigner />
+    </DesignerErrorBoundary>
+  );
 }

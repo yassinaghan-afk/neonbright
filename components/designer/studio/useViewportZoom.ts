@@ -1,26 +1,34 @@
 "use client";
 
-import { useEffect, type RefObject } from "react";
+import { useEffect, useRef, type RefObject } from "react";
 import { ZOOM_MAX, ZOOM_MIN } from "@/lib/designer/constants";
+
+function clampZoom(z: number): number {
+  return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, +z.toFixed(3)));
+}
 
 export function useViewportZoom(
   ref: RefObject<HTMLElement | null>,
   zoom: number,
   setZoom: (z: number) => void
 ) {
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
+
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
 
-    const clamp = (z: number) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, +z.toFixed(2)));
+    const applyZoom = (next: number) => setZoom(clampZoom(next));
 
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      setZoom(clamp(zoom + (e.deltaY > 0 ? -0.08 : 0.08)));
+      const factor = e.deltaY > 0 ? 0.94 : 1.06;
+      applyZoom(zoomRef.current * factor);
     };
 
     let pinchStart = 0;
-    let zoomStart = zoom;
+    let zoomStart = 1;
 
     const onTouchStart = (e: TouchEvent) => {
       if (e.touches.length === 2) {
@@ -28,7 +36,7 @@ export function useViewportZoom(
           e.touches[0].clientX - e.touches[1].clientX,
           e.touches[0].clientY - e.touches[1].clientY
         );
-        zoomStart = zoom;
+        zoomStart = zoomRef.current;
       }
     };
 
@@ -39,7 +47,7 @@ export function useViewportZoom(
         e.touches[0].clientX - e.touches[1].clientX,
         e.touches[0].clientY - e.touches[1].clientY
       );
-      setZoom(clamp(zoomStart * (dist / pinchStart)));
+      applyZoom(zoomStart * (dist / pinchStart));
     };
 
     const onTouchEnd = () => {
@@ -57,5 +65,5 @@ export function useViewportZoom(
       el.removeEventListener("touchmove", onTouchMove);
       el.removeEventListener("touchend", onTouchEnd);
     };
-  }, [ref, zoom, setZoom]);
+  }, [ref, setZoom]);
 }
