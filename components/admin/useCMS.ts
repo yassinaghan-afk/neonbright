@@ -34,6 +34,8 @@ export function useCMSContent(options?: { enabled?: boolean }) {
   return { content, loading, error, refresh, setContent };
 }
 
+const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
 export async function adminFetch<T>(
   url: string,
   options?: RequestInit
@@ -44,5 +46,16 @@ export async function adminFetch<T>(
   });
   const json = await res.json().catch(() => ({}));
   if (!res.ok) return { error: json.error ?? "Request failed" };
+
+  const method = (options?.method ?? "GET").toUpperCase();
+  if (MUTATING_METHODS.has(method)) {
+    // Fire-and-forget revalidation so the public site refreshes immediately
+    fetch("/api/admin/revalidate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    }).catch(() => {});
+  }
+
   return { data: json as T };
 }

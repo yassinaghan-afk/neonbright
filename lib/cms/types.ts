@@ -1,6 +1,11 @@
 export type AccentColor = "neon-pink" | "neon-purple" | "neon-blue";
 
-export type HeroStat = { id: string; value: string; label: string };
+export type HeroTrustBlock = {
+  enabled: boolean;
+  value: string;
+  label: string;
+  sublabel: string;
+};
 
 export type HeroContent = {
   badge: string;
@@ -9,10 +14,9 @@ export type HeroContent = {
   subheadline: string;
   primaryCta: string;
   secondaryCta: string;
-  helperText: string;
   backgroundImage: string;
-  stats: HeroStat[];
   trustStripLabel: string;
+  trustBlock: HeroTrustBlock;
 };
 
 /** Hero background slideshow slide — managed via /admin/hero-slider */
@@ -24,6 +28,7 @@ export type CMSHeroSlide = {
   sortOrder: number;
 };
 
+/** @deprecated Legacy homepage projects — use portfolioProjects */
 export type CMSProject = {
   id: string;
   title: string;
@@ -37,6 +42,58 @@ export type CMSProject = {
   imageAlt: string;
   accent: AccentColor;
   featured: boolean;
+};
+
+export type CMSPortfolioCategory = {
+  id: string;
+  slug: string;
+  title: string;
+  titleAccent: string;
+  description: string;
+  coverImage: string;
+  coverAlt: string;
+  heroImage: string;
+  href: string;
+  pageTitle: string;
+  pageSubtitle: string;
+  enabled: boolean;
+  sortOrder: number;
+};
+
+export type CMSPortfolioProject = {
+  id: string;
+  categoryId: string;
+  slug: string;
+  title: string;
+  description: string;
+  shortDescription: string;
+  client: string;
+  city: string;
+  country: string;
+  year: string;
+  images: string[];
+  videos: string[];
+  gallery: string[];
+  featuredImage: string;
+  coverImage: string;
+  thumbnail: string;
+  imageAlt: string;
+  tags: string[];
+  accent: AccentColor;
+  published: boolean;
+  sortOrder: number;
+  type?: string;
+  typeLabel?: string;
+  logoFile?: string;
+  installationType?: string;
+  beforeImage?: string;
+  afterImage?: string;
+  relatedProjectSlugs?: string[];
+  technologies?: string[];
+  filters?: string[];
+  seoTitle?: string;
+  seoDescription?: string;
+  subtitle?: string;
 };
 
 export type CMSTestimonial = {
@@ -173,7 +230,10 @@ export type CMSContent = {
   heroSlides: CMSHeroSlide[];
   /** Busts browser cache when hero media is re-synced from MEDIA/hero-slider */
   heroMediaVersion?: string;
-  projects: CMSProject[];
+  /** @deprecated use portfolioProjects */
+  projects?: CMSProject[];
+  portfolioCategories: CMSPortfolioCategory[];
+  portfolioProjects: CMSPortfolioProject[];
   testimonials: CMSTestimonial[];
   partners: CMSPartner[];
   services: CMSService[];
@@ -194,7 +254,8 @@ export type CMSContent = {
 export type CMSSection =
   | "hero"
   | "heroSlides"
-  | "projects"
+  | "portfolioCategories"
+  | "portfolioProjects"
   | "testimonials"
   | "partners"
   | "services"

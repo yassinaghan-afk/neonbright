@@ -14,6 +14,7 @@ type NavItem = {
   label: string;
   icon: string;
   roles: UserRole[];
+  exact?: boolean;
 };
 
 const NAV: NavItem[] = [
@@ -31,6 +32,7 @@ const NAV: NavItem[] = [
   { href: "/admin/faq", label: "FAQ", icon: "?", roles: ["owner"] },
   { href: "/admin/section-copy", label: "Textes sections", icon: "✎", roles: ["owner"] },
   { href: "/admin/instagram", label: "Instagram", icon: "◑", roles: ["owner"] },
+  { href: "/admin/media", label: "Médiathèque", icon: "🖼", roles: ["owner"], exact: true },
   { href: "/admin/media/logos", label: "Logos partenaires", icon: "◎", roles: ["owner"] },
   { href: "/admin/services", label: "Services (court)", icon: "◇", roles: ["owner"] },
   { href: "/admin/company", label: "Entreprise & Contact", icon: "◇", roles: ["owner"] },
@@ -66,7 +68,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               href={item.href}
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors",
-                pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href))
+                pathname === item.href || (!item.exact && item.href !== "/admin" && pathname.startsWith(item.href))
                   ? "bg-neon-pink/15 text-neon-pink"
                   : "text-white/55 hover:bg-white/5 hover:text-white"
               )}

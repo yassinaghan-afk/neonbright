@@ -73,15 +73,17 @@ export function AdminField({
   required,
   children,
   hint,
+  className,
 }: {
   label: string;
   htmlFor?: string;
   required?: boolean;
   children: React.ReactNode;
   hint?: string;
+  className?: string;
 }) {
   return (
-    <div>
+    <div className={className}>
       <AdminLabel htmlFor={htmlFor} required={required}>
         {label}
       </AdminLabel>
@@ -147,18 +149,40 @@ export function AdminButton({
   );
 }
 
+export function AdminBadge({
+  status,
+}: {
+  status: "public" | "hidden";
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider",
+        status === "public"
+          ? "bg-green-500/15 text-green-400"
+          : "bg-white/5 text-white/30"
+      )}
+    >
+      <span className={cn("h-1.5 w-1.5 rounded-full", status === "public" ? "bg-green-400" : "bg-white/20")} />
+      {status === "public" ? "Public" : "Masqué"}
+    </span>
+  );
+}
+
 export function AdminAlert({
   type,
   message,
 }: {
-  type: "success" | "error";
+  type: "success" | "error" | "warning";
   message: string;
 }) {
   return (
     <div
       className={cn(
         "rounded-lg px-4 py-3 text-sm",
-        type === "success" ? "bg-green-500/10 text-green-400 border border-green-500/20" : "bg-red-500/10 text-red-400 border border-red-500/20"
+        type === "success" && "bg-green-500/10 text-green-400 border border-green-500/20",
+        type === "error" && "bg-red-500/10 text-red-400 border border-red-500/20",
+        type === "warning" && "bg-amber-500/10 text-amber-300 border border-amber-500/25"
       )}
     >
       {message}
