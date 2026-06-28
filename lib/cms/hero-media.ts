@@ -1,6 +1,5 @@
 import { promises as fs } from "fs";
 import path from "path";
-import sharp from "sharp";
 import type { CMSHeroSlide } from "@/lib/cms/types";
 
 const MEDIA_DIRS = ["MEDIA/hero-slider", "MEDIA/hero slider"];
@@ -64,11 +63,6 @@ function slideIdFromFile(file: string): string {
 }
 
 function destNameForSource(file: string): string {
-  const ext = path.extname(file).toLowerCase();
-  const stem = path.basename(file, path.extname(file));
-  if (ext === ".jpg" || ext === ".jpeg" || ext === ".png") {
-    return `${stem}.webp`;
-  }
   return file.toLowerCase();
 }
 
@@ -84,19 +78,7 @@ async function publishHeroImage(
   pubDir: string,
   file: string
 ): Promise<string> {
-  const ext = path.extname(file).toLowerCase();
-
-  if (ext === ".jpg" || ext === ".jpeg" || ext === ".png") {
-    const destName = destNameForSource(file);
-    const buffer = await sharp(sourcePath)
-      .rotate()
-      .webp({ quality: 85 })
-      .toBuffer();
-    await fs.writeFile(path.join(pubDir, destName), buffer);
-    return destName;
-  }
-
-  const destName = file.toLowerCase();
+  const destName = destNameForSource(file);
   await fs.copyFile(sourcePath, path.join(pubDir, destName));
   return destName;
 }
