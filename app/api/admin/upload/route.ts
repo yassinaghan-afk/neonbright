@@ -7,7 +7,6 @@ import {
   optimizeUploadedImage,
   type ImageProcessPreset,
 } from "@/lib/cms/image-process";
-import { saveLogoUpload } from "@/lib/cms/logo-media";
 
 const UPLOAD_DIR = path.join(process.cwd(), "public/uploads/cms");
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024;   // 10 MB
@@ -49,6 +48,7 @@ async function saveFile(
   }
 
   if (preset === "logo") {
+    const { saveLogoUpload } = await import("@/lib/cms/admin/logo-upload");
     const logo = await saveLogoUpload(raw, file.name);
     return {
       url: logo.src,

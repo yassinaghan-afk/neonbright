@@ -84,31 +84,6 @@ export function logoFilenameFromSrc(src: string): string {
   return decodeURIComponent(path.basename(src.split("?")[0]));
 }
 
-export async function saveLogoUpload(
-  buffer: Buffer,
-  originalName: string
-): Promise<PartnerLogo> {
-  const root = process.cwd();
-  const mediaDir = path.join(root, "MEDIA", "logo");
-  const pubDir = path.join(root, PUBLIC_DIR);
-  await fs.mkdir(mediaDir, { recursive: true });
-  await fs.mkdir(pubDir, { recursive: true });
-
-  const safeName = path.basename(originalName);
-  if (!LOGO_EXT.test(safeName)) {
-    throw new Error("Formats autorisés : PNG, JPG, JPEG, SVG, WebP");
-  }
-
-  await fs.writeFile(path.join(mediaDir, safeName), buffer);
-  await fs.writeFile(path.join(pubDir, safeName), buffer);
-
-  return {
-    id: logoIdFromFile(safeName),
-    src: publicLogoSrc(safeName),
-    alt: logoAltFromFile(safeName),
-  };
-}
-
 export async function deleteLogoByFilename(filename: string): Promise<void> {
   const root = process.cwd();
   const safeName = path.basename(filename);
