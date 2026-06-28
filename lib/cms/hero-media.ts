@@ -1,7 +1,7 @@
 import { promises as fs } from "fs";
 import path from "path";
 import sharp from "sharp";
-import type { CMSHeroSlide } from "./types";
+import type { CMSHeroSlide } from "@/lib/cms/types";
 
 const MEDIA_DIRS = ["MEDIA/hero-slider", "MEDIA/hero slider"];
 const PUBLIC_DIR = "public/media/hero-slider";

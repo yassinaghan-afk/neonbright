@@ -1,15 +1,15 @@
 import { promises as fs } from "fs";
 import path from "path";
-import { getDefaultCMSContent } from "./defaults";
+import { getDefaultCMSContent } from "@/lib/cms/defaults";
 import {
   brandHeroSlidesStale,
   getExpectedHeroSlidesFromMedia,
   isHeroMediaOutOfSync,
   refreshBrandHeroSlides,
   shouldSeedBrandHeroSlides,
-} from "./hero-media";
-import { normalizeHeroSlides, normalizePartners } from "./normalize";
-import type { CMSContent } from "./types";
+} from "@/lib/cms/hero-media";
+import { normalizeHeroSlides, normalizePartners } from "@/lib/cms/normalize";
+import type { CMSContent } from "@/lib/cms/types";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const CONTENT_FILE = path.join(DATA_DIR, "cms-content.json");

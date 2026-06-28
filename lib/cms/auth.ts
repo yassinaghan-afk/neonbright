@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { getUserById } from "@/lib/auth/users";
 import type { SessionUser } from "@/lib/auth/types";
-import { SESSION_COOKIE, verifySessionToken } from "./session";
+import { SESSION_COOKIE, verifySessionToken } from "@/lib/cms/session";
 
 export async function getSession(): Promise<SessionUser | null> {
   const cookieStore = await cookies();

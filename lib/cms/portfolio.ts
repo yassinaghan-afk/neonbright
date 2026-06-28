@@ -1,13 +1,13 @@
 import type { PortfolioCategory } from "@/lib/portfolio/types";
 import type { EventProject } from "@/lib/events";
 import type { BrandProfile, ResolvedBrand } from "@/lib/brands/types";
-import { sortByOrder } from "./normalize";
-import { readCMSContent } from "./store";
+import { sortByOrder } from "@/lib/cms/normalize";
+import { readCMSContent } from "@/lib/cms/store";
 import type {
   CMSPortfolioCategory,
   CMSPortfolioProject,
   HeroContent,
-} from "./types";
+} from "@/lib/cms/types";
 
 export function toPortfolioCategory(cat: CMSPortfolioCategory): PortfolioCategory {
   return {

@@ -1,7 +1,7 @@
-import { readCMSContent } from "./store";
-import { heroSlideSrc } from "./hero-media";
-import { getPartnerLogosFromMedia, type PartnerLogo } from "./logo-media";
-import { normalizeHeroSlides, normalizePartners, sortByOrder } from "./normalize";
+import { readCMSContent } from "@/lib/cms/store";
+import { heroSlideSrc } from "@/lib/cms/hero-media";
+import { getPartnerLogosFromMedia, type PartnerLogo } from "@/lib/cms/logo-media";
+import { normalizeHeroSlides, normalizePartners, sortByOrder } from "@/lib/cms/normalize";
 import type {
   CMSFAQItem,
   CMSFeature,
@@ -16,7 +16,7 @@ import type {
   CompanyInfo,
   ContactInfo,
   SocialLinks,
-} from "./types";
+} from "@/lib/cms/types";
 
 export type PublicHomepageContent = {
   heroSlides: CMSHeroSlide[];

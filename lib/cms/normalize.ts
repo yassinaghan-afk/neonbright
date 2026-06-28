@@ -1,4 +1,4 @@
-import type { CMSHeroSlide, CMSPartner } from "./types";
+import type { CMSHeroSlide, CMSPartner } from "@/lib/cms/types";
 
 export function sortByOrder<T extends { sortOrder: number }>(items: T[]): T[] {
   return [...items].sort((a, b) => a.sortOrder - b.sortOrder);

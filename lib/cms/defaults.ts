@@ -1,6 +1,6 @@
-import { createId } from "./id";
-import { seedPortfolioCategories, seedPortfolioProjects } from "./portfolio-seed";
-import type { CMSContent } from "./types";
+import { createId } from "@/lib/cms/id";
+import { seedPortfolioCategories, seedPortfolioProjects } from "@/lib/cms/portfolio-seed";
+import type { CMSContent } from "@/lib/cms/types";
 
 export function getDefaultCMSContent(): CMSContent {
   const portfolioCategories = seedPortfolioCategories();

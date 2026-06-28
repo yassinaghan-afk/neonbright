@@ -1,7 +1,7 @@
 import { brandsCategory, BRAND_PROFILES } from "@/lib/brands/types";
 import { eventsCategory, eventProjects } from "@/lib/events";
-import { createId } from "./id";
-import type { CMSPortfolioCategory, CMSPortfolioProject } from "./types";
+import { createId } from "@/lib/cms/id";
+import type { CMSPortfolioCategory, CMSPortfolioProject } from "@/lib/cms/types";
 
 const PLACEHOLDER_CATEGORIES: Omit<CMSPortfolioCategory, "id">[] = [
   {
