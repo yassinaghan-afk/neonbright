@@ -7,6 +7,7 @@ import {
   eventProjectHref,
   type EventProject,
 } from "@/lib/events";
+import { localImageUnoptimized } from "@/lib/media/local-image";
 import { cn } from "@/lib/utils";
 
 const accentMap = {
@@ -69,6 +70,7 @@ export function EventProjectCard({ project, className }: EventProjectCardProps) 
                 : "(max-width: 768px) 100vw, 640px"
             }
             className="object-cover transition-transform duration-700 group-hover:scale-105"
+            {...localImageUnoptimized(project.image)}
           />
 
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/15" />

@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { brandHref, type ResolvedBrand } from "@/lib/brands/types";
+import { localImageUnoptimized } from "@/lib/media/local-image";
 import { cn } from "@/lib/utils";
 
 type BrandCardProps = {
@@ -29,6 +30,7 @@ export function BrandCard({ brand, className }: BrandCardProps) {
             height={80}
             className="max-h-14 w-auto max-w-[180px] object-contain object-center sm:max-h-16 sm:max-w-[200px]"
             sizes="200px"
+            {...localImageUnoptimized(brand.logoSrc)}
           />
         </div>
 

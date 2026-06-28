@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import type { PartnerLogo } from "@/lib/cms/logo-media";
+import { localImageUnoptimized } from "@/lib/media/local-image";
 import { cn } from "@/lib/utils";
 
 type PartnerLogoStripProps = {
@@ -25,6 +26,7 @@ function LogoItem({ logo }: { logo: PartnerLogo }) {
         sizes="(max-width: 640px) 140px, (max-width: 1024px) 200px, 240px"
         className="partner-strip-logo"
         draggable={false}
+        {...localImageUnoptimized(logo.src)}
       />
     </div>
   );

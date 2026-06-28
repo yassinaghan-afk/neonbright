@@ -11,6 +11,7 @@ import {
   getEventSlugsForPage,
 } from "@/lib/events/server";
 import type { EventProject } from "@/lib/events";
+import { localImageUnoptimized } from "@/lib/media/local-image";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -46,6 +47,7 @@ function ProjectGallery({ project }: { project: EventProject }) {
             fill
             sizes="(max-width: 768px) 100vw, 400px"
             className="object-cover"
+            {...localImageUnoptimized(src)}
           />
         </div>
       ))}
@@ -81,6 +83,7 @@ export default async function EventProjectPage({ params }: Props) {
                 sizes="(max-width: 768px) 100vw, 1280px"
                 className="object-cover"
                 priority
+                {...localImageUnoptimized(project.image)}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
             </div>

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
 import type { CMSHeroSlide } from "@/lib/cms/types";
+import { localImageUnoptimized } from "@/lib/media/local-image";
 
 const SLIDE_MS = 5500;
 const FADE_S = 2;
@@ -135,6 +136,7 @@ export function HeroSlideshow({ slides }: HeroSlideshowProps) {
                 sizes="100vw"
                 quality={85}
                 className="object-cover object-center"
+                {...localImageUnoptimized(slide.src)}
               />
             </motion.div>
           </motion.div>

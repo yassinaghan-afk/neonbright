@@ -1,6 +1,10 @@
 import { readCMSContent } from "@/lib/cms/store";
 import { heroSlideSrc } from "@/lib/cms/hero-media";
-import { getPartnerLogosFromMedia, type PartnerLogo } from "@/lib/cms/logo-media";
+import {
+  getPartnerLogosFromMedia,
+  isLogoMediaSyncEnabled,
+  type PartnerLogo,
+} from "@/lib/cms/logo-media";
 import { normalizeHeroSlides, normalizePartners, sortByOrder } from "@/lib/cms/normalize";
 import { resolvePublicAsset } from "@/lib/media/public-asset";
 import type {
@@ -38,24 +42,40 @@ export type PublicHomepageContent = {
   social: SocialLinks;
 };
 
-export async function getPublicHomepageContent(): Promise<PublicHomepageContent> {
-  const [content, partnerLogos] = await Promise.all([
-    readCMSContent(),
-    getPartnerLogosFromMedia(),
-  ]);
+function partnerLogosFromMediaDir(content: Awaited<ReturnType<typeof readCMSContent>>): PartnerLogo[] {
+  const seen = new Set<string>();
+  const logos: PartnerLogo[] = [];
 
-  const heroSlidesRaw = sortByOrder(content.heroSlides)
-    .filter((s) => s.enabled && s.src)
-    .map((s) => ({
-      ...s,
-      src: heroSlideSrc(s),
-    }));
-
-  const heroSlides: CMSHeroSlide[] = [];
-  for (const slide of heroSlidesRaw) {
-    const src = await resolvePublicAsset(slide.src);
-    if (src) heroSlides.push({ ...slide, src });
+  for (const file of content.portfolioProjects) {
+    if (!file.logoFile || seen.has(file.logoFile)) continue;
+    seen.add(file.logoFile);
+    const src = resolvePublicAsset(`/media/logo/${encodeURIComponent(file.logoFile)}`);
+    if (!src) continue;
+    logos.push({
+      id: `logo_${file.logoFile.replace(/[^a-z0-9]+/gi, "_").slice(0, 40)}`,
+      src,
+      alt: file.title,
+    });
   }
+
+  return logos;
+}
+
+export async function getPublicHomepageContent(): Promise<PublicHomepageContent> {
+  const content = await readCMSContent();
+
+  const partnerLogos = isLogoMediaSyncEnabled()
+    ? await getPartnerLogosFromMedia()
+    : partnerLogosFromMediaDir(content);
+
+  const heroSlides = sortByOrder(content.heroSlides)
+    .filter((s) => s.enabled && s.src)
+    .map((s) => {
+      const src = resolvePublicAsset(heroSlideSrc(s));
+      if (!src) return null;
+      return { ...s, src };
+    })
+    .filter((s): s is CMSHeroSlide => s !== null);
 
   const partners = sortByOrder(content.partners).filter((p) => p.enabled && p.name);
 

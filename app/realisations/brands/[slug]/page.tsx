@@ -13,6 +13,7 @@ import {
   getResolvedBrands,
 } from "@/lib/brands/server";
 import { getEventProjectsForPage } from "@/lib/events/server";
+import { localImageUnoptimized } from "@/lib/media/local-image";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -72,6 +73,7 @@ export default async function BrandDetailPage({ params }: Props) {
                 height={100}
                 className="max-h-24 w-auto max-w-[220px] object-contain"
                 priority
+                {...localImageUnoptimized(brand.logoSrc)}
               />
             </div>
 
@@ -120,6 +122,7 @@ export default async function BrandDetailPage({ params }: Props) {
                     fill
                     sizes="(max-width: 768px) 100vw, 400px"
                     className="object-cover"
+                    {...localImageUnoptimized(src)}
                   />
                 </div>
               ))}
@@ -142,6 +145,7 @@ export default async function BrandDetailPage({ params }: Props) {
                     fill
                     sizes="(max-width: 768px) 100vw, 600px"
                     className="object-cover"
+                    {...localImageUnoptimized(brand.beforeImage)}
                   />
                 </div>
               </div>
@@ -156,6 +160,7 @@ export default async function BrandDetailPage({ params }: Props) {
                     fill
                     sizes="(max-width: 768px) 100vw, 600px"
                     className="object-cover"
+                    {...localImageUnoptimized(brand.afterImage)}
                   />
                 </div>
               </div>
@@ -193,6 +198,7 @@ export default async function BrandDetailPage({ params }: Props) {
                       width={140}
                       height={48}
                       className="max-h-10 w-auto object-contain sm:max-h-12"
+                      {...localImageUnoptimized(b.logoSrc)}
                     />
                   </Link>
                 ))}

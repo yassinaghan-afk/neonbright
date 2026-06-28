@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import type { PortfolioCategory } from "@/lib/portfolio/types";
+import { localImageUnoptimized } from "@/lib/media/local-image";
 import { cn } from "@/lib/utils";
 
 type CategoryCardProps = {
@@ -27,6 +28,7 @@ export function CategoryCard({ category, className }: CategoryCardProps) {
             sizes="(max-width: 768px) 100vw, 1280px"
             className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
             priority
+            {...localImageUnoptimized(category.coverImage)}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/10" />
 

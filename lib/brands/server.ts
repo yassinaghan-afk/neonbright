@@ -1,7 +1,10 @@
 import {
   getPartnerLogosFromMedia,
+  isLogoMediaSyncEnabled,
   logoFilenameFromSrc,
 } from "@/lib/cms/logo-media";
+import { readCMSContent } from "@/lib/cms/store";
+import { resolvePublicAsset } from "@/lib/media/public-asset";
 import {
   getBrandProfileFromCMS,
   getBrandSlugsFromCMS,
@@ -21,10 +24,23 @@ export {
 } from "@/lib/brands/types";
 
 async function buildLogoMap(): Promise<Map<string, string>> {
-  const logos = await getPartnerLogosFromMedia();
+  if (isLogoMediaSyncEnabled()) {
+    const logos = await getPartnerLogosFromMedia();
+    const map = new Map<string, string>();
+    for (const logo of logos) {
+      map.set(logoFilenameFromSrc(logo.src), logo.src);
+    }
+    return map;
+  }
+
+  const content = await readCMSContent();
   const map = new Map<string, string>();
-  for (const logo of logos) {
-    map.set(logoFilenameFromSrc(logo.src), logo.src);
+  for (const p of content.portfolioProjects) {
+    if (!p.logoFile) continue;
+    const src = resolvePublicAsset(
+      `/media/logo/${encodeURIComponent(p.logoFile)}`
+    );
+    if (src) map.set(p.logoFile, src);
   }
   return map;
 }

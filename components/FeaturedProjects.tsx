@@ -1,7 +1,6 @@
 import { sectionCopy as staticCopy } from "@/lib/data";
 import { brandsCategory } from "@/lib/brands/types";
 import { eventsCategory } from "@/lib/events";
-import { resolvePublicAsset } from "@/lib/media/public-asset";
 import { CategoryCard } from "@/components/portfolio/CategoryCard";
 import { Container } from "@/components/ui/Container";
 import { SectionDivider, SectionReveal } from "@/components/ui/SectionReveal";
@@ -17,22 +16,8 @@ type FeaturedProjectsProps = {
   copy?: PortfolioCopy;
 };
 
-export async function FeaturedProjects({ copy }: FeaturedProjectsProps) {
+export function FeaturedProjects({ copy }: FeaturedProjectsProps) {
   const sectionsCopy = copy ?? staticCopy.portfolio;
-
-  const [eventsCover, brandsCover] = await Promise.all([
-    resolvePublicAsset(eventsCategory.coverImage),
-    resolvePublicAsset(brandsCategory.coverImage),
-  ]);
-
-  const eventsCat = {
-    ...eventsCategory,
-    coverImage: eventsCover ?? eventsCategory.coverImage,
-  };
-  const brandsCat = {
-    ...brandsCategory,
-    coverImage: brandsCover ?? brandsCategory.coverImage,
-  };
 
   return (
     <>
@@ -64,11 +49,11 @@ export async function FeaturedProjects({ copy }: FeaturedProjectsProps) {
 
           <div className="mt-14 space-y-6 sm:mt-16 sm:space-y-7 md:mt-20 md:space-y-8">
             <SectionReveal delay={0.1}>
-              <CategoryCard category={eventsCat} />
+              <CategoryCard category={eventsCategory} />
             </SectionReveal>
 
             <SectionReveal delay={0.15}>
-              <CategoryCard category={brandsCat} />
+              <CategoryCard category={brandsCategory} />
             </SectionReveal>
           </div>
         </Container>

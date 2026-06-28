@@ -10,24 +10,14 @@ import type {
   HeroContent,
 } from "@/lib/cms/types";
 
-async function resolveOptionalAsset(url: string | undefined): Promise<string | undefined> {
-  if (!url) return undefined;
-  return (await resolvePublicAsset(url)) ?? undefined;
-}
-
-async function resolveProjectImages(
-  p: CMSPortfolioProject
-): Promise<CMSPortfolioProject> {
+function resolveProjectImages(p: CMSPortfolioProject): CMSPortfolioProject {
   const rawGallery = p.gallery.length ? p.gallery : p.images;
-  const gallery = await resolvePublicAssets(rawGallery);
-  const coverImage = (await resolvePublicAsset(p.coverImage)) ?? "";
-  const featuredImage =
-    (await resolvePublicAsset(p.featuredImage)) ?? coverImage;
-  const thumbnail =
-    (await resolvePublicAsset(p.thumbnail)) ?? featuredImage;
-  const beforeImage = await resolveOptionalAsset(p.beforeImage);
-  const afterImage =
-    (await resolveOptionalAsset(p.afterImage)) ?? featuredImage;
+  const gallery = resolvePublicAssets(rawGallery);
+  const coverImage = resolvePublicAsset(p.coverImage) ?? "";
+  const featuredImage = resolvePublicAsset(p.featuredImage) ?? coverImage;
+  const thumbnail = resolvePublicAsset(p.thumbnail) ?? featuredImage;
+  const beforeImage = resolvePublicAsset(p.beforeImage) ?? undefined;
+  const afterImage = resolvePublicAsset(p.afterImage) ?? featuredImage;
 
   return {
     ...p,
@@ -41,10 +31,8 @@ async function resolveProjectImages(
   };
 }
 
-export async function toPortfolioCategory(
-  cat: CMSPortfolioCategory
-): Promise<PortfolioCategory> {
-  const coverImage = (await resolvePublicAsset(cat.coverImage)) ?? cat.coverImage;
+export function toPortfolioCategory(cat: CMSPortfolioCategory): PortfolioCategory {
+  const coverImage = resolvePublicAsset(cat.coverImage) ?? cat.coverImage;
   return {
     id: cat.slug,
     title: cat.title,
@@ -126,7 +114,7 @@ export async function getPortfolioProjectsByCategorySlug(
         p.categoryId === category.id && (!publishedOnly || p.published)
     )
   );
-  return Promise.all(projects.map(resolveProjectImages));
+  return projects.map(resolveProjectImages);
 }
 
 export async function getPortfolioProjectBySlug(

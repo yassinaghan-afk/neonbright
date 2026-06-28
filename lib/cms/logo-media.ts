@@ -5,6 +5,11 @@ const MEDIA_DIRS = ["MEDIA/logo", "MEDIA/Logos", "Media/logo"];
 const PUBLIC_DIR = "public/media/logo";
 const LOGO_EXT = /\.(png|jpe?g|svg|webp)$/i;
 
+/** Logo sync from MEDIA/ → public/ runs only in local development. */
+export function isLogoMediaSyncEnabled(): boolean {
+  return process.env.NODE_ENV === "development";
+}
+
 export type PartnerLogo = {
   id: string;
   src: string;
@@ -128,6 +133,10 @@ async function purgeStalePublicFiles(pubDir: string, keepNames: Set<string>) {
 }
 
 export async function syncLogosFromMedia(): Promise<PartnerLogo[]> {
+  if (!isLogoMediaSyncEnabled()) {
+    return [];
+  }
+
   const root = process.cwd();
   const pubDir = path.join(root, PUBLIC_DIR);
   await fs.mkdir(pubDir, { recursive: true });
