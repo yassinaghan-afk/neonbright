@@ -259,3 +259,63 @@ export const faqs = [
       "Of course. Use our instant quote form or upload your logo — we'll respond within 24 hours with a detailed proposal and mockup preview.",
   },
 ];
+
+/** Static fallbacks when CMS props are not passed (matches lib/cms/defaults sectionCopy). */
+export const sectionCopy = {
+  portfolio: {
+    title: "Événements & Expériences",
+    headline: "Nos réalisations pour",
+    headlineAccent: "événements, festivals et expériences de marque",
+    subtitle:
+      "Des installations lumineuses conçues pour attirer l'attention, renforcer l'image de marque et créer des expériences mémorables lors d'événements, festivals, salons, concerts et activations marketing.",
+  },
+  services: {
+    title: "Services",
+    headline: "Conçu pour l'échelle commerciale",
+    subtitle:
+      "Néon LED et enseignes lumineuses de grade commercial pour espaces à fort trafic et déploiements multi-sites.",
+  },
+  industries: {
+    title: "Secteurs",
+    headline: "Les secteurs que nous équipons",
+    subtitle:
+      "De la boutique indépendante au siège corporate — nous illuminons tous les espaces professionnels.",
+  },
+  testimonials: {
+    title: "Témoignages",
+    headline: "La confiance des grandes marques",
+  },
+  process: {
+    title: "Processus",
+    headline: "Du concept à la lumière",
+    subtitle:
+      "Un parcours en quatre étapes, de votre idée initiale à une installation lumineuse remarquable.",
+  },
+  faq: {
+    title: "FAQ",
+    headline: "Questions fréquentes",
+    subtitle: "Tout ce qu'il faut savoir sur votre enseigne néon sur mesure.",
+    contactLink: "Contactez-nous",
+  },
+  cta: {
+    headline: "Prêt pour votre devis sur mesure ?",
+    subtitle:
+      "Maquette photoréaliste et devis commercial gratuits sous 24 h — directement sur le site.",
+    primary: "Obtenir un Devis",
+    secondary: "Créer Mon Néon",
+  },
+};
+
+/** Static fallback for Hero when CMS hero prop is not passed. */
+export const heroContent = {
+  badge: "Néon LED & Enseignes Lumineuses · Maroc & International",
+  headline: "Leader du néon sur mesure",
+  headlineAccent: "et de l'enseigne personnalisée",
+  subheadline:
+    "D'une idée à la réalisation, nous illuminons vos évènements, commerces et établissements avec des solutions sur-mesure.",
+  primaryCta: "Créer Mon Néon",
+  secondaryCta: "Créer Mon Enseigne",
+  helperText:
+    "Visualisez, personnalisez et expérimentez avant de demander votre devis — sans engagement.",
+  trustLabel: "Ils nous font confiance",
+};

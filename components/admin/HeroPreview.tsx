@@ -3,6 +3,8 @@
 import type { HeroContent } from "@/lib/cms/types";
 
 export function HeroPreview({ hero }: { hero: HeroContent }) {
+  const block = hero.trustBlock;
+
   return (
     <div className="overflow-hidden rounded-xl border border-white/10 bg-[#050505] p-6">
       <p className="mb-3 text-[10px] uppercase tracking-widest text-neon-pink">Live Preview</p>
@@ -16,14 +18,15 @@ export function HeroPreview({ hero }: { hero: HeroContent }) {
       <p className="mt-3 text-sm leading-relaxed text-white/50">
         {hero.subheadline || "Subheadline text..."}
       </p>
-      <div className="mt-6 grid grid-cols-2 gap-3 border-t border-white/10 pt-4 sm:grid-cols-4">
-        {hero.stats.map((s) => (
-          <div key={s.id}>
-            <p className="font-display text-lg font-bold">{s.value || "—"}</p>
-            <p className="text-[10px] text-white/40">{s.label}</p>
-          </div>
-        ))}
-      </div>
+      {block?.enabled !== false && (
+        <div className="mt-6 border-t border-white/10 pt-4 text-center">
+          <p className="font-display text-2xl font-bold">{block?.value || "200+"}</p>
+          <p className="text-xs text-white/50">{block?.label || "clients satisfaits"}</p>
+          {block?.sublabel && (
+            <p className="mt-1 text-[10px] text-white/35">{block.sublabel}</p>
+          )}
+        </div>
+      )}
       <p className="mt-4 text-center text-[10px] uppercase tracking-widest text-white/30">
         {hero.trustStripLabel}
       </p>

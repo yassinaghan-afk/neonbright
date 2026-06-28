@@ -35,7 +35,7 @@ export default async function Home() {
     <>
       <Navbar nav={nav} />
       <main>
-        <Hero slides={heroSlides} />
+        <Hero />
         <PartnerLogoStrip logos={partnerLogos} label={trustStripLabel} />
         <FeaturedProjects copy={sectionCopy.portfolio} />
         <InstagramFeedSection />

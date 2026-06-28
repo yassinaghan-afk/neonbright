@@ -18,15 +18,35 @@ async function ensureDataDir() {
   await fs.mkdir(DATA_DIR, { recursive: true });
 }
 
+function mergeHero(
+  defaults: CMSContent["hero"],
+  parsed: Partial<CMSContent["hero"]> | undefined
+): CMSContent["hero"] {
+  const merged = { ...defaults, ...(parsed ?? {}) };
+  return {
+    ...merged,
+    trustBlock: {
+      ...defaults.trustBlock,
+      ...(parsed?.trustBlock ?? {}),
+    },
+  };
+}
+
 function mergeContent(parsed: Partial<CMSContent>): CMSContent {
   const defaults = getDefaultCMSContent();
   return {
     ...defaults,
     ...parsed,
-    hero: { ...defaults.hero, ...(parsed.hero ?? {}) },
+    hero: mergeHero(defaults.hero, parsed.hero),
     heroSlides: normalizeHeroSlides(parsed.heroSlides, defaults.heroSlides),
     partners: normalizePartners(parsed.partners, defaults.partners),
     projects: parsed.projects?.length ? parsed.projects : defaults.projects,
+    portfolioCategories: parsed.portfolioCategories?.length
+      ? parsed.portfolioCategories
+      : defaults.portfolioCategories,
+    portfolioProjects: parsed.portfolioProjects?.length
+      ? parsed.portfolioProjects
+      : defaults.portfolioProjects,
     testimonials: parsed.testimonials?.length ? parsed.testimonials : defaults.testimonials,
     services: parsed.services?.length ? parsed.services : defaults.services,
     faq: parsed.faq?.length ? parsed.faq : defaults.faq,

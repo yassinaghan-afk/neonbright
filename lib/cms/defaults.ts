@@ -1,7 +1,9 @@
 import { createId } from "./id";
+import { seedPortfolioCategories, seedPortfolioProjects } from "./portfolio-seed";
 import type { CMSContent } from "./types";
 
 export function getDefaultCMSContent(): CMSContent {
+  const portfolioCategories = seedPortfolioCategories();
   return {
     hero: {
       badge: "Néon LED & Enseignes Lumineuses · Maroc & International",
@@ -11,18 +13,18 @@ export function getDefaultCMSContent(): CMSContent {
         "Créez votre néon LED ou votre enseigne lumineuse sur mesure. Visualisez votre projet en temps réel grâce à notre designer interactif.",
       primaryCta: "Créer Mon Néon",
       secondaryCta: "Créer Mon Enseigne",
-      helperText:
-        "Visualisez, personnalisez et expérimentez avant de demander votre devis — sans engagement.",
       backgroundImage: "",
-      stats: [
-        { id: createId("stat"), value: "2M€+", label: "Projets commerciaux" },
-        { id: createId("stat"), value: "500+", label: "Installations" },
-        { id: createId("stat"), value: "15+", label: "Pays desservis" },
-        { id: createId("stat"), value: "4,9★", label: "Satisfaction client" },
-      ],
+      trustBlock: {
+        enabled: true,
+        value: "200+",
+        label: "clients satisfaits",
+        sublabel: "",
+      },
       trustStripLabel: "Ils nous font confiance",
     },
     heroSlides: [],
+    portfolioCategories,
+    portfolioProjects: seedPortfolioProjects(portfolioCategories),
     projects: [
       {
         id: createId("proj"),

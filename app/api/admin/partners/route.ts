@@ -17,10 +17,13 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   if (!body?.name) return jsonError("Name is required");
 
+  const content = await readCMSContent();
   const item: CMSPartner = {
     id: createId("partner"),
     name: body.name,
     logoUrl: body.logoUrl ?? "",
+    enabled: body.enabled !== false,
+    sortOrder: body.sortOrder ?? content.partners.length,
   };
 
   await updateCMSContent((c) => ({

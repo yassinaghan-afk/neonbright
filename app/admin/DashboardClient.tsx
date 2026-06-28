@@ -39,7 +39,7 @@ export default function AdminDashboardClient() {
     { label: "Total Leads", count: leadStats?.total ?? 0, href: "/admin/leads" },
     ...(isOwner && content
       ? [
-          { label: "Projects", count: content.projects.length, href: "/admin/portfolio" },
+          { label: "Projects", count: content.portfolioProjects?.length ?? content.projects?.length ?? 0, href: "/admin/portfolio" },
           { label: "Services", count: content.services.length, href: "/admin/services" },
         ]
       : []),
