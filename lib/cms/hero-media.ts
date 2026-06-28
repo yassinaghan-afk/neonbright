@@ -40,6 +40,11 @@ export function heroSlideSrc(slide: CMSHeroSlide): string {
   return slide.src.split("?")[0];
 }
 
+/** Hero media sync from MEDIA/ → public/ runs only in local development. */
+export function isHeroMediaSyncEnabled(): boolean {
+  return process.env.NODE_ENV === "development";
+}
+
 async function resolveMediaDir(root: string): Promise<string | null> {
   for (const dir of MEDIA_DIRS) {
     const full = path.join(root, dir);
@@ -77,7 +82,13 @@ async function publishHeroImage(
   sourcePath: string,
   pubDir: string,
   file: string
-): Promise<string> {
+): Promise<string | null> {
+  try {
+    await fs.access(sourcePath);
+  } catch {
+    return null;
+  }
+
   const destName = destNameForSource(file);
   await fs.copyFile(sourcePath, path.join(pubDir, destName));
   return destName;
@@ -105,6 +116,8 @@ export async function wipePublicHeroCache(): Promise<number> {
 }
 
 async function purgeStalePublicFiles(pubDir: string, keepNames: Set<string>) {
+  if (!keepNames.size) return;
+
   let existing: string[] = [];
   try {
     existing = await fs.readdir(pubDir);
@@ -141,7 +154,14 @@ export async function isHeroMediaOutOfSync(): Promise<boolean> {
   if (expected.some((name) => !published.includes(name))) return true;
 
   for (const file of sourceFiles) {
-    const sourceStat = await fs.stat(path.join(sourceDir, file));
+    const sourcePath = path.join(sourceDir, file);
+    try {
+      await fs.access(sourcePath);
+    } catch {
+      continue;
+    }
+
+    const sourceStat = await fs.stat(sourcePath);
     const destName = destNameForSource(file);
     try {
       const destStat = await fs.stat(path.join(pubDir, destName));
@@ -157,6 +177,10 @@ export async function isHeroMediaOutOfSync(): Promise<boolean> {
 export async function syncHeroSlidesFromMedia(options?: {
   force?: boolean;
 }): Promise<HeroMediaSyncResult> {
+  if (!isHeroMediaSyncEnabled()) {
+    return { slides: [], removed: 0, mediaVersion: "", sourceFiles: [] };
+  }
+
   const root = process.cwd();
   const sourceDir = await resolveMediaDir(root);
   if (!sourceDir) {
@@ -167,8 +191,6 @@ export async function syncHeroSlidesFromMedia(options?: {
   await fs.mkdir(pubDir, { recursive: true });
 
   const files = await listSourceFiles(sourceDir);
-  const removed = options?.force ? await wipePublicHeroCache() : 0;
-
   const publishedNames = new Set<string>();
   const slides: CMSHeroSlide[] = [];
 
@@ -179,8 +201,9 @@ export async function syncHeroSlidesFromMedia(options?: {
       pubDir,
       file
     );
-    publishedNames.add(destName);
+    if (!destName) continue;
 
+    publishedNames.add(destName);
     slides.push({
       id: slideIdFromFile(destName),
       src: `/media/hero-slider/${destName}`,
@@ -190,11 +213,15 @@ export async function syncHeroSlidesFromMedia(options?: {
     });
   }
 
-  await purgeStalePublicFiles(pubDir, publishedNames);
+  if (publishedNames.size > 0) {
+    if (options?.force) {
+      await purgeStalePublicFiles(pubDir, publishedNames);
+    }
+  }
 
   return {
     slides,
-    removed,
+    removed: 0,
     mediaVersion: Date.now().toString(36),
     sourceFiles: files,
   };

@@ -2,6 +2,7 @@ import { readCMSContent } from "@/lib/cms/store";
 import { heroSlideSrc } from "@/lib/cms/hero-media";
 import { getPartnerLogosFromMedia, type PartnerLogo } from "@/lib/cms/logo-media";
 import { normalizeHeroSlides, normalizePartners, sortByOrder } from "@/lib/cms/normalize";
+import { resolvePublicAsset } from "@/lib/media/public-asset";
 import type {
   CMSFAQItem,
   CMSFeature,
@@ -43,12 +44,18 @@ export async function getPublicHomepageContent(): Promise<PublicHomepageContent>
     getPartnerLogosFromMedia(),
   ]);
 
-  const heroSlides = sortByOrder(content.heroSlides)
+  const heroSlidesRaw = sortByOrder(content.heroSlides)
     .filter((s) => s.enabled && s.src)
     .map((s) => ({
       ...s,
       src: heroSlideSrc(s),
     }));
+
+  const heroSlides: CMSHeroSlide[] = [];
+  for (const slide of heroSlidesRaw) {
+    const src = await resolvePublicAsset(slide.src);
+    if (src) heroSlides.push({ ...slide, src });
+  }
 
   const partners = sortByOrder(content.partners).filter((p) => p.enabled && p.name);
 

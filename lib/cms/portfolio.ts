@@ -3,19 +3,54 @@ import type { EventProject } from "@/lib/events";
 import type { BrandProfile, ResolvedBrand } from "@/lib/brands/types";
 import { sortByOrder } from "@/lib/cms/normalize";
 import { readCMSContent } from "@/lib/cms/store";
+import { resolvePublicAsset, resolvePublicAssets } from "@/lib/media/public-asset";
 import type {
   CMSPortfolioCategory,
   CMSPortfolioProject,
   HeroContent,
 } from "@/lib/cms/types";
 
-export function toPortfolioCategory(cat: CMSPortfolioCategory): PortfolioCategory {
+async function resolveOptionalAsset(url: string | undefined): Promise<string | undefined> {
+  if (!url) return undefined;
+  return (await resolvePublicAsset(url)) ?? undefined;
+}
+
+async function resolveProjectImages(
+  p: CMSPortfolioProject
+): Promise<CMSPortfolioProject> {
+  const rawGallery = p.gallery.length ? p.gallery : p.images;
+  const gallery = await resolvePublicAssets(rawGallery);
+  const coverImage = (await resolvePublicAsset(p.coverImage)) ?? "";
+  const featuredImage =
+    (await resolvePublicAsset(p.featuredImage)) ?? coverImage;
+  const thumbnail =
+    (await resolvePublicAsset(p.thumbnail)) ?? featuredImage;
+  const beforeImage = await resolveOptionalAsset(p.beforeImage);
+  const afterImage =
+    (await resolveOptionalAsset(p.afterImage)) ?? featuredImage;
+
+  return {
+    ...p,
+    gallery,
+    images: gallery,
+    coverImage,
+    featuredImage,
+    thumbnail,
+    beforeImage,
+    afterImage,
+  };
+}
+
+export async function toPortfolioCategory(
+  cat: CMSPortfolioCategory
+): Promise<PortfolioCategory> {
+  const coverImage = (await resolvePublicAsset(cat.coverImage)) ?? cat.coverImage;
   return {
     id: cat.slug,
     title: cat.title,
     titleAccent: cat.titleAccent,
     description: cat.description,
-    coverImage: cat.coverImage,
+    coverImage,
     coverAlt: cat.coverAlt,
     href: cat.href,
   };
@@ -85,12 +120,13 @@ export async function getPortfolioProjectsByCategorySlug(
   const content = await readCMSContent();
   const category = content.portfolioCategories.find((c) => c.slug === categorySlug);
   if (!category) return [];
-  return sortByOrder(
+  const projects = sortByOrder(
     content.portfolioProjects.filter(
       (p) =>
         p.categoryId === category.id && (!publishedOnly || p.published)
     )
   );
+  return Promise.all(projects.map(resolveProjectImages));
 }
 
 export async function getPortfolioProjectBySlug(

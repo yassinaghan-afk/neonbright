@@ -5,6 +5,7 @@ import {
   brandHeroSlidesStale,
   getExpectedHeroSlidesFromMedia,
   isHeroMediaOutOfSync,
+  isHeroMediaSyncEnabled,
   refreshBrandHeroSlides,
   shouldSeedBrandHeroSlides,
 } from "@/lib/cms/hero-media";
@@ -96,6 +97,10 @@ async function maybeSyncHeroFromMedia(
   parsed: Partial<CMSContent>,
   content: CMSContent
 ): Promise<{ content: CMSContent; changed: boolean }> {
+  if (!isHeroMediaSyncEnabled()) {
+    return { content, changed: false };
+  }
+
   const outOfSync = await isHeroMediaOutOfSync();
   const needsSeed = shouldSeedBrandHeroSlides(parsed.heroSlides);
   const expected = await getExpectedHeroSlidesFromMedia();
@@ -132,6 +137,10 @@ export async function readCMSContent(): Promise<CMSContent> {
     return content;
   } catch {
     const defaults = getDefaultCMSContent();
+    if (!isHeroMediaSyncEnabled()) {
+      await writeCMSContent(defaults);
+      return defaults;
+    }
     const result = await refreshBrandHeroSlides(true);
     const content = applyBrandHeroSlides(defaults, result.slides, result.mediaVersion);
     await writeCMSContent(content);
