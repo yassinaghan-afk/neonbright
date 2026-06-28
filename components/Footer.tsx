@@ -2,23 +2,46 @@ import { Container } from "@/components/ui/Container";
 import { QuoteLink } from "@/components/quote/QuoteLink";
 import { WhatsAppLink, WhatsAppIcon } from "@/components/whatsapp/WhatsAppLink";
 import { Logo } from "@/components/Logo";
+import type { CompanyInfo, ContactInfo, SocialLinks } from "@/lib/cms/types";
 
-const footerLinks = {
+const staticFooterLinks = {
   company: [
-    { label: "About", href: "#about" },
-    { label: "Portfolio", href: "#portfolio" },
-    { label: "Process", href: "#process" },
+    { label: "À propos", href: "#about" },
+    { label: "Réalisations", href: "#portfolio" },
+    { label: "Processus", href: "#process" },
     { label: "Contact", isQuote: true as const },
   ],
   services: [
-    { label: "Custom Logo Signs", href: "#services" },
-    { label: "Wall Installations", href: "#services" },
-    { label: "Event Signage", href: "#services" },
-    { label: "Commercial Projects", href: "#services" },
+    { label: "Néons LED personnalisés", href: "#services" },
+    { label: "Enseignes lumineuses", href: "#services" },
+    { label: "Logos lumineux", href: "#services" },
+    { label: "Signalétique professionnelle", href: "#services" },
   ],
 };
 
-export function Footer() {
+type FooterProps = {
+  company?: CompanyInfo;
+  contact?: ContactInfo;
+  social?: SocialLinks;
+};
+
+export function Footer({ company, contact, social }: FooterProps) {
+  const tagline =
+    company?.footerTagline ??
+    "Néon LED et enseignes lumineuses sur mesure, fabriqués au Maroc et livrés dans le monde entier. Illuminez votre marque avec excellence.";
+
+  const address = contact?.address ?? "Casablanca, Maroc";
+  const email = contact?.email ?? "hello@neonbright.ma";
+  const phone = contact?.phone ?? "+212 600 000 000";
+  const year = new Date().getFullYear();
+  const companyName = company?.name ?? "Neon Bright";
+
+  const socialLinks = [
+    { label: "Instagram", href: social?.instagram || "#" },
+    { label: "LinkedIn", href: social?.linkedin || "#" },
+    { label: "Pinterest", href: social?.pinterest || "#" },
+  ];
+
   return (
     <footer className="border-t border-white/10 bg-surface pt-16 pb-8">
       <Container>
@@ -26,17 +49,16 @@ export function Footer() {
           <div className="sm:col-span-2 lg:col-span-1">
             <Logo href="/" variant="footer" />
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted">
-              Premium custom LED neon signs crafted in Morocco, delivered
-              worldwide. Transform your space with light.
+              {tagline}
             </p>
           </div>
 
           <div>
             <h4 className="text-sm font-semibold uppercase tracking-wider">
-              Company
+              Entreprise
             </h4>
             <ul className="mt-4 space-y-3">
-              {footerLinks.company.map((link) => (
+              {staticFooterLinks.company.map((link) => (
                 <li key={link.label}>
                   {"isQuote" in link && link.isQuote ? (
                     <QuoteLink className="text-sm text-muted transition-colors hover:text-white">
@@ -60,7 +82,7 @@ export function Footer() {
               Services
             </h4>
             <ul className="mt-4 space-y-3">
-              {footerLinks.services.map((link) => (
+              {staticFooterLinks.services.map((link) => (
                 <li key={link.label}>
                   <a
                     href={link.href}
@@ -78,27 +100,27 @@ export function Footer() {
               Contact
             </h4>
             <ul className="mt-4 space-y-3 text-sm text-muted">
-              <li>Casablanca, Morocco</li>
+              <li>{address}</li>
               <li>
                 <a
-                  href="mailto:hello@neonbright.ma"
+                  href={`mailto:${email}`}
                   className="transition-colors hover:text-neon-pink"
                 >
-                  hello@neonbright.ma
+                  {email}
                 </a>
               </li>
               <li>
                 <a
-                  href="tel:+212600000000"
+                  href={`tel:${phone.replace(/\s/g, "")}`}
                   className="transition-colors hover:text-neon-pink"
                 >
-                  +212 600 000 000
+                  {phone}
                 </a>
               </li>
               <li>
                 <WhatsAppLink className="inline-flex items-center gap-2 text-[#25D366]">
                   <WhatsAppIcon className="h-4 w-4" />
-                  Chat on WhatsApp
+                  WhatsApp
                 </WhatsAppLink>
               </li>
             </ul>
@@ -107,16 +129,18 @@ export function Footer() {
 
         <div className="mt-16 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 sm:flex-row">
           <p className="text-xs text-muted">
-            &copy; {new Date().getFullYear()} Neon Bright. All rights reserved.
+            &copy; {year} {companyName}. Tous droits réservés.
           </p>
           <div className="flex gap-6">
-            {["Instagram", "LinkedIn", "Pinterest"].map((social) => (
+            {socialLinks.map((s) => (
               <a
-                key={social}
-                href="#"
+                key={s.label}
+                href={s.href}
                 className="text-xs text-muted transition-colors hover:text-white"
+                target={s.href !== "#" ? "_blank" : undefined}
+                rel={s.href !== "#" ? "noopener noreferrer" : undefined}
               >
-                {social}
+                {s.label}
               </a>
             ))}
           </div>

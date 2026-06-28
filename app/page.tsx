@@ -1,6 +1,8 @@
 import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
+import { PartnerLogoStrip } from "@/components/PartnerLogoStrip";
 import { FeaturedProjects } from "@/components/FeaturedProjects";
+import { InstagramFeedSection } from "@/components/InstagramFeedSection";
 import { WhyChooseUs } from "@/components/WhyChooseUs";
 import { Industries } from "@/components/Industries";
 import { Testimonials } from "@/components/Testimonials";
@@ -8,22 +10,43 @@ import { Process } from "@/components/Process";
 import { FAQ } from "@/components/FAQ";
 import { QuoteCTA } from "@/components/quote/QuoteCTA";
 import { Footer } from "@/components/Footer";
+import { getPublicHomepageContent } from "@/lib/cms/public";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const {
+    heroSlides,
+    partnerLogos,
+    trustStripLabel,
+    testimonials,
+    features,
+    industries,
+    processSteps,
+    faq,
+    sectionCopy,
+    nav,
+    company,
+    contact,
+    social,
+  } = await getPublicHomepageContent();
+
   return (
     <>
-      <Navbar />
+      <Navbar nav={nav} />
       <main>
-        <Hero />
-        <FeaturedProjects />
-        <WhyChooseUs />
-        <Industries />
-        <Testimonials />
-        <Process />
-        <FAQ />
+        <Hero slides={heroSlides} />
+        <PartnerLogoStrip logos={partnerLogos} label={trustStripLabel} />
+        <FeaturedProjects copy={sectionCopy.portfolio} />
+        <InstagramFeedSection />
+        <WhyChooseUs items={features} copy={sectionCopy.services} />
+        <Industries items={industries} copy={sectionCopy.industries} />
+        <Testimonials items={testimonials} copy={sectionCopy.testimonials} />
+        <Process steps={processSteps} copy={sectionCopy.process} />
+        <FAQ items={faq} copy={sectionCopy.faq} />
         <QuoteCTA />
       </main>
-      <Footer />
+      <Footer company={company} contact={contact} social={social} />
     </>
   );
 }

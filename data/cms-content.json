@@ -1,15 +1,98 @@
 {
   "hero": {
-    "badge": "Updated Badge",
-    "headline": "Test",
-    "headlineAccent": "Light.",
-    "subheadline": "Sub",
-    "stats": [],
-    "trustStripLabel": "Trust"
+    "badge": "Néon LED & Enseignes Lumineuses · Maroc & International",
+    "headline": "Leader du néon sur mesure",
+    "headlineAccent": "et de l'enseigne personnalisée",
+    "subheadline": "Créez votre néon LED ou votre enseigne lumineuse sur mesure. Visualisez votre projet en temps réel grâce à notre designer interactif.",
+    "primaryCta": "Créer Mon Néon",
+    "secondaryCta": "Créer Mon Enseigne",
+    "helperText": "Visualisez, personnalisez et expérimentez avant de demander votre devis — sans engagement.",
+    "backgroundImage": "/media/hero-slider/13978eaa-af3e-422b-afce-217b5298c6ed.webp",
+    "stats": [
+      {
+        "id": "stat_mqe6jere_dgqb6s",
+        "value": "2M€+",
+        "label": "Projets commerciaux"
+      },
+      {
+        "id": "stat_mqe6jere_ebpnps",
+        "value": "500+",
+        "label": "Installations"
+      },
+      {
+        "id": "stat_mqe6jere_3eudst",
+        "value": "15+",
+        "label": "Pays desservis"
+      },
+      {
+        "id": "stat_mqe6jere_xaqsjv",
+        "value": "4,9★",
+        "label": "Satisfaction client"
+      }
+    ],
+    "trustStripLabel": "Ils nous font confiance"
   },
+  "heroSlides": [
+    {
+      "id": "slide_brand_13978eaa-af3",
+      "src": "/media/hero-slider/13978eaa-af3e-422b-afce-217b5298c6ed.webp",
+      "alt": "Enseigne néon LED sur mesure — vitrine commerciale illuminée",
+      "enabled": true,
+      "sortOrder": 0
+    },
+    {
+      "id": "slide_brand_2842fb6b-da2",
+      "src": "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp",
+      "alt": "Néon LED personnalisé — enseigne lumineuse restaurant",
+      "enabled": true,
+      "sortOrder": 1
+    },
+    {
+      "id": "slide_brand_64550da3-666",
+      "src": "/media/hero-slider/64550da3-6666-41e4-ae29-6d8422853ffd.webp",
+      "alt": "Enseigne lumineuse LED — façade hôtel et hospitality",
+      "enabled": true,
+      "sortOrder": 2
+    },
+    {
+      "id": "slide_brand_82efd0d2-291",
+      "src": "/media/hero-slider/82efd0d2-2918-440b-9d23-41974d6cbb59.webp",
+      "alt": "Logo néon LED monté sur mur — installation sur mesure",
+      "enabled": true,
+      "sortOrder": 3
+    },
+    {
+      "id": "slide_brand_c465b19f-396",
+      "src": "/media/hero-slider/c465b19f-3967-4486-b3eb-d4eda34b9c7b.webp",
+      "alt": "Enseigne néon script — commerce et retail",
+      "enabled": true,
+      "sortOrder": 4
+    },
+    {
+      "id": "slide_brand_d35fa705-f3f",
+      "src": "/media/hero-slider/d35fa705-f3f5-4435-a878-d6d3f99c92cc.webp",
+      "alt": "Néon LED multicolore — enseigne lumineuse professionnelle",
+      "enabled": true,
+      "sortOrder": 5
+    },
+    {
+      "id": "slide_brand_d4aa5e68-81c",
+      "src": "/media/hero-slider/d4aa5e68-81c9-4331-8a8f-83b20958ef85.webp",
+      "alt": "Enseigne lumineuse sur mesure — néon LED intérieur",
+      "enabled": true,
+      "sortOrder": 6
+    },
+    {
+      "id": "slide_brand_efa6a01f-04f",
+      "src": "/media/hero-slider/efa6a01f-04f7-4220-8080-c35519c6539f.webp",
+      "alt": "Signalétique néon LED — enseigne de magasin",
+      "enabled": true,
+      "sortOrder": 7
+    }
+  ],
   "projects": [
     {
-      "id": "proj_mqctyjbn_yj9vto",
+      "id": "proj_mqe6jere_slvgg1",
       "title": "Lumière Lounge",
       "industry": "Hospitality",
       "city": "Casablanca",
@@ -23,7 +106,7 @@
       "featured": true
     },
     {
-      "id": "proj_mqctyjbn_zgolbq",
+      "id": "proj_mqe6jere_29qkbl",
       "title": "Atlas Fitness",
       "industry": "Fitness & Wellness",
       "city": "Rabat",
@@ -39,14 +122,14 @@
   ],
   "testimonials": [
     {
-      "id": "test_mqctyjbn_bio4ej",
+      "id": "test_mqe6jere_y8cosn",
       "quote": "Neon Bright transformed our restaurant entrance into an Instagram magnet.",
       "author": "Yasmine El Amrani",
       "role": "Owner, Lumière Lounge",
       "location": "Casablanca, Morocco"
     },
     {
-      "id": "test_mqctyjbn_semmaa",
+      "id": "test_mqe6jere_zcbxmd",
       "quote": "They handled design, production, and international shipping flawlessly.",
       "author": "Marcus Chen",
       "role": "Creative Director, Maison Éclat",
@@ -55,41 +138,77 @@
   ],
   "partners": [
     {
-      "id": "partner_mqctyjbn_rfg0g1",
-      "name": "Marriott",
-      "logoUrl": ""
+      "id": "partner_mqe6jere_0365fw",
+      "name": "Atlas Hospitality",
+      "logoUrl": "",
+      "enabled": true,
+      "sortOrder": 0
     },
     {
-      "id": "partner_mqctyjbn_anqw6p",
-      "name": "Sofitel",
-      "logoUrl": ""
+      "id": "partner_mqe6jere_dn9kf1",
+      "name": "Maison Éclat",
+      "logoUrl": "",
+      "enabled": true,
+      "sortOrder": 1
     },
     {
-      "id": "partner_mqctyjbn_c7z1p1",
-      "name": "WeWork",
-      "logoUrl": ""
+      "id": "partner_mqe6jere_jn7pxs",
+      "name": "Nova Corporate",
+      "logoUrl": "",
+      "enabled": true,
+      "sortOrder": 2
     },
     {
-      "id": "partner_mqctyjbn_brba8b",
-      "name": "Virgin",
-      "logoUrl": ""
+      "id": "partner_mqe6jere_78brwb",
+      "name": "Lumière Lounge",
+      "logoUrl": "",
+      "enabled": true,
+      "sortOrder": 3
+    },
+    {
+      "id": "partner_mqe6jere_4ub949",
+      "name": "Zenith Retail",
+      "logoUrl": "",
+      "enabled": true,
+      "sortOrder": 4
+    },
+    {
+      "id": "partner_mqe6jere_jktpds",
+      "name": "Pacific Enseignes",
+      "logoUrl": "",
+      "enabled": true,
+      "sortOrder": 5
+    },
+    {
+      "id": "partner_mqe6jere_kxyhqa",
+      "name": "Royal Palm Group",
+      "logoUrl": "",
+      "enabled": true,
+      "sortOrder": 6
+    },
+    {
+      "id": "partner_mqe6jere_rcq4z3",
+      "name": "Éclat Boutique",
+      "logoUrl": "",
+      "enabled": true,
+      "sortOrder": 7
     }
   ],
   "services": [
     {
-      "id": "svc_mqctyjbn_c7jzkq",
+      "id": "svc_mqe6jere_dcx0rz",
       "title": "Handcrafted Quality",
       "description": "Every sign is precision-built with premium LED flex neon and commercial-grade materials.",
       "icon": "✦"
     },
     {
-      "id": "svc_mqctyjbn_a75aj2",
+      "id": "svc_mqe6jere_dh0n47",
       "title": "Custom Design",
       "description": "Our designers bring your vision to life with pixel-perfect accuracy.",
       "icon": "◈"
     },
     {
-      "id": "svc_mqctyjbn_40eu3d",
+      "id": "svc_mqe6jere_i31aqm",
       "title": "Global Shipping",
       "description": "Based in Morocco, trusted worldwide with white-glove delivery.",
       "icon": "◎"
@@ -120,5 +239,6 @@
     "keywords": "LED neon signs, custom neon, business signage, Morocco",
     "ogImage": ""
   },
-  "updatedAt": "2026-06-13T20:54:40.177Z"
+  "updatedAt": "2026-06-14T20:25:52.554Z",
+  "heroMediaVersion": "mqe8hyuh"
 }

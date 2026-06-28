@@ -2,10 +2,18 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { faqs } from "@/lib/data";
+import { faqs as staticFaqs, sectionCopy as staticCopy } from "@/lib/data";
 import { Container } from "@/components/ui/Container";
 import { SectionReveal } from "@/components/ui/SectionReveal";
 import { useQuote } from "@/components/quote/QuoteProvider";
+import type { CMSFAQItem } from "@/lib/cms/types";
+
+type FAQCopy = {
+  title: string;
+  headline: string;
+  subtitle: string;
+  contactLink: string;
+};
 
 function FAQItem({
   question,
@@ -51,9 +59,24 @@ function FAQItem({
   );
 }
 
-export function FAQ() {
+type FAQProps = {
+  items?: CMSFAQItem[];
+  copy?: FAQCopy;
+};
+
+export function FAQ({ items, copy }: FAQProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
   const { openQuote } = useQuote();
+
+  const faqItems = items ?? staticFaqs.map((f, i) => ({
+    id: String(i),
+    question: f.question,
+    answer: f.answer,
+    sortOrder: i,
+    enabled: true,
+  }));
+
+  const faqCopy = copy ?? staticCopy.faq;
 
   return (
     <section className="py-24 sm:py-32">
@@ -61,20 +84,19 @@ export function FAQ() {
         <div className="grid gap-12 lg:grid-cols-2 lg:gap-20">
           <SectionReveal>
             <span className="text-xs font-medium uppercase tracking-[0.2em] text-neon-purple">
-              FAQ
+              {faqCopy.title}
             </span>
             <h2 className="mt-4 font-display text-3xl font-bold tracking-tight sm:text-4xl">
-              Frequently Asked Questions
+              {faqCopy.headline}
             </h2>
             <p className="mt-4 text-muted">
-              Everything you need to know about ordering your custom neon sign.
-              Can&apos;t find your answer?{" "}
+              {faqCopy.subtitle}{" "}
               <button
                 type="button"
                 onClick={() => openQuote(1)}
                 className="text-neon-pink hover:underline"
               >
-                Contact us
+                {faqCopy.contactLink}
               </button>
               .
             </p>
@@ -82,9 +104,9 @@ export function FAQ() {
 
           <SectionReveal delay={0.1}>
             <div>
-              {faqs.map((faq, i) => (
+              {faqItems.map((faq, i) => (
                 <FAQItem
-                  key={faq.question}
+                  key={faq.id}
                   question={faq.question}
                   answer={faq.answer}
                   isOpen={openIndex === i}

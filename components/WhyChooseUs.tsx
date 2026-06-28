@@ -1,6 +1,6 @@
 "use client";
 
-import { features } from "@/lib/data";
+import { features as staticFeatures, sectionCopy as staticCopy } from "@/lib/data";
 import { Container } from "@/components/ui/Container";
 import {
   SectionReveal,
@@ -8,8 +8,31 @@ import {
   StaggerItem,
   SectionDivider,
 } from "@/components/ui/SectionReveal";
+import type { CMSFeature } from "@/lib/cms/types";
 
-export function WhyChooseUs() {
+type ServicesCopy = {
+  title: string;
+  headline: string;
+  subtitle: string;
+};
+
+type WhyChooseUsProps = {
+  items?: CMSFeature[];
+  copy?: ServicesCopy;
+};
+
+export function WhyChooseUs({ items, copy }: WhyChooseUsProps) {
+  const featureItems = items ?? staticFeatures.map((f, i) => ({
+    id: String(i),
+    title: f.title,
+    description: f.description,
+    icon: f.icon,
+    sortOrder: i,
+    enabled: true,
+  }));
+
+  const sectionsCopy = copy ?? staticCopy.services;
+
   return (
     <>
       <SectionDivider />
@@ -19,21 +42,19 @@ export function WhyChooseUs() {
         <Container className="relative">
           <SectionReveal className="mx-auto max-w-3xl text-center">
             <span className="text-xs font-semibold uppercase tracking-[0.25em] text-neon-purple">
-              Why Neon Bright
+              {sectionsCopy.title}
             </span>
             <h2 className="mt-5 font-display text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-              Built For{" "}
-              <span className="neon-text-gradient">Enterprise Scale</span>
+              {sectionsCopy.headline}
             </h2>
             <p className="mt-5 text-lg text-muted">
-              Commercial-grade LED neon engineered for high-traffic environments,
-              multi-location rollouts, and lasting brand impact.
+              {sectionsCopy.subtitle}
             </p>
           </SectionReveal>
 
           <StaggerContainer className="mt-20 grid gap-5 sm:grid-cols-2 lg:grid-cols-3" staggerDelay={0.1}>
-            {features.map((feature) => (
-              <StaggerItem key={feature.title}>
+            {featureItems.map((feature) => (
+              <StaggerItem key={feature.id}>
                 <div className="group h-full rounded-2xl border border-white/10 glass-premium p-7 transition-all duration-500 hover:border-neon-purple/25 hover:shadow-[0_8px_40px_rgba(168,85,247,0.08)]">
                   <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-neon-pink/25 to-neon-purple/25 text-lg transition-transform duration-300 group-hover:scale-110">
                     {feature.icon}

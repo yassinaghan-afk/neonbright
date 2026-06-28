@@ -2,17 +2,30 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { navLinks } from "@/lib/data";
+import { navLinks as staticNavLinks } from "@/lib/data";
 import { cn } from "@/lib/utils";
 import { QuoteTrigger } from "@/components/quote/QuoteTrigger";
 import { useQuote } from "@/components/quote/QuoteProvider";
 import { Container } from "@/components/ui/Container";
 import { Logo } from "@/components/Logo";
+import type { CMSNavLink } from "@/lib/cms/types";
 
-export function Navbar() {
+type NavbarProps = {
+  nav?: CMSNavLink[];
+};
+
+export function Navbar({ nav }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { openQuote } = useQuote();
+
+  const navLinks = nav ?? staticNavLinks.map((l, i) => ({
+    id: String(i),
+    label: l.label,
+    href: l.href,
+    sortOrder: i,
+    enabled: true,
+  }));
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -27,7 +40,7 @@ export function Navbar() {
     };
   }, [mobileOpen]);
 
-  const handleNavClick = (href: string, label: string) => {
+  const handleNavClick = (label: string) => {
     if (label === "Contact") {
       openQuote(1);
       setMobileOpen(false);
@@ -47,14 +60,14 @@ export function Navbar() {
           scrolled ? "glass py-3" : "bg-transparent py-5"
         )}
       >
-        <Container className="flex items-center justify-between gap-6">
-          <Logo href="/" variant="nav" priority />
+        <Container className="flex items-center justify-between gap-8">
+          <Logo href="/" variant="nav" className="shrink-0" />
 
-          <nav className="hidden items-center gap-8 lg:flex ml-6">
+          <nav className="hidden items-center gap-8 lg:flex lg:ml-10 xl:ml-14">
             {navLinks.map((link) =>
               link.label === "Contact" ? (
                 <button
-                  key={link.href}
+                  key={link.id}
                   type="button"
                   onClick={() => openQuote(1)}
                   className="text-sm text-muted transition-colors duration-300 hover:text-white"
@@ -63,7 +76,7 @@ export function Navbar() {
                 </button>
               ) : (
                 <a
-                  key={link.href}
+                  key={link.id}
                   href={link.href}
                   className="text-sm text-muted transition-colors duration-300 hover:text-white"
                 >
@@ -75,7 +88,7 @@ export function Navbar() {
 
           <div className="hidden lg:block">
             <QuoteTrigger size="sm" className="glow-cta">
-              Get Instant Quote
+              Obtenir un Devis
             </QuoteTrigger>
           </div>
 
@@ -126,19 +139,19 @@ export function Navbar() {
               {navLinks.map((link, i) =>
                 link.label === "Contact" ? (
                   <motion.button
-                    key={link.href}
+                    key={link.id}
                     type="button"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 + i * 0.05 }}
                     className="font-display text-2xl font-medium text-white"
-                    onClick={() => handleNavClick(link.href, link.label)}
+                    onClick={() => handleNavClick(link.label)}
                   >
                     {link.label}
                   </motion.button>
                 ) : (
                   <motion.a
-                    key={link.href}
+                    key={link.id}
                     href={link.href}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -151,7 +164,7 @@ export function Navbar() {
                 )
               )}
               <QuoteTrigger onTrigger={() => setMobileOpen(false)}>
-                Get Instant Quote
+                Obtenir un Devis
               </QuoteTrigger>
             </motion.nav>
           </motion.div>

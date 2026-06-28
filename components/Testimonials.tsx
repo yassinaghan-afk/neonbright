@@ -2,12 +2,33 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { testimonials } from "@/lib/data";
+import { testimonials as staticTestimonials, sectionCopy as staticCopy } from "@/lib/data";
 import { Container } from "@/components/ui/Container";
 import { SectionReveal } from "@/components/ui/SectionReveal";
+import type { CMSTestimonial } from "@/lib/cms/types";
 
-export function Testimonials() {
+type TestimonialsCopy = {
+  title: string;
+  headline: string;
+};
+
+type TestimonialsProps = {
+  items?: CMSTestimonial[];
+  copy?: TestimonialsCopy;
+};
+
+export function Testimonials({ items, copy }: TestimonialsProps) {
   const [active, setActive] = useState(0);
+
+  const testimonialItems: import("@/lib/cms/types").CMSTestimonial[] = items ?? staticTestimonials.map((t, i) => ({
+    id: String(i),
+    quote: t.quote,
+    author: t.author,
+    role: t.role,
+    location: t.location,
+  }));
+
+  const sectionsCopy = copy ?? staticCopy.testimonials;
 
   return (
     <section className="relative py-24 sm:py-32">
@@ -16,10 +37,10 @@ export function Testimonials() {
       <Container className="relative">
         <SectionReveal className="mx-auto max-w-2xl text-center">
           <span className="text-xs font-medium uppercase tracking-[0.2em] text-neon-pink">
-            Testimonials
+            {sectionsCopy.title}
           </span>
           <h2 className="mt-4 font-display text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-            Trusted By Leading Brands
+            {sectionsCopy.headline}
           </h2>
         </SectionReveal>
 
@@ -43,19 +64,27 @@ export function Testimonials() {
                   transition={{ duration: 0.4 }}
                 >
                   <p className="text-lg leading-relaxed sm:text-xl">
-                    &ldquo;{testimonials[active].quote}&rdquo;
+                    &ldquo;{testimonialItems[active]?.quote}&rdquo;
                   </p>
                   <div className="mt-8 flex items-center gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-neon-pink to-neon-purple font-display text-lg font-bold">
-                      {testimonials[active].author.charAt(0)}
-                    </div>
+                    {testimonialItems[active]?.photo ? (
+                      <img
+                        src={testimonialItems[active].photo}
+                        alt={testimonialItems[active].author}
+                        className="h-12 w-12 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-neon-pink to-neon-purple font-display text-lg font-bold">
+                        {testimonialItems[active]?.author.charAt(0)}
+                      </div>
+                    )}
                     <div>
-                      <p className="font-semibold">{testimonials[active].author}</p>
+                      <p className="font-semibold">{testimonialItems[active]?.author}</p>
                       <p className="text-sm text-muted">
-                        {testimonials[active].role}
+                        {testimonialItems[active]?.role}
                       </p>
                       <p className="text-xs text-muted/70">
-                        {testimonials[active].location}
+                        {testimonialItems[active]?.location}
                       </p>
                     </div>
                   </div>
@@ -64,11 +93,11 @@ export function Testimonials() {
             </div>
 
             <div className="mt-8 flex items-center justify-center gap-3">
-              {testimonials.map((_, i) => (
+              {testimonialItems.map((_, i) => (
                 <button
                   key={i}
                   type="button"
-                  aria-label={`View testimonial ${i + 1}`}
+                  aria-label={`Témoignage ${i + 1}`}
                   onClick={() => setActive(i)}
                   className={`h-2 rounded-full transition-all duration-300 ${
                     i === active
