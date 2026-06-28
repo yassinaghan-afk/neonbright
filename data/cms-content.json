@@ -6,8 +6,15 @@
     "subheadline": "Créez votre néon LED ou votre enseigne lumineuse sur mesure. Visualisez votre projet en temps réel grâce à notre designer interactif.",
     "primaryCta": "Créer Mon Néon",
     "secondaryCta": "Créer Mon Enseigne",
+    "backgroundImage": "/media/hero-slider/13978eaa-af3e-422b-afce-217b5298c6ed.jpg",
+    "trustBlock": {
+      "enabled": true,
+      "value": "200+",
+      "label": "clients satisfaits",
+      "sublabel": ""
+    },
+    "trustStripLabel": "Ils nous font confiance",
     "helperText": "Visualisez, personnalisez et expérimentez avant de demander votre devis — sans engagement.",
-    "backgroundImage": "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp",
     "stats": [
       {
         "id": "stat_mqe6jere_dgqb6s",
@@ -29,65 +36,774 @@
         "value": "4,9★",
         "label": "Satisfaction client"
       }
-    ],
-    "trustStripLabel": "Ils nous font confiance"
+    ]
   },
   "heroSlides": [
     {
-      "id": "slide_brand_2842fb6b-dup",
-      "src": "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp",
+      "id": "slide_brand_13978eaa-af3",
+      "src": "/media/hero-slider/13978eaa-af3e-422b-afce-217b5298c6ed.jpg",
       "alt": "Enseigne néon LED sur mesure — vitrine commerciale illuminée",
       "enabled": true,
       "sortOrder": 0
     },
     {
       "id": "slide_brand_2842fb6b-da2",
-      "src": "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp",
+      "src": "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.jpg",
       "alt": "Néon LED personnalisé — enseigne lumineuse restaurant",
       "enabled": true,
       "sortOrder": 1
     },
     {
       "id": "slide_brand_64550da3-666",
-      "src": "/media/hero-slider/64550da3-6666-41e4-ae29-6d8422853ffd.webp",
+      "src": "/media/hero-slider/64550da3-6666-41e4-ae29-6d8422853ffd.jpg",
       "alt": "Enseigne lumineuse LED — façade hôtel et hospitality",
       "enabled": true,
       "sortOrder": 2
     },
     {
       "id": "slide_brand_82efd0d2-291",
-      "src": "/media/hero-slider/82efd0d2-2918-440b-9d23-41974d6cbb59.webp",
+      "src": "/media/hero-slider/82efd0d2-2918-440b-9d23-41974d6cbb59.jpg",
       "alt": "Logo néon LED monté sur mur — installation sur mesure",
       "enabled": true,
       "sortOrder": 3
     },
     {
       "id": "slide_brand_c465b19f-396",
-      "src": "/media/hero-slider/c465b19f-3967-4486-b3eb-d4eda34b9c7b.webp",
+      "src": "/media/hero-slider/c465b19f-3967-4486-b3eb-d4eda34b9c7b.jpg",
       "alt": "Enseigne néon script — commerce et retail",
       "enabled": true,
       "sortOrder": 4
     },
     {
       "id": "slide_brand_d35fa705-f3f",
-      "src": "/media/hero-slider/d35fa705-f3f5-4435-a878-d6d3f99c92cc.webp",
+      "src": "/media/hero-slider/d35fa705-f3f5-4435-a878-d6d3f99c92cc.jpg",
       "alt": "Néon LED multicolore — enseigne lumineuse professionnelle",
       "enabled": true,
       "sortOrder": 5
     },
     {
       "id": "slide_brand_d4aa5e68-81c",
-      "src": "/media/hero-slider/d4aa5e68-81c9-4331-8a8f-83b20958ef85.webp",
+      "src": "/media/hero-slider/d4aa5e68-81c9-4331-8a8f-83b20958ef85.jpg",
       "alt": "Enseigne lumineuse sur mesure — néon LED intérieur",
       "enabled": true,
       "sortOrder": 6
     },
     {
       "id": "slide_brand_efa6a01f-04f",
-      "src": "/media/hero-slider/efa6a01f-04f7-4220-8080-c35519c6539f.webp",
+      "src": "/media/hero-slider/efa6a01f-04f7-4220-8080-c35519c6539f.jpg",
       "alt": "Signalétique néon LED — enseigne de magasin",
       "enabled": true,
       "sortOrder": 7
+    }
+  ],
+  "portfolioCategories": [
+    {
+      "id": "cat_evenements",
+      "slug": "evenements",
+      "title": "Réalisations pour",
+      "titleAccent": "événements",
+      "description": "Festivals, concerts, soirées VIP, activations de marque, salons professionnels et expériences immersives conçues pour marquer les esprits.",
+      "coverImage": "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp",
+      "coverAlt": "Installation néon LED pour festival et événement premium",
+      "heroImage": "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp",
+      "href": "/realisations/events",
+      "pageTitle": "ÉVÉNEMENTS",
+      "pageSubtitle": "Festivals, concerts, soirées VIP, lancements produit, mariages et activations de marque — découvrez nos installations lumineuses pour événements premium.",
+      "enabled": true,
+      "sortOrder": 0
+    },
+    {
+      "id": "cat_marques",
+      "slug": "marques-clients",
+      "title": "Réalisations pour",
+      "titleAccent": "marques",
+      "description": "Plus de 200 clients satisfaits nous ont fait confiance pour leurs enseignes, néons et installations lumineuses au Maroc et à l'international.",
+      "coverImage": "/media/hero-slider/c465b19f-3967-4486-b3eb-d4eda34b9c7b.webp",
+      "coverAlt": "Installations néon LED pour marques et clients premium",
+      "heroImage": "/media/hero-slider/c465b19f-3967-4486-b3eb-d4eda34b9c7b.webp",
+      "href": "/realisations/brands",
+      "pageTitle": "MARQUES & CLIENTS",
+      "pageSubtitle": "Découvrez les marques, hôtels, restaurants, enseignes et entreprises qui nous ont confié leurs projets lumineux.",
+      "enabled": true,
+      "sortOrder": 1
+    },
+    {
+      "slug": "restaurants",
+      "title": "Réalisations pour",
+      "titleAccent": "restaurants",
+      "description": "Enseignes lumineuses, néons et signalétique pour restaurants, bars et établissements gastronomiques.",
+      "coverImage": "",
+      "coverAlt": "Installations néon LED pour restaurants",
+      "heroImage": "",
+      "href": "/realisations/restaurants",
+      "pageTitle": "RESTAURANTS",
+      "pageSubtitle": "Découvrez nos installations lumineuses pour restaurants, bars et établissements premium.",
+      "enabled": false,
+      "sortOrder": 2,
+      "id": "cat_mqy9xx8u_nfnvm6"
+    },
+    {
+      "slug": "hotels",
+      "title": "Réalisations pour",
+      "titleAccent": "hôtels",
+      "description": "Décors lumineux, enseignes et néons sur mesure pour hôtels, resorts et établissements hôteliers.",
+      "coverImage": "",
+      "coverAlt": "Installations néon LED pour hôtels",
+      "heroImage": "",
+      "href": "/realisations/hotels",
+      "pageTitle": "HÔTELS",
+      "pageSubtitle": "Découvrez nos réalisations pour hôtels, resorts et établissements hôteliers premium.",
+      "enabled": false,
+      "sortOrder": 3,
+      "id": "cat_mqy9xx8u_8fxafo"
+    },
+    {
+      "slug": "retail",
+      "title": "Réalisations pour",
+      "titleAccent": "retail",
+      "description": "Logos néon, vitrines lumineuses et enseignes pour boutiques et espaces retail.",
+      "coverImage": "",
+      "coverAlt": "Installations néon LED pour retail",
+      "heroImage": "",
+      "href": "/realisations/retail",
+      "pageTitle": "RETAIL",
+      "pageSubtitle": "Découvrez nos installations pour boutiques et espaces retail.",
+      "enabled": false,
+      "sortOrder": 4,
+      "id": "cat_mqy9xx8u_nzmm87"
+    },
+    {
+      "slug": "corporate",
+      "title": "Réalisations pour",
+      "titleAccent": "corporate",
+      "description": "Signalétique professionnelle, logos lumineux et branding pour entreprises et sièges corporate.",
+      "coverImage": "",
+      "coverAlt": "Installations néon LED corporate",
+      "heroImage": "",
+      "href": "/realisations/corporate",
+      "pageTitle": "CORPORATE",
+      "pageSubtitle": "Découvrez nos réalisations pour entreprises et espaces corporate.",
+      "enabled": false,
+      "sortOrder": 5,
+      "id": "cat_mqy9xx8u_807n82"
+    }
+  ],
+  "portfolioProjects": [
+    {
+      "id": "proj_mqy9xx8v_boutxf",
+      "categoryId": "cat_evenements",
+      "slug": "festival-scene-musicale",
+      "title": "Festival & Scène Musicale",
+      "description": "Conception et production d'une installation néon monumentale pour une scène festival au cœur de Marrakech. L'objectif : créer une signature visuelle immédiatement reconnaissable, photogénique et adaptée aux shows live devant des milliers de spectateurs. Structure modulaire, rendu haute luminosité et finitions premium pour résister aux conditions événementielles.",
+      "shortDescription": "Scénographie néon grand format pour une scène festival — signature lumineuse visible à des centaines de mètres.",
+      "client": "Production événementielle",
+      "city": "Marrakech",
+      "country": "Maroc",
+      "year": "2025",
+      "images": [
+        "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp"
+      ],
+      "videos": [],
+      "gallery": [
+        "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp",
+        "/media/hero-slider/64550da3-6666-41e4-ae29-6d8422853ffd.webp",
+        "/media/hero-slider/d35fa705-f3f5-4435-a878-d6d3f99c92cc.webp"
+      ],
+      "featuredImage": "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp",
+      "coverImage": "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp",
+      "thumbnail": "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp",
+      "imageAlt": "Installation néon LED sur scène de festival à Marrakech",
+      "tags": [
+        "festivals",
+        "concerts"
+      ],
+      "accent": "neon-pink",
+      "published": true,
+      "sortOrder": 0,
+      "technologies": [
+        "Néon LED flex RGB",
+        "Contrôle DMX",
+        "Structure aluminium",
+        "Diffusion opale"
+      ],
+      "filters": [
+        "festivals",
+        "concerts"
+      ]
+    },
+    {
+      "id": "proj_mqy9xx8v_djmz7c",
+      "categoryId": "cat_evenements",
+      "slug": "palm-party",
+      "title": "Palm Party",
+      "description": "Installation complète de néons personnalisés pour une soirée signée Palm Party Events. Chaque élément lumineux a été pensé pour renforcer l'ambiance festive, guider les invités et créer des zones photo mémorables sur la piste et les espaces VIP.",
+      "shortDescription": "Néons sur mesure pour une soirée Palm Party Events — ambiance premium et impact visuel sur les espaces VIP.",
+      "client": "Palm Party Events",
+      "city": "Marrakech",
+      "country": "Maroc",
+      "year": "2025",
+      "images": [
+        "/media/hero-slider/64550da3-6666-41e4-ae29-6d8422853ffd.webp"
+      ],
+      "videos": [],
+      "gallery": [
+        "/media/hero-slider/64550da3-6666-41e4-ae29-6d8422853ffd.webp",
+        "/media/hero-slider/efa6a01f-04f7-4220-8080-c35519c6539f.webp",
+        "/media/hero-slider/c465b19f-3967-4486-b3eb-d4eda34b9c7b.webp"
+      ],
+      "featuredImage": "/media/hero-slider/64550da3-6666-41e4-ae29-6d8422853ffd.webp",
+      "coverImage": "/media/hero-slider/64550da3-6666-41e4-ae29-6d8422853ffd.webp",
+      "thumbnail": "/media/hero-slider/64550da3-6666-41e4-ae29-6d8422853ffd.webp",
+      "imageAlt": "Néon LED personnalisé pour soirée Palm Party Events",
+      "tags": [
+        "vip",
+        "concerts"
+      ],
+      "accent": "neon-purple",
+      "published": true,
+      "sortOrder": 1,
+      "technologies": [
+        "Néon LED flex",
+        "Fixations invisibles",
+        "Variateur intensité",
+        "Câblage discret"
+      ],
+      "filters": [
+        "vip",
+        "concerts"
+      ]
+    },
+    {
+      "id": "proj_mqy9xx8v_fz9kqg",
+      "categoryId": "cat_evenements",
+      "slug": "activation-volkswagen",
+      "title": "Activation Volkswagen",
+      "description": "Réalisation de néons sur mesure pour une activation de marque Volkswagen au Maroc. Des pièces lumineuses uniques, conçues pour attirer le regard, structurer l'espace événementiel et offrir une expérience premium alignée avec l'univers de la marque.",
+      "shortDescription": "Néons personnalisés hors norme pour l'activation @volkswagen.ma — vitrine lumineuse et image de marque amplifiée.",
+      "client": "Volkswagen Maroc",
+      "city": "Casablanca",
+      "country": "Maroc",
+      "year": "2025",
+      "images": [
+        "/media/hero-slider/82efd0d2-2918-440b-9d23-41974d6cbb59.webp"
+      ],
+      "videos": [],
+      "gallery": [
+        "/media/hero-slider/82efd0d2-2918-440b-9d23-41974d6cbb59.webp",
+        "/media/hero-slider/d4aa5e68-81c9-4331-8a8f-83b20958ef85.webp",
+        "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp"
+      ],
+      "featuredImage": "/media/hero-slider/82efd0d2-2918-440b-9d23-41974d6cbb59.webp",
+      "coverImage": "/media/hero-slider/82efd0d2-2918-440b-9d23-41974d6cbb59.webp",
+      "thumbnail": "/media/hero-slider/82efd0d2-2918-440b-9d23-41974d6cbb59.webp",
+      "imageAlt": "Activation de marque Volkswagen avec néons LED sur mesure",
+      "tags": [
+        "corporate"
+      ],
+      "accent": "neon-blue",
+      "published": true,
+      "sortOrder": 2,
+      "technologies": [
+        "Néon LED flex",
+        "Couleurs brandées",
+        "Montage rapide",
+        "Transport sécurisé"
+      ],
+      "filters": [
+        "corporate"
+      ]
+    },
+    {
+      "id": "proj_mqy9xx8v_x6jri1",
+      "categoryId": "cat_evenements",
+      "slug": "royal-mansour-pure-the-show",
+      "title": "Royal Mansour — Clôture Pure The Show",
+      "description": "Décors néon et signalétique lumineuse pour la soirée de clôture Pure The Show au Royal Mansour Marrakech. Une approche raffinée, intégrée au décor existant, pour sublimer l'expérience invités dans un cadre palace cinq étoiles.",
+      "shortDescription": "Installation lumineuse pour la soirée de clôture @pure_theshow au Royal Mansour — expérience haut de gamme et atmosphère VIP.",
+      "client": "Pure The Show · Royal Mansour",
+      "city": "Marrakech",
+      "country": "Maroc",
+      "year": "2024",
+      "images": [
+        "/media/hero-slider/c465b19f-3967-4486-b3eb-d4eda34b9c7b.webp"
+      ],
+      "videos": [],
+      "gallery": [
+        "/media/hero-slider/c465b19f-3967-4486-b3eb-d4eda34b9c7b.webp",
+        "/media/hero-slider/64550da3-6666-41e4-ae29-6d8422853ffd.webp",
+        "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp"
+      ],
+      "featuredImage": "/media/hero-slider/c465b19f-3967-4486-b3eb-d4eda34b9c7b.webp",
+      "coverImage": "/media/hero-slider/c465b19f-3967-4486-b3eb-d4eda34b9c7b.webp",
+      "thumbnail": "/media/hero-slider/c465b19f-3967-4486-b3eb-d4eda34b9c7b.webp",
+      "imageAlt": "Néon LED pour événement corporate au Royal Mansour Marrakech",
+      "tags": [
+        "vip",
+        "corporate"
+      ],
+      "accent": "neon-pink",
+      "published": true,
+      "sortOrder": 3,
+      "technologies": [
+        "Néon LED warm white",
+        "Arches sur mesure",
+        "Installation nocturne",
+        "Finitions luxe"
+      ],
+      "filters": [
+        "vip",
+        "corporate"
+      ]
+    },
+    {
+      "id": "proj_mqy9xx8v_903siv",
+      "categoryId": "cat_evenements",
+      "slug": "rooftop-vip-stardust",
+      "title": "Rooftop VIP Stardust",
+      "description": "Création d'installations néon pour un rooftop VIP orchestré par Stardust Event Designer. Typographies lumineuses, décors muraux et points focaux conçus pour maximiser l'impact visuel et la partageabilité sur les réseaux sociaux.",
+      "shortDescription": "Décors néon pour une soirée @stardust.eventdesigner — zones Instagrammables et expérience invitée mémorable.",
+      "client": "Stardust Event Designer",
+      "city": "Casablanca",
+      "country": "Maroc",
+      "year": "2025",
+      "images": [
+        "/media/hero-slider/d35fa705-f3f5-4435-a878-d6d3f99c92cc.webp"
+      ],
+      "videos": [],
+      "gallery": [
+        "/media/hero-slider/d35fa705-f3f5-4435-a878-d6d3f99c92cc.webp",
+        "/media/hero-slider/efa6a01f-04f7-4220-8080-c35519c6539f.webp",
+        "/media/hero-slider/64550da3-6666-41e4-ae29-6d8422853ffd.webp"
+      ],
+      "featuredImage": "/media/hero-slider/d35fa705-f3f5-4435-a878-d6d3f99c92cc.webp",
+      "coverImage": "/media/hero-slider/d35fa705-f3f5-4435-a878-d6d3f99c92cc.webp",
+      "thumbnail": "/media/hero-slider/d35fa705-f3f5-4435-a878-d6d3f99c92cc.webp",
+      "imageAlt": "Installation néon sur rooftop VIP pour événement Stardust",
+      "tags": [
+        "vip"
+      ],
+      "accent": "neon-purple",
+      "published": true,
+      "sortOrder": 4,
+      "technologies": [
+        "Néon LED script",
+        "Montage mural",
+        "RGB programmable",
+        "Housse transport"
+      ],
+      "filters": [
+        "vip"
+      ]
+    },
+    {
+      "id": "proj_mqy9xx8v_gsm55l",
+      "categoryId": "cat_evenements",
+      "slug": "stand-salon-expo",
+      "title": "Stand Salon & Expo",
+      "description": "Enseignes et éléments néon pour un stand d'exposition professionnel. Conception orientée visibilité à distance, repérage instantané en salon et cohérence avec l'identité visuelle de la marque exposante.",
+      "shortDescription": "Signalétique néon pour stand d'exposition — visibilité maximale et image de marque premium sur le parcours visiteurs.",
+      "client": "Marque exposante",
+      "city": "Casablanca",
+      "country": "Maroc",
+      "year": "2024",
+      "images": [
+        "/media/hero-slider/d4aa5e68-81c9-4331-8a8f-83b20958ef85.webp"
+      ],
+      "videos": [],
+      "gallery": [
+        "/media/hero-slider/d4aa5e68-81c9-4331-8a8f-83b20958ef85.webp",
+        "/media/hero-slider/82efd0d2-2918-440b-9d23-41974d6cbb59.webp",
+        "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp"
+      ],
+      "featuredImage": "/media/hero-slider/d4aa5e68-81c9-4331-8a8f-83b20958ef85.webp",
+      "coverImage": "/media/hero-slider/d4aa5e68-81c9-4331-8a8f-83b20958ef85.webp",
+      "thumbnail": "/media/hero-slider/d4aa5e68-81c9-4331-8a8f-83b20958ef85.webp",
+      "imageAlt": "Stand d'exposition avec enseigne néon LED sur salon professionnel",
+      "tags": [
+        "expositions",
+        "corporate"
+      ],
+      "accent": "neon-blue",
+      "published": true,
+      "sortOrder": 5,
+      "technologies": [
+        "Néon LED compact",
+        "Logo 3D lumineux",
+        "Kit démontable",
+        "Alimentation 12V"
+      ],
+      "filters": [
+        "expositions",
+        "corporate"
+      ]
+    },
+    {
+      "id": "proj_mqy9xx8v_dqybye",
+      "categoryId": "cat_evenements",
+      "slug": "mariage-neon-personnalise",
+      "title": "Mariage — Néon Personnalisé",
+      "description": "Création de néons personnalisés pour une célébration de mariage premium à Marrakech. Prénoms des mariés, date du jour et messages sentimentaux transformés en pièces lumineuses élégantes, parfaites pour la cérémonie et la réception.",
+      "shortDescription": "Prénoms, dates et messages lumineux pour une réception de mariage — une touche spectaculaire et inoubliable.",
+      "client": "Mariés privés",
+      "city": "Marrakech",
+      "country": "Maroc",
+      "year": "2025",
+      "images": [
+        "/media/hero-slider/efa6a01f-04f7-4220-8080-c35519c6539f.webp"
+      ],
+      "videos": [],
+      "gallery": [
+        "/media/hero-slider/efa6a01f-04f7-4220-8080-c35519c6539f.webp",
+        "/media/hero-slider/64550da3-6666-41e4-ae29-6d8422853ffd.webp",
+        "/media/hero-slider/c465b19f-3967-4486-b3eb-d4eda34b9c7b.webp"
+      ],
+      "featuredImage": "/media/hero-slider/efa6a01f-04f7-4220-8080-c35519c6539f.webp",
+      "coverImage": "/media/hero-slider/efa6a01f-04f7-4220-8080-c35519c6539f.webp",
+      "thumbnail": "/media/hero-slider/efa6a01f-04f7-4220-8080-c35519c6539f.webp",
+      "imageAlt": "Néon LED personnalisé pour mariage et réception premium",
+      "tags": [
+        "mariages"
+      ],
+      "accent": "neon-pink",
+      "published": true,
+      "sortOrder": 6,
+      "technologies": [
+        "Néon LED warm white",
+        "Typo script",
+        "Support acrylique",
+        "Livraison événement"
+      ],
+      "filters": [
+        "mariages"
+      ]
+    },
+    {
+      "id": "proj_mqy9xx8v_tp7f8r",
+      "categoryId": "cat_evenements",
+      "slug": "conference-scene",
+      "title": "Conférence & Scène",
+      "description": "Installation de branding lumineux pour une conférence et keynote corporate. Logo néon, éléments typographiques et habillage scénique conçus pour renforcer la crédibilité de la marque et la qualité perçue de l'événement.",
+      "shortDescription": "Branding scénique pour keynote — logo néon, typo lumineuse et fond de scène pour une présence professionnelle forte.",
+      "client": "Organisateur corporate",
+      "city": "Rabat",
+      "country": "Maroc",
+      "year": "2024",
+      "images": [
+        "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp"
+      ],
+      "videos": [],
+      "gallery": [
+        "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp",
+        "/media/hero-slider/d4aa5e68-81c9-4331-8a8f-83b20958ef85.webp",
+        "/media/hero-slider/82efd0d2-2918-440b-9d23-41974d6cbb59.webp"
+      ],
+      "featuredImage": "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp",
+      "coverImage": "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp",
+      "thumbnail": "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp",
+      "imageAlt": "Branding néon LED pour scène de conférence et keynote",
+      "tags": [
+        "corporate",
+        "concerts"
+      ],
+      "accent": "neon-purple",
+      "published": true,
+      "sortOrder": 7,
+      "technologies": [
+        "Néon LED blanc froid",
+        "Logo sur mesure",
+        "Structure scénique",
+        "Installation technique"
+      ],
+      "filters": [
+        "corporate",
+        "concerts"
+      ]
+    },
+    {
+      "id": "proj_mqy9xx8v_yndq6p",
+      "categoryId": "cat_marques",
+      "slug": "royal-mansour",
+      "title": "Royal Mansour Marrakech",
+      "description": "Installations néon sur mesure pour le palace Royal Mansour — signalétique lumineuse et décors d'événements intégrés à un cadre hôtelier cinq étoiles.",
+      "shortDescription": "Installations néon sur mesure pour le palace Royal Mansour — signalétique lumineuse et décors d'événements intégrés à un cadre hôtelier cinq étoiles.",
+      "client": "Royal Mansour Marrakech",
+      "city": "Marrakech",
+      "country": "Maroc",
+      "year": "2024",
+      "images": [
+        "/media/hero-slider/c465b19f-3967-4486-b3eb-d4eda34b9c7b.webp",
+        "/media/hero-slider/64550da3-6666-41e4-ae29-6d8422853ffd.webp",
+        "/media/hero-slider/efa6a01f-04f7-4220-8080-c35519c6539f.webp"
+      ],
+      "videos": [],
+      "gallery": [
+        "/media/hero-slider/c465b19f-3967-4486-b3eb-d4eda34b9c7b.webp",
+        "/media/hero-slider/64550da3-6666-41e4-ae29-6d8422853ffd.webp",
+        "/media/hero-slider/efa6a01f-04f7-4220-8080-c35519c6539f.webp"
+      ],
+      "featuredImage": "/media/hero-slider/c465b19f-3967-4486-b3eb-d4eda34b9c7b.webp",
+      "coverImage": "/media/hero-slider/c465b19f-3967-4486-b3eb-d4eda34b9c7b.webp",
+      "thumbnail": "/media/hero-slider/d35fa705-f3f5-4435-a878-d6d3f99c92cc.webp",
+      "imageAlt": "Installation néon Royal Mansour Marrakech",
+      "tags": [
+        "Hôtel & Resort"
+      ],
+      "accent": "neon-pink",
+      "published": true,
+      "sortOrder": 0,
+      "type": "hotel",
+      "typeLabel": "Hôtel & Resort",
+      "logoFile": "PHOTO-2026-06-23-18-20-29.jpg",
+      "installationType": "Décors événementiels & enseignes intérieures",
+      "beforeImage": "/media/hero-slider/d35fa705-f3f5-4435-a878-d6d3f99c92cc.webp",
+      "afterImage": "/media/hero-slider/c465b19f-3967-4486-b3eb-d4eda34b9c7b.webp",
+      "relatedProjectSlugs": [
+        "royal-mansour-pure-the-show"
+      ]
+    },
+    {
+      "id": "proj_mqy9xx8v_mnu2ms",
+      "categoryId": "cat_marques",
+      "slug": "volkswagen",
+      "title": "Volkswagen",
+      "description": "Néons personnalisés pour les activations et lancements Volkswagen Maroc — pièces lumineuses signature alignées sur l'identité de la marque.",
+      "shortDescription": "Néons personnalisés pour les activations et lancements Volkswagen Maroc — pièces lumineuses signature alignées sur l'identité de la marque.",
+      "client": "Volkswagen",
+      "city": "Casablanca",
+      "country": "Maroc",
+      "year": "2025",
+      "images": [
+        "/media/hero-slider/82efd0d2-2918-440b-9d23-41974d6cbb59.webp",
+        "/media/hero-slider/d4aa5e68-81c9-4331-8a8f-83b20958ef85.webp",
+        "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp"
+      ],
+      "videos": [],
+      "gallery": [
+        "/media/hero-slider/82efd0d2-2918-440b-9d23-41974d6cbb59.webp",
+        "/media/hero-slider/d4aa5e68-81c9-4331-8a8f-83b20958ef85.webp",
+        "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp"
+      ],
+      "featuredImage": "/media/hero-slider/82efd0d2-2918-440b-9d23-41974d6cbb59.webp",
+      "coverImage": "/media/hero-slider/82efd0d2-2918-440b-9d23-41974d6cbb59.webp",
+      "thumbnail": "/media/hero-slider/d4aa5e68-81c9-4331-8a8f-83b20958ef85.webp",
+      "imageAlt": "Installation néon Volkswagen",
+      "tags": [
+        "Marque automobile"
+      ],
+      "accent": "neon-pink",
+      "published": true,
+      "sortOrder": 1,
+      "type": "automotive",
+      "typeLabel": "Marque automobile",
+      "logoFile": "PHOTO-2026-06-23-18-20-29 6.jpg",
+      "installationType": "Activation de marque & lancement produit",
+      "beforeImage": "/media/hero-slider/d4aa5e68-81c9-4331-8a8f-83b20958ef85.webp",
+      "afterImage": "/media/hero-slider/82efd0d2-2918-440b-9d23-41974d6cbb59.webp",
+      "relatedProjectSlugs": [
+        "activation-volkswagen"
+      ]
+    },
+    {
+      "id": "proj_mqy9xx8v_5r71d2",
+      "categoryId": "cat_marques",
+      "slug": "byd",
+      "title": "BYD",
+      "description": "Enseignes et éléments néon pour l'univers BYD — visibilité retail et présence lumineuse premium en espace commercial.",
+      "shortDescription": "Enseignes et éléments néon pour l'univers BYD — visibilité retail et présence lumineuse premium en espace commercial.",
+      "client": "BYD",
+      "city": "Casablanca",
+      "country": "Maroc",
+      "year": "2025",
+      "images": [
+        "/media/hero-slider/82efd0d2-2918-440b-9d23-41974d6cbb59.webp",
+        "/media/hero-slider/d4aa5e68-81c9-4331-8a8f-83b20958ef85.webp"
+      ],
+      "videos": [],
+      "gallery": [
+        "/media/hero-slider/82efd0d2-2918-440b-9d23-41974d6cbb59.webp",
+        "/media/hero-slider/d4aa5e68-81c9-4331-8a8f-83b20958ef85.webp"
+      ],
+      "featuredImage": "/media/hero-slider/82efd0d2-2918-440b-9d23-41974d6cbb59.webp",
+      "coverImage": "/media/hero-slider/82efd0d2-2918-440b-9d23-41974d6cbb59.webp",
+      "thumbnail": "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp",
+      "imageAlt": "Installation néon BYD",
+      "tags": [
+        "Marque automobile"
+      ],
+      "accent": "neon-pink",
+      "published": true,
+      "sortOrder": 2,
+      "type": "automotive",
+      "typeLabel": "Marque automobile",
+      "logoFile": "PHOTO-2026-06-23-18-20-29 5.jpg",
+      "installationType": "Enseigne showroom & logo néon",
+      "beforeImage": "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp",
+      "afterImage": "/media/hero-slider/82efd0d2-2918-440b-9d23-41974d6cbb59.webp",
+      "relatedProjectSlugs": [
+        "activation-volkswagen"
+      ]
+    },
+    {
+      "id": "proj_mqy9xx8v_6d9l1x",
+      "categoryId": "cat_marques",
+      "slug": "puma",
+      "title": "PUMA",
+      "description": "Logo néon et signalétique lumineuse pour espace retail PUMA — impact visuel fort et cohérence avec l'univers sport et lifestyle.",
+      "shortDescription": "Logo néon et signalétique lumineuse pour espace retail PUMA — impact visuel fort et cohérence avec l'univers sport et lifestyle.",
+      "client": "PUMA",
+      "city": "Casablanca",
+      "country": "Maroc",
+      "year": "2024",
+      "images": [
+        "/media/hero-slider/d4aa5e68-81c9-4331-8a8f-83b20958ef85.webp",
+        "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp",
+        "/media/hero-slider/64550da3-6666-41e4-ae29-6d8422853ffd.webp"
+      ],
+      "videos": [],
+      "gallery": [
+        "/media/hero-slider/d4aa5e68-81c9-4331-8a8f-83b20958ef85.webp",
+        "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp",
+        "/media/hero-slider/64550da3-6666-41e4-ae29-6d8422853ffd.webp"
+      ],
+      "featuredImage": "/media/hero-slider/d4aa5e68-81c9-4331-8a8f-83b20958ef85.webp",
+      "coverImage": "/media/hero-slider/d4aa5e68-81c9-4331-8a8f-83b20958ef85.webp",
+      "thumbnail": "/media/hero-slider/efa6a01f-04f7-4220-8080-c35519c6539f.webp",
+      "imageAlt": "Installation néon PUMA",
+      "tags": [
+        "Retail & Sport"
+      ],
+      "accent": "neon-pink",
+      "published": true,
+      "sortOrder": 3,
+      "type": "retail",
+      "typeLabel": "Retail & Sport",
+      "logoFile": "PHOTO-2026-06-23-18-20-29 4.jpg",
+      "installationType": "Logo néon & vitrine retail",
+      "beforeImage": "/media/hero-slider/efa6a01f-04f7-4220-8080-c35519c6539f.webp",
+      "afterImage": "/media/hero-slider/d4aa5e68-81c9-4331-8a8f-83b20958ef85.webp",
+      "relatedProjectSlugs": [
+        "stand-salon-expo"
+      ]
+    },
+    {
+      "id": "proj_mqy9xx8w_8ek43v",
+      "categoryId": "cat_marques",
+      "slug": "nike",
+      "title": "Nike",
+      "description": "Installation néon pour flagship et espace retail Nike — swoosh lumineux et typographie signature pour une présence de marque iconique.",
+      "shortDescription": "Installation néon pour flagship et espace retail Nike — swoosh lumineux et typographie signature pour une présence de marque iconique.",
+      "client": "Nike",
+      "city": "Casablanca",
+      "country": "Maroc",
+      "year": "2024",
+      "images": [
+        "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp",
+        "/media/hero-slider/d35fa705-f3f5-4435-a878-d6d3f99c92cc.webp"
+      ],
+      "videos": [],
+      "gallery": [
+        "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp",
+        "/media/hero-slider/d35fa705-f3f5-4435-a878-d6d3f99c92cc.webp"
+      ],
+      "featuredImage": "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp",
+      "coverImage": "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp",
+      "thumbnail": "/media/hero-slider/d35fa705-f3f5-4435-a878-d6d3f99c92cc.webp",
+      "imageAlt": "Installation néon Nike",
+      "tags": [
+        "Fitness & Retail"
+      ],
+      "accent": "neon-pink",
+      "published": true,
+      "sortOrder": 4,
+      "type": "fitness",
+      "typeLabel": "Fitness & Retail",
+      "logoFile": "PHOTO-2026-06-23-18-20-29 2.jpg",
+      "installationType": "Logo néon grand format",
+      "beforeImage": "/media/hero-slider/d35fa705-f3f5-4435-a878-d6d3f99c92cc.webp",
+      "afterImage": "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp",
+      "relatedProjectSlugs": [
+        "festival-scene-musicale"
+      ]
+    },
+    {
+      "id": "proj_mqy9xx8w_falzql",
+      "categoryId": "cat_marques",
+      "slug": "supreme",
+      "title": "Supreme",
+      "description": "Néon logo Supreme pour espace retail et activation — typographie rouge iconique reproduite en LED flex haute fidélité.",
+      "shortDescription": "Néon logo Supreme pour espace retail et activation — typographie rouge iconique reproduite en LED flex haute fidélité.",
+      "client": "Supreme",
+      "city": "Marrakech",
+      "country": "Maroc",
+      "year": "2025",
+      "images": [
+        "/media/hero-slider/64550da3-6666-41e4-ae29-6d8422853ffd.webp",
+        "/media/hero-slider/d35fa705-f3f5-4435-a878-d6d3f99c92cc.webp"
+      ],
+      "videos": [],
+      "gallery": [
+        "/media/hero-slider/64550da3-6666-41e4-ae29-6d8422853ffd.webp",
+        "/media/hero-slider/d35fa705-f3f5-4435-a878-d6d3f99c92cc.webp"
+      ],
+      "featuredImage": "/media/hero-slider/d35fa705-f3f5-4435-a878-d6d3f99c92cc.webp",
+      "coverImage": "/media/hero-slider/d35fa705-f3f5-4435-a878-d6d3f99c92cc.webp",
+      "thumbnail": "/media/hero-slider/64550da3-6666-41e4-ae29-6d8422853ffd.webp",
+      "imageAlt": "Installation néon Supreme",
+      "tags": [
+        "Retail & Lifestyle"
+      ],
+      "accent": "neon-pink",
+      "published": true,
+      "sortOrder": 5,
+      "type": "retail",
+      "typeLabel": "Retail & Lifestyle",
+      "logoFile": "PHOTO-2026-06-23-18-20-29 3.jpg",
+      "installationType": "Logo néon script",
+      "beforeImage": "/media/hero-slider/64550da3-6666-41e4-ae29-6d8422853ffd.webp",
+      "afterImage": "/media/hero-slider/d35fa705-f3f5-4435-a878-d6d3f99c92cc.webp",
+      "relatedProjectSlugs": [
+        "palm-party"
+      ]
+    },
+    {
+      "id": "proj_mqy9xx8w_qnk676",
+      "categoryId": "cat_marques",
+      "slug": "mfm-radio",
+      "title": "MFM Radio",
+      "description": "Enseigne néon pour studio et espace média MFM Radio — logo circulaire reproduit en néon LED pour une identité visible jour et nuit.",
+      "shortDescription": "Enseigne néon pour studio et espace média MFM Radio — logo circulaire reproduit en néon LED pour une identité visible jour et nuit.",
+      "client": "MFM Radio",
+      "city": "Casablanca",
+      "country": "Maroc",
+      "year": "2024",
+      "images": [
+        "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp",
+        "/media/hero-slider/efa6a01f-04f7-4220-8080-c35519c6539f.webp"
+      ],
+      "videos": [],
+      "gallery": [
+        "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp",
+        "/media/hero-slider/efa6a01f-04f7-4220-8080-c35519c6539f.webp"
+      ],
+      "featuredImage": "/media/hero-slider/efa6a01f-04f7-4220-8080-c35519c6539f.webp",
+      "coverImage": "/media/hero-slider/efa6a01f-04f7-4220-8080-c35519c6539f.webp",
+      "thumbnail": "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp",
+      "imageAlt": "Installation néon MFM Radio",
+      "tags": [
+        "Média & Corporate"
+      ],
+      "accent": "neon-pink",
+      "published": true,
+      "sortOrder": 6,
+      "type": "corporate",
+      "typeLabel": "Média & Corporate",
+      "logoFile": "PHOTO-2026-06-23-18-32-12.jpg",
+      "installationType": "Enseigne logo & studio branding",
+      "beforeImage": "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp",
+      "afterImage": "/media/hero-slider/efa6a01f-04f7-4220-8080-c35519c6539f.webp",
+      "relatedProjectSlugs": [
+        "conference-scene"
+      ]
     }
   ],
   "projects": [
@@ -214,17 +930,308 @@
       "icon": "◎"
     }
   ],
+  "faq": [
+    {
+      "id": "faq_mqy9xx8w_hail64",
+      "question": "Quels sont vos délais de production ?",
+      "answer": "Les commandes standard sont livrées en 7 à 14 jours ouvrés. Production express disponible pour projets urgents — contactez-nous pour les délais accélérés.",
+      "sortOrder": 0,
+      "enabled": true
+    },
+    {
+      "id": "faq_mqy9xx8w_ca2ckq",
+      "question": "Pouvez-vous reproduire mon logo en néon ?",
+      "answer": "Absolument. Envoyez votre logo (AI, SVG, PNG ou PDF) et nous créons une version néon optimisée pour la technologie LED flex.",
+      "sortOrder": 1,
+      "enabled": true
+    },
+    {
+      "id": "faq_mqy9xx8w_qobmn6",
+      "question": "Livrez-vous à l'international ?",
+      "answer": "Oui. Nous expédions dans le monde entier depuis le Maroc avec emballage sécurisé et suivi complet. Installation locale disponible dans les grandes villes marocaines.",
+      "sortOrder": 2,
+      "enabled": true
+    },
+    {
+      "id": "faq_mqy9xx8w_chj91b",
+      "question": "Les enseignes LED sont-elles sûres en intérieur ?",
+      "answer": "Oui. Nos enseignes fonctionnent en basse tension (12V), ne produisent aucune chaleur et sont parfaitement sûres pour les espaces commerciaux et résidentiels.",
+      "sortOrder": 3,
+      "enabled": true
+    },
+    {
+      "id": "faq_mqy9xx8w_313fge",
+      "question": "Qu'est-ce qui est inclus dans le devis ?",
+      "answer": "Consultation design, production, tests qualité, fixations, adaptateur secteur, variateur (si applicable) et garantie.",
+      "sortOrder": 4,
+      "enabled": true
+    },
+    {
+      "id": "faq_mqy9xx8w_r91bio",
+      "question": "Puis-je obtenir un devis avant de m'engager ?",
+      "answer": "Bien sûr. Utilisez notre designer interactif ou le formulaire de devis — réponse sous 24 h avec proposition détaillée et aperçu visuel.",
+      "sortOrder": 5,
+      "enabled": true
+    }
+  ],
+  "features": [
+    {
+      "id": "feat_mqy9xx8w_lf4o1h",
+      "title": "Qualité artisanale",
+      "description": "Chaque enseigne est fabriquée avec du néon LED flex premium et des matériaux de grade commercial.",
+      "icon": "✦",
+      "sortOrder": 0,
+      "enabled": true
+    },
+    {
+      "id": "feat_mqy9xx8w_k1sj16",
+      "title": "Design sur mesure",
+      "description": "Du logo à l'installation murale complète — nos designers concrétisent votre vision avec une précision pixel-perfect.",
+      "icon": "◈",
+      "sortOrder": 1,
+      "enabled": true
+    },
+    {
+      "id": "feat_mqy9xx8w_mn1w4l",
+      "title": "Livraison internationale",
+      "description": "Basés au Maroc, nous livrons et installons dans le monde entier avec un service premium.",
+      "icon": "◎",
+      "sortOrder": 2,
+      "enabled": true
+    },
+    {
+      "id": "feat_mqy9xx8w_d2goku",
+      "title": "Énergie efficiente",
+      "description": "Technologie LED moderne — jusqu'à 80 % d'économie d'énergie par rapport au néon traditionnel, zéro émission de chaleur.",
+      "icon": "◉",
+      "sortOrder": 3,
+      "enabled": true
+    },
+    {
+      "id": "feat_mqy9xx8w_gfbdg7",
+      "title": "Délais rapides",
+      "description": "Production standard en 7 à 14 jours. Commandes express disponibles pour ouvertures et événements.",
+      "icon": "◆",
+      "sortOrder": 4,
+      "enabled": true
+    },
+    {
+      "id": "feat_mqy9xx8w_pp4w7y",
+      "title": "Support à vie",
+      "description": "Assistance après-vente, garantie et conseils d'entretien pour chaque installation.",
+      "icon": "◇",
+      "sortOrder": 5,
+      "enabled": true
+    }
+  ],
+  "industries": [
+    {
+      "id": "ind_mqy9xx8w_ku3ppq",
+      "name": "Néons LED personnalisés",
+      "icon": "✨",
+      "sortOrder": 0,
+      "enabled": true
+    },
+    {
+      "id": "ind_mqy9xx8w_hs9hka",
+      "name": "Enseignes lumineuses",
+      "icon": "💡",
+      "sortOrder": 1,
+      "enabled": true
+    },
+    {
+      "id": "ind_mqy9xx8w_ht0gi3",
+      "name": "Logos lumineux",
+      "icon": "◎",
+      "sortOrder": 2,
+      "enabled": true
+    },
+    {
+      "id": "ind_mqy9xx8w_xsu59u",
+      "name": "Enseignes commerciales",
+      "icon": "🏪",
+      "sortOrder": 3,
+      "enabled": true
+    },
+    {
+      "id": "ind_mqy9xx8w_fls2jl",
+      "name": "Signalétique pro",
+      "icon": "📍",
+      "sortOrder": 4,
+      "enabled": true
+    },
+    {
+      "id": "ind_mqy9xx8w_b4dwti",
+      "name": "Hôtels & Resorts",
+      "icon": "🏨",
+      "sortOrder": 5,
+      "enabled": true
+    },
+    {
+      "id": "ind_mqy9xx8w_wl8mb8",
+      "name": "Restaurants & Bars",
+      "icon": "🍸",
+      "sortOrder": 6,
+      "enabled": true
+    },
+    {
+      "id": "ind_mqy9xx8w_v69ocd",
+      "name": "Boutiques & Retail",
+      "icon": "🛍️",
+      "sortOrder": 7,
+      "enabled": true
+    },
+    {
+      "id": "ind_mqy9xx8w_gyxf2a",
+      "name": "Corporate",
+      "icon": "🏢",
+      "sortOrder": 8,
+      "enabled": true
+    }
+  ],
+  "processSteps": [
+    {
+      "id": "step_mqy9xx8w_7wmk63",
+      "step": "01",
+      "title": "Consultation",
+      "description": "Partagez votre vision, logo ou concept. Nous définissons dimensions, couleurs, emplacement et budget.",
+      "sortOrder": 0
+    },
+    {
+      "id": "step_mqy9xx8w_v7f01w",
+      "step": "02",
+      "title": "Design & Maquette",
+      "description": "Nos designers créent une maquette photoréaliste montrant exactement le rendu dans votre espace.",
+      "sortOrder": 1
+    },
+    {
+      "id": "step_mqy9xx8w_s0sqte",
+      "step": "03",
+      "title": "Production",
+      "description": "Fabrication artisanale en néon LED flex premium, testée rigoureusement avant expédition.",
+      "sortOrder": 2
+    },
+    {
+      "id": "step_mqy9xx8w_4htg4z",
+      "step": "04",
+      "title": "Livraison & Pose",
+      "description": "Livraison soignée et installation professionnelle — au Maroc ou expédition sécurisée dans le monde entier.",
+      "sortOrder": 3
+    }
+  ],
+  "sectionCopy": {
+    "portfolio": {
+      "title": "Événements & Expériences",
+      "headline": "Nos réalisations pour",
+      "headlineAccent": "événements, festivals et expériences de marque",
+      "subtitle": "Des installations lumineuses conçues pour attirer l'attention, renforcer l'image de marque et créer des expériences mémorables lors d'événements, festivals, salons, concerts et activations marketing."
+    },
+    "services": {
+      "title": "Services",
+      "headline": "Conçu pour l'échelle commerciale",
+      "subtitle": "Néon LED et enseignes lumineuses de grade commercial pour espaces à fort trafic et déploiements multi-sites."
+    },
+    "industries": {
+      "title": "Secteurs",
+      "headline": "Les secteurs que nous équipons",
+      "subtitle": "De la boutique indépendante au siège corporate — nous illuminons tous les espaces professionnels."
+    },
+    "testimonials": {
+      "title": "Témoignages",
+      "headline": "La confiance des grandes marques"
+    },
+    "process": {
+      "title": "Processus",
+      "headline": "Du concept à la lumière",
+      "subtitle": "Un parcours en quatre étapes, de votre idée initiale à une installation lumineuse remarquable."
+    },
+    "faq": {
+      "title": "FAQ",
+      "headline": "Questions fréquentes",
+      "subtitle": "Tout ce qu'il faut savoir sur votre enseigne néon sur mesure.",
+      "contactLink": "Contactez-nous"
+    },
+    "cta": {
+      "badge": "Démarrez votre projet",
+      "headline": "Prêt à illuminer",
+      "headlineAccent": "votre marque ?",
+      "subtitle": "Maquette photoréaliste et devis commercial gratuits sous 24 h — directement sur le site.",
+      "primaryCta": "Obtenir un Devis",
+      "secondaryCta": "Créer Mon Néon",
+      "trustPoints": [
+        "Maquette gratuite",
+        "Réponse sous 24 h",
+        "Garantie commerciale",
+        "Livraison mondiale"
+      ]
+    }
+  },
+  "instagram": {
+    "enabled": true,
+    "title": "Notre Instagram",
+    "subtitle": "Suivez-nous pour les dernières réalisations et inspirations.",
+    "buttonText": "Voir sur Instagram",
+    "url": "https://www.instagram.com/neonbright.ma/"
+  },
+  "nav": [
+    {
+      "id": "nav_mqy9xx8w_hxtfqn",
+      "label": "Réalisations",
+      "href": "#portfolio",
+      "sortOrder": 0,
+      "enabled": true
+    },
+    {
+      "id": "nav_mqy9xx8w_6xsge0",
+      "label": "Services",
+      "href": "#services",
+      "sortOrder": 1,
+      "enabled": true
+    },
+    {
+      "id": "nav_mqy9xx8w_6ql89x",
+      "label": "Designer Mon Néon",
+      "href": "/designer",
+      "sortOrder": 2,
+      "enabled": true
+    },
+    {
+      "id": "nav_mqy9xx8w_ysw96c",
+      "label": "Processus",
+      "href": "#process",
+      "sortOrder": 3,
+      "enabled": true
+    },
+    {
+      "id": "nav_mqy9xx8w_tmqqp2",
+      "label": "À propos",
+      "href": "#about",
+      "sortOrder": 4,
+      "enabled": true
+    },
+    {
+      "id": "nav_mqy9xx8w_ii7e53",
+      "label": "Contact",
+      "href": "#quote",
+      "sortOrder": 5,
+      "enabled": true
+    }
+  ],
   "company": {
     "name": "Neon Bright",
     "tagline": "Premium Custom LED Neon Signs",
     "description": "Premium custom LED neon signs crafted in Morocco, delivered worldwide.",
     "commercialHighlight": "€2M+",
-    "commercialSubtext": "in delivered installations across 15+ countries"
+    "commercialSubtext": "in delivered installations across 15+ countries",
+    "footerTagline": "Néon LED et enseignes lumineuses sur mesure, fabriqués au Maroc et livrés dans le monde entier. Illuminez votre marque avec excellence."
   },
   "contact": {
     "address": "Casablanca, Morocco",
     "email": "hello@neonbright.ma",
-    "phone": "+212 600 000 000"
+    "phone": "+212 600 000 000",
+    "whatsapp": "+212600000000",
+    "googleMapsUrl": "",
+    "openingHours": "Lun–Ven : 9h–18h"
   },
   "social": {
     "instagram": "",
@@ -239,6 +1246,6 @@
     "keywords": "LED neon signs, custom neon, business signage, Morocco",
     "ogImage": ""
   },
-  "updatedAt": "2026-06-14T20:25:52.554Z",
-  "heroMediaVersion": "mqe8hyuh"
+  "updatedAt": "2026-06-28T21:01:40.176Z",
+  "heroMediaVersion": "mqy9xxam"
 }

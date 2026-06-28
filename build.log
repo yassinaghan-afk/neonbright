@@ -1,0 +1,138 @@
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> neonbright@0.1.0 build
+> next build
+
+▲ Next.js 16.2.9 (Turbopack)
+
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+  Creating an optimized production build ...
+Turbopack build encountered 1 warnings:
+./next.config.ts
+Encountered unexpected file in NFT list
+A file was traced that indicates that the whole project was traced unintentionally. Somewhere in the import trace below, there are:
+- filesystem operations (like path.join, path.resolve or fs.readFile), or
+- very dynamic requires (like require('./' + foo)).
+To resolve this, you can
+- remove them if possible, or
+- only use them in development, or
+- make sure they are statically scoped to some subfolder: path.join(process.cwd(), 'data', bar), or
+- add ignore comments: path.join(/*turbopackIgnore: true*/ process.cwd(), bar)
+
+Import trace:
+  App Route:
+    ./next.config.ts
+    ./lib/cms/logo-media.ts
+    ./lib/cms/public.ts
+    ./app/api/public/homepage/route.ts
+
+
+✓ Compiled successfully in 4.2s
+  Running TypeScript ...
+  Finished TypeScript in 3.5s ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/361) ...
+  Generating static pages using 7 workers (90/361) 
+  Generating static pages using 7 workers (180/361) 
+  Generating static pages using 7 workers (270/361) 
+✓ Generating static pages using 7 workers (361/361) in 1288ms
+  Finalizing page optimization ...
+
+Route (app)                               Revalidate  Expire
+┌ ƒ /
+├ ○ /_not-found
+├ ● /[slug]
+│ ├ /custom-neon-signs
+│ ├ /custom-neon-signs-casablanca
+│ ├ /custom-neon-signs-rabat
+│ └ [+282 more paths]
+├ ○ /admin
+├ ○ /admin/company
+├ ○ /admin/faq
+├ ○ /admin/features
+├ ○ /admin/hero
+├ ○ /admin/hero-slider
+├ ○ /admin/industries
+├ ○ /admin/instagram
+├ ○ /admin/leads
+├ ƒ /admin/leads/[id]
+├ ○ /admin/login
+├ ○ /admin/media
+├ ○ /admin/media/logos
+├ ○ /admin/nav
+├ ○ /admin/orders
+├ ƒ /admin/orders/[id]
+├ ○ /admin/partners
+├ ○ /admin/portfolio
+├ ○ /admin/process
+├ ○ /admin/section-copy
+├ ○ /admin/seo
+├ ○ /admin/services
+├ ○ /admin/testimonials
+├ ƒ /api/admin/auth/login
+├ ƒ /api/admin/auth/logout
+├ ƒ /api/admin/auth/me
+├ ƒ /api/admin/company
+├ ƒ /api/admin/content
+├ ƒ /api/admin/faq
+├ ƒ /api/admin/faq/[id]
+├ ƒ /api/admin/features
+├ ƒ /api/admin/features/[id]
+├ ƒ /api/admin/hero
+├ ƒ /api/admin/hero-slider
+├ ƒ /api/admin/hero-slider/[id]
+├ ƒ /api/admin/industries
+├ ƒ /api/admin/industries/[id]
+├ ƒ /api/admin/instagram
+├ ƒ /api/admin/leads
+├ ƒ /api/admin/leads/[id]
+├ ƒ /api/admin/leads/[id]/activity
+├ ƒ /api/admin/leads/[id]/convert
+├ ƒ /api/admin/media
+├ ƒ /api/admin/nav
+├ ƒ /api/admin/orders
+├ ƒ /api/admin/orders/[id]
+├ ƒ /api/admin/orders/[id]/activity
+├ ƒ /api/admin/orders/[id]/files
+├ ƒ /api/admin/partners
+├ ƒ /api/admin/partners/[id]
+├ ƒ /api/admin/portfolio/categories
+├ ƒ /api/admin/portfolio/categories/[id]
+├ ƒ /api/admin/portfolio/projects
+├ ƒ /api/admin/portfolio/projects/[id]
+├ ƒ /api/admin/process
+├ ƒ /api/admin/process/[id]
+├ ƒ /api/admin/projects
+├ ƒ /api/admin/projects/[id]
+├ ƒ /api/admin/revalidate
+├ ƒ /api/admin/section-copy
+├ ƒ /api/admin/seo
+├ ƒ /api/admin/services
+├ ƒ /api/admin/services/[id]
+├ ƒ /api/admin/testimonials
+├ ƒ /api/admin/testimonials/[id]
+├ ƒ /api/admin/upload
+├ ƒ /api/public/homepage
+├ ○ /api/public/instagram                         1h      1y
+├ ƒ /api/quotes
+├ ○ /apple-icon.png
+├ ○ /blog
+├ ○ /case-studies
+├ ○ /designer
+├ ○ /icon.png
+├ ○ /opengraph-image
+├ ○ /opengraph-image.png
+├ ƒ /realisations/brands
+├ ƒ /realisations/brands/[slug]
+├ ƒ /realisations/events
+├ ƒ /realisations/events/[slug]
+├ ○ /robots.txt
+└ ○ /sitemap.xml
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ƒ  (Dynamic)  server-rendered on demand
+
