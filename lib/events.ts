@@ -121,7 +121,7 @@ export const eventProjects: EventProject[] = [
     gallery: [
       hero("82efd0d2-2918-440b-9d23-41974d6cbb59.webp"),
       hero("d4aa5e68-81c9-4331-8a8f-83b20958ef85.webp"),
-      hero("13978eaa-af3e-422b-afce-217b5298c6ed.webp"),
+      hero("2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp"),
     ],
     accent: "neon-blue",
     featured: true,
@@ -188,7 +188,7 @@ export const eventProjects: EventProject[] = [
     gallery: [
       hero("d4aa5e68-81c9-4331-8a8f-83b20958ef85.webp"),
       hero("82efd0d2-2918-440b-9d23-41974d6cbb59.webp"),
-      hero("13978eaa-af3e-422b-afce-217b5298c6ed.webp"),
+      hero("2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp"),
     ],
     accent: "neon-blue",
   },
@@ -227,10 +227,10 @@ export const eventProjects: EventProject[] = [
     client: "Organisateur corporate",
     technologies: ["Néon LED blanc froid", "Logo sur mesure", "Structure scénique", "Installation technique"],
     filters: ["corporate", "concerts"],
-    image: hero("13978eaa-af3e-422b-afce-217b5298c6ed.webp"),
+    image: hero("2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp"),
     imageAlt: "Branding néon LED pour scène de conférence et keynote",
     gallery: [
-      hero("13978eaa-af3e-422b-afce-217b5298c6ed.webp"),
+      hero("2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp"),
       hero("d4aa5e68-81c9-4331-8a8f-83b20958ef85.webp"),
       hero("82efd0d2-2918-440b-9d23-41974d6cbb59.webp"),
     ],

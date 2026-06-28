@@ -7,7 +7,7 @@
     "primaryCta": "Créer Mon Néon",
     "secondaryCta": "Créer Mon Enseigne",
     "helperText": "Visualisez, personnalisez et expérimentez avant de demander votre devis — sans engagement.",
-    "backgroundImage": "/media/hero-slider/13978eaa-af3e-422b-afce-217b5298c6ed.webp",
+    "backgroundImage": "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp",
     "stats": [
       {
         "id": "stat_mqe6jere_dgqb6s",
@@ -34,8 +34,8 @@
   },
   "heroSlides": [
     {
-      "id": "slide_brand_13978eaa-af3",
-      "src": "/media/hero-slider/13978eaa-af3e-422b-afce-217b5298c6ed.webp",
+      "id": "slide_brand_2842fb6b-dup",
+      "src": "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp",
       "alt": "Enseigne néon LED sur mesure — vitrine commerciale illuminée",
       "enabled": true,
       "sortOrder": 0
