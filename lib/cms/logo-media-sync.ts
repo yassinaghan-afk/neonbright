@@ -1,0 +1,138 @@
+import { promises as fs } from "fs";
+import path from "path";
+import type { PartnerLogo } from "@/lib/cms/logo-media";
+import { isLogoMediaSyncEnabled } from "@/lib/cms/logo-media";
+
+const MEDIA_DIRS = ["MEDIA/logo", "MEDIA/Logos", "Media/logo"];
+const PUBLIC_DIR = "public/media/logo";
+const LOGO_EXT = /\.(png|jpe?g|svg|webp)$/i;
+
+function logoIdFromFile(file: string): string {
+  const stem = path.basename(file, path.extname(file)).toLowerCase();
+  return `logo_${stem.replace(/[^a-z0-9]+/g, "_").slice(0, 40)}`;
+}
+
+function logoAltFromFile(file: string): string {
+  return path
+    .basename(file, path.extname(file))
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function publicLogoSrc(filename: string): string {
+  return `/media/logo/${encodeURIComponent(filename)}`;
+}
+
+async function resolveMediaDir(root: string): Promise<string | null> {
+  for (const dir of MEDIA_DIRS) {
+    const full = path.join(root, dir);
+    try {
+      const stat = await fs.lstat(full);
+      if (stat.isDirectory() || stat.isSymbolicLink()) {
+        const resolved = await fs.realpath(full);
+        const resolvedStat = await fs.stat(resolved);
+        if (resolvedStat.isDirectory()) return resolved;
+      }
+    } catch {
+      /* try next */
+    }
+  }
+  return null;
+}
+
+async function listLogoFiles(dir: string): Promise<string[]> {
+  const entries = await fs.readdir(dir);
+  return entries
+    .filter((f) => LOGO_EXT.test(f) && !f.startsWith("."))
+    .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+}
+
+async function publishLogo(
+  sourcePath: string,
+  pubDir: string,
+  file: string
+): Promise<string> {
+  const destName = file;
+  const destPath = path.join(pubDir, destName);
+  try {
+    const [sourceStat, destStat] = await Promise.all([
+      fs.stat(sourcePath),
+      fs.stat(destPath),
+    ]);
+    if (sourceStat.mtimeMs <= destStat.mtimeMs + 500) {
+      return destName;
+    }
+  } catch {
+    /* dest missing — copy below */
+  }
+
+  await fs.copyFile(sourcePath, destPath);
+  return destName;
+}
+
+export async function deleteLogoByFilename(filename: string): Promise<void> {
+  const root = process.cwd();
+  const safeName = path.basename(filename);
+  await Promise.all([
+    fs.unlink(path.join(root, "MEDIA", "logo", safeName)).catch(() => undefined),
+    fs.unlink(path.join(root, PUBLIC_DIR, safeName)).catch(() => undefined),
+  ]);
+}
+
+async function purgeStalePublicFiles(pubDir: string, keepNames: Set<string>) {
+  let existing: string[] = [];
+  try {
+    existing = await fs.readdir(pubDir);
+  } catch {
+    return;
+  }
+  await Promise.all(
+    existing
+      .filter((f) => LOGO_EXT.test(f) && !f.startsWith(".") && !keepNames.has(f))
+      .map((f) => fs.unlink(path.join(pubDir, f)).catch(() => undefined))
+  );
+}
+
+function logosFromPublicDir(files: string[]): PartnerLogo[] {
+  return files.map((file) => ({
+    id: logoIdFromFile(file),
+    src: publicLogoSrc(file),
+    alt: logoAltFromFile(file),
+  }));
+}
+
+export async function syncLogosFromMedia(): Promise<PartnerLogo[]> {
+  const root = process.cwd();
+  const pubDir = path.join(root, PUBLIC_DIR);
+  await fs.mkdir(pubDir, { recursive: true });
+
+  if (isLogoMediaSyncEnabled()) {
+    const sourceDir = await resolveMediaDir(root);
+    const publishedNames = new Set<string>();
+    const syncedLogos: PartnerLogo[] = [];
+
+    if (sourceDir) {
+      const files = await listLogoFiles(sourceDir);
+      for (const file of files) {
+        const destName = await publishLogo(
+          path.join(sourceDir, file),
+          pubDir,
+          file
+        );
+        publishedNames.add(destName);
+        syncedLogos.push({
+          id: logoIdFromFile(destName),
+          src: publicLogoSrc(destName),
+          alt: logoAltFromFile(destName),
+        });
+      }
+      await purgeStalePublicFiles(pubDir, publishedNames);
+    }
+
+    if (syncedLogos.length > 0) return syncedLogos;
+  }
+
+  const pubFiles = await listLogoFiles(pubDir);
+  return logosFromPublicDir(pubFiles);
+}

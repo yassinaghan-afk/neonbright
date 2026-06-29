@@ -10,7 +10,12 @@ const nextConfig: NextConfig = {
   // public/media/ and MEDIA/ are served by Vercel's CDN, not the Lambda.
   // Without this, Vercel lstat-fails on any media file missing from git.
   outputFileTracingExcludes: {
-    "**": ["public/media/**", "MEDIA/**", "public/uploads/**"],
+    "**": [
+      "public/media/**",
+      "MEDIA/**",
+      "public/uploads/**",
+      "scripts/**",
+    ],
   },
 
   images: {
