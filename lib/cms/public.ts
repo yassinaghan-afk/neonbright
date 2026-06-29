@@ -66,8 +66,9 @@ export async function getPublicHomepageContent(): Promise<PublicHomepageContent>
     }));
 
   const partners = sortByOrder(content.partners).filter((p) => p.enabled && p.name);
+  const cmsLogos = partnerLogosFromCMS(partners);
   const partnerLogos =
-    filesystemLogos.length > 0 ? filesystemLogos : partnerLogosFromCMS(partners);
+    cmsLogos.length > 0 ? cmsLogos : filesystemLogos;
 
   const features = sortByOrder(content.features).filter((f) => f.enabled);
   const industries = sortByOrder(content.industries).filter((i) => i.enabled);
