@@ -8,6 +8,8 @@ import { QuoteTrigger } from "@/components/quote/QuoteTrigger";
 import { useQuote } from "@/components/quote/QuoteProvider";
 import { Container } from "@/components/ui/Container";
 import { Logo } from "@/components/Logo";
+import { SocialIconLinks } from "@/components/contact/SocialIconLinks";
+import { WhatsAppLink, WhatsAppIcon } from "@/components/whatsapp/WhatsAppLink";
 import type { CMSNavLink } from "@/lib/cms/types";
 
 type NavbarProps = {
@@ -60,7 +62,7 @@ export function Navbar({ nav }: NavbarProps) {
           scrolled ? "glass py-3" : "bg-transparent py-5"
         )}
       >
-        <Container className="flex items-center justify-between gap-8">
+        <Container className="flex items-center justify-between gap-4">
           <Logo href="/" variant="nav" className="shrink-0" />
 
           <nav className="hidden items-center gap-8 lg:flex lg:ml-10 xl:ml-14">
@@ -86,7 +88,15 @@ export function Navbar({ nav }: NavbarProps) {
             )}
           </nav>
 
-          <div className="hidden lg:block">
+          <div className="hidden items-center gap-4 lg:flex">
+            <SocialIconLinks iconClassName="h-4 w-4" />
+            <WhatsAppLink
+              variant="inline"
+              className="inline-flex items-center gap-1.5 text-sm text-[#25D366]"
+            >
+              <WhatsAppIcon className="h-4 w-4" />
+              <span className="sr-only sm:not-sr-only">WhatsApp</span>
+            </WhatsAppLink>
             <QuoteTrigger size="sm" className="glow-cta">
               Obtenir un Devis
             </QuoteTrigger>
@@ -166,6 +176,22 @@ export function Navbar({ nav }: NavbarProps) {
               <QuoteTrigger onTrigger={() => setMobileOpen(false)}>
                 Obtenir un Devis
               </QuoteTrigger>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 + navLinks.length * 0.05 }}
+                className="mt-4 flex flex-col items-center gap-5"
+              >
+                <SocialIconLinks iconClassName="h-6 w-6" />
+                <WhatsAppLink
+                  variant="button"
+                  className="min-w-[200px]"
+                >
+                  <WhatsAppIcon className="h-5 w-5" />
+                  WhatsApp
+                </WhatsAppLink>
+              </motion.div>
             </motion.nav>
           </motion.div>
         )}

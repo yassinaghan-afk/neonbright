@@ -98,7 +98,7 @@ export function useDraftEditor<T>(fetchUrl: string) {
 
 export async function uploadMediaFiles(
   files: File[],
-  preset: "hero" | "logo"
+  preset: "hero" | "logo" | "gallery"
 ): Promise<{ url: string; filename: string; label: string }[]> {
   const { uploadAdminFiles } = await import("@/lib/admin/upload-client");
   const results = await uploadAdminFiles(files, preset);

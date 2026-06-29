@@ -172,6 +172,12 @@ function mergeContent(parsed: Partial<CMSContent>): CMSContent {
       cta: { ...defaults.sectionCopy.cta, ...(parsed.sectionCopy?.cta ?? {}) },
     },
     instagram: { ...defaults.instagram, ...(parsed.instagram ?? {}) },
+    instagramPosts: parsed.instagramPosts?.length
+      ? parsed.instagramPosts
+      : defaults.instagramPosts,
+    instagramReels: parsed.instagramReels?.length
+      ? parsed.instagramReels
+      : defaults.instagramReels,
     nav: parsed.nav?.length ? parsed.nav : defaults.nav,
     company: { ...defaults.company, ...(parsed.company ?? {}) },
     contact: { ...defaults.contact, ...(parsed.contact ?? {}) },

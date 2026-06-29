@@ -1,12 +1,4 @@
-/** Client-safe WhatsApp business number (digits only, country code included). */
-export const WHATSAPP_NUMBER =
-  process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "212600000000";
-
-export function getWhatsAppNumber(): string {
-  return process.env.WHATSAPP_NUMBER ?? WHATSAPP_NUMBER;
-}
-
-/** Normalize site URLs for metadata and absolute links. */
+/** Client-safe WhatsApp utilities — numbers come from CMS, not env defaults. */
 export function normalizeSiteUrl(url: string): string {
   const trimmed = url.trim().replace(/\/$/, "");
   if (!trimmed) return "http://localhost:3000";
@@ -32,7 +24,9 @@ export function normalizeWhatsAppNumber(phone: string): string {
 }
 
 export function buildWhatsAppUrl(phone: string, message: string): string {
-  return `https://wa.me/${normalizeWhatsAppNumber(phone)}?text=${encodeURIComponent(message)}`;
+  const digits = normalizeWhatsAppNumber(phone);
+  if (!digits) return "";
+  return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
 }
 
 export const DEFAULT_WHATSAPP_GREETING =

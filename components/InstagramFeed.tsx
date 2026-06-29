@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { InstagramFeedResult } from "@/lib/instagram/types";
-import { INSTAGRAM_PROFILE_URL } from "@/lib/instagram/constants";
 import {
   SectionReveal,
   SectionDivider,
@@ -14,6 +13,7 @@ import {
   InstagramShowcase,
 } from "@/components/instagram/InstagramShowcase";
 import { InstagramPostModal } from "@/components/instagram/InstagramPostModal";
+import { useContactSocialOptional } from "@/components/contact/ContactSocialProvider";
 
 function InstagramIcon({ className }: { className?: string }) {
   return (
@@ -31,9 +31,13 @@ function InstagramIcon({ className }: { className?: string }) {
 
 type Props = {
   initialFeed: InstagramFeedResult;
+  profileUrl?: string;
 };
 
-export function InstagramFeed({ initialFeed }: Props) {
+export function InstagramFeed({ initialFeed, profileUrl: profileUrlProp }: Props) {
+  const cms = useContactSocialOptional();
+  const profileUrl = profileUrlProp ?? cms?.instagramUrl ?? initialFeed.profileUrl ?? "";
+
   const hasPostsOnServer = initialFeed.posts.some((p) => p.imageUrl);
 
   const [feed, setFeed] = useState(initialFeed);
@@ -50,9 +54,12 @@ export function InstagramFeed({ initialFeed }: Props) {
       setFetchError(null);
       const res = await fetch("/api/public/instagram");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = (await res.json()) as InstagramFeedResult;
-      setFeed(data);
-      if (data.error) setFetchError(data.error);
+      const data = (await res.json()) as InstagramFeedResult & {
+        data?: InstagramFeedResult;
+      };
+      const payload = "data" in data && data.data ? data.data : data;
+      setFeed(payload);
+      if (payload.error) setFetchError(payload.error);
     } catch (err) {
       setFetchError(
         err instanceof Error ? err.message : "Erreur de chargement Instagram"
@@ -129,17 +136,19 @@ export function InstagramFeed({ initialFeed }: Props) {
             </p>
           )}
 
-          <SectionReveal className="mt-12 flex justify-center">
-            <a
-              href={INSTAGRAM_PROFILE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="glass-premium relative inline-flex min-w-[200px] items-center justify-center gap-2.5 rounded-full px-9 py-4 text-base font-semibold tracking-wide text-white transition-all duration-300 hover:scale-[1.02] hover:border-neon-purple/50 hover:shadow-[0_0_30px_rgba(168,85,247,0.15)] active:scale-[0.98]"
-            >
-              <InstagramIcon className="h-4 w-4" />
-              Voir Instagram
-            </a>
-          </SectionReveal>
+          {profileUrl ? (
+            <SectionReveal className="mt-12 flex justify-center">
+              <a
+                href={profileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="glass-premium relative inline-flex min-w-[200px] items-center justify-center gap-2.5 rounded-full px-9 py-4 text-base font-semibold tracking-wide text-white transition-all duration-300 hover:scale-[1.02] hover:border-neon-purple/50 hover:shadow-[0_0_30px_rgba(168,85,247,0.15)] active:scale-[0.98]"
+              >
+                <InstagramIcon className="h-4 w-4" />
+                Voir Instagram
+              </a>
+            </SectionReveal>
+          ) : null}
         </Container>
       </section>
 

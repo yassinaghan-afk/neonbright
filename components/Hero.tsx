@@ -55,21 +55,7 @@ export function Hero({ slides = [], hero }: HeroProps) {
 
       <Container className="relative z-10">
         <motion.div className="max-w-3xl" style={{ y, opacity }}>
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <span className="inline-flex items-center gap-2.5 rounded-full glass-premium px-5 py-2 text-xs font-medium tracking-wide">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inset-0 rounded-full bg-neon-pink animate-pulse-glow" />
-                <span className="relative h-2 w-2 rounded-full bg-neon-pink" />
-              </span>
-              {content.badge}
-            </span>
-          </motion.div>
-
-          <h1 className="mt-8 display-headline">
+          <h1 className="display-headline">
             <span className="block overflow-hidden">
               {headlineWords.map((word, i) => (
                 <motion.span

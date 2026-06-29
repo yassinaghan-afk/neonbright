@@ -1,17 +1,17 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import {
-  buildWhatsAppUrl,
-  DEFAULT_WHATSAPP_GREETING,
-  WHATSAPP_NUMBER,
-} from "@/lib/whatsapp/config";
+import { useContactSocial } from "@/components/contact/ContactSocialProvider";
+import { DEFAULT_WHATSAPP_GREETING } from "@/lib/whatsapp/config";
+import { buildWhatsAppUrl } from "@/lib/cms/contact-social";
 
 type WhatsAppLinkProps = {
   message?: string;
   className?: string;
   children: React.ReactNode;
   variant?: "inline" | "button";
+  /** Override CMS number (e.g. server-rendered Footer). */
+  href?: string;
 };
 
 export function WhatsAppLink({
@@ -19,8 +19,17 @@ export function WhatsAppLink({
   className,
   children,
   variant = "inline",
+  href: hrefOverride,
 }: WhatsAppLinkProps) {
-  const href = buildWhatsAppUrl(WHATSAPP_NUMBER, message);
+  const { contact, whatsAppUrl } = useContactSocial();
+  const whatsappNumber = contact.whatsapp?.trim() || contact.phone?.trim() || "";
+  const href =
+    hrefOverride ??
+    (message === DEFAULT_WHATSAPP_GREETING
+      ? buildWhatsAppUrl(whatsappNumber, message) || whatsAppUrl
+      : buildWhatsAppUrl(whatsappNumber, message) || whatsAppUrl);
+
+  if (!href) return <span className={className}>{children}</span>;
 
   return (
     <a

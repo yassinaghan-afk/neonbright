@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Outfit } from "next/font/google";
 import { QuoteRoot } from "@/components/quote/QuoteRoot";
+import { ContactSocialProvider } from "@/components/contact/ContactSocialProvider";
 import { BRAND_OG_DIMENSIONS, BRAND_OG_IMAGE, BRAND_NAME } from "@/lib/brand";
 import { getSiteBaseUrl } from "@/lib/seo/metadata";
+import { readCMSContent } from "@/lib/cms/store";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -64,18 +66,28 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export const dynamic = "force-dynamic";
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const { contact, social, instagram } = await readCMSContent();
+
   return (
     <html
       lang="fr"
       className={`${plusJakarta.variable} ${outfit.variable} h-full`}
     >
       <body className="min-h-full bg-background text-foreground antialiased">
-        <QuoteRoot>{children}</QuoteRoot>
+        <ContactSocialProvider
+          contact={contact}
+          social={social}
+          instagramSettingsUrl={instagram.url}
+        >
+          <QuoteRoot>{children}</QuoteRoot>
+        </ContactSocialProvider>
       </body>
     </html>
   );

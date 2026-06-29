@@ -556,7 +556,77 @@ body {
   }
 }
 
-/* ── Instagram feed carousel (Embla) ── */
+/* ── Instagram premium marquee showcase ── */
+@keyframes instagram-marquee-rtl {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@keyframes instagram-marquee-ltr {
+  0% {
+    transform: translate3d(-50%, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.instagram-marquee-mask {
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 6%,
+    black 94%,
+    transparent
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 6%,
+    black 94%,
+    transparent
+  );
+}
+
+.instagram-marquee-track {
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+.instagram-marquee-track--rtl {
+  animation: instagram-marquee-rtl 50s linear infinite;
+}
+
+.instagram-marquee-track--ltr {
+  animation: instagram-marquee-ltr 55s linear infinite;
+}
+
+.instagram-marquee-row:hover .instagram-marquee-track {
+  animation-play-state: paused;
+}
+
+@media (max-width: 640px) {
+  .instagram-marquee-track--rtl {
+    animation-duration: 40s;
+  }
+  .instagram-marquee-track--ltr {
+    animation-duration: 44s;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .instagram-marquee-track--rtl,
+  .instagram-marquee-track--ltr {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+/* ── Instagram feed carousel (Embla) — legacy ── */
 .instagram-showcase-mask {
   mask-image: linear-gradient(
     to right,

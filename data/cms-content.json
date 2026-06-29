@@ -1168,11 +1168,13 @@
   },
   "instagram": {
     "enabled": true,
-    "title": "Notre Instagram",
-    "subtitle": "Suivez-nous pour les dernières réalisations et inspirations.",
+    "title": "Suivez-nous sur Instagram",
+    "subtitle": "Découvrez nos dernières réalisations et créations lumineuses.",
     "buttonText": "Voir sur Instagram",
-    "url": "https://www.instagram.com/neonbright.ma/"
+    "url": "https://www.instagram.com/_neonbright_?igsh=NHQxN3MzcjJhdGZ0"
   },
+  "instagramPosts": [],
+  "instagramReels": [],
   "nav": [
     {
       "id": "nav_mqy9xx8w_hxtfqn",
@@ -1226,18 +1228,18 @@
     "footerTagline": "Néon LED et enseignes lumineuses sur mesure, fabriqués au Maroc et livrés dans le monde entier. Illuminez votre marque avec excellence."
   },
   "contact": {
-    "address": "Casablanca, Morocco",
+    "address": "Casablanca, Maroc",
     "email": "hello@neonbright.ma",
-    "phone": "+212 600 000 000",
-    "whatsapp": "+212600000000",
+    "phone": "+212 702 688 416",
+    "whatsapp": "+212702688416",
     "googleMapsUrl": "",
     "openingHours": "Lun–Ven : 9h–18h"
   },
   "social": {
-    "instagram": "",
+    "instagram": "https://www.instagram.com/_neonbright_?igsh=NHQxN3MzcjJhdGZ0",
     "linkedin": "",
     "pinterest": "",
-    "facebook": "",
+    "facebook": "https://www.facebook.com/share/1BrrbDuxoB/?mibextid=wwXIfr",
     "twitter": ""
   },
   "seo": {

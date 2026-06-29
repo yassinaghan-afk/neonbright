@@ -8,7 +8,8 @@ import {
   updateLeadFiles,
 } from "@/lib/leads/store";
 import type { DesignerSnapshot } from "@/lib/designer/types";
-import { buildWhatsAppUrl, getSiteUrl, getWhatsAppNumber } from "@/lib/whatsapp/config";
+import { buildWhatsAppUrl, getSiteUrl } from "@/lib/whatsapp/config";
+import { readCMSContent } from "@/lib/cms/store";
 import { buildNewLeadWhatsAppMessage } from "@/lib/whatsapp/message";
 import {
   ACCEPTED_FILE_TYPES,
@@ -125,7 +126,10 @@ export async function POST(request: Request) {
 
     const savedLead = (await getLeadById(lead.id))!;
     const whatsappMessage = buildNewLeadWhatsAppMessage(savedLead, siteUrl);
-    const whatsappUrl = buildWhatsAppUrl(getWhatsAppNumber(), whatsappMessage);
+    const cms = await readCMSContent();
+    const whatsappNumber =
+      cms.contact.whatsapp?.trim() || cms.contact.phone?.trim() || "";
+    const whatsappUrl = buildWhatsAppUrl(whatsappNumber, whatsappMessage);
 
     return jsonOk(
       {

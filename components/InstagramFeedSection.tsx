@@ -1,7 +1,7 @@
-import { InstagramFeed } from "@/components/InstagramFeed";
-import { getInstagramFeed } from "@/lib/instagram/posts";
+import { InstagramMarqueeShowcase } from "@/components/instagram/InstagramMarqueeShowcase";
+import { getInstagramShowcase } from "@/lib/instagram/showcase";
 
 export async function InstagramFeedSection() {
-  const feed = await getInstagramFeed();
-  return <InstagramFeed initialFeed={feed} />;
+  const data = await getInstagramShowcase();
+  return <InstagramMarqueeShowcase data={data} />;
 }

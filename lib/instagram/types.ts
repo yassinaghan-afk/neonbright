@@ -31,4 +31,5 @@ export type InstagramFeedResult = {
   source: "graph";
   configured: boolean;
   error?: string;
+  profileUrl?: string;
 };

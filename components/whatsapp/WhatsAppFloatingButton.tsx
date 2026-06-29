@@ -1,19 +1,17 @@
 "use client";
 
 import { motion } from "framer-motion";
-import {
-  buildWhatsAppUrl,
-  DEFAULT_WHATSAPP_GREETING,
-  WHATSAPP_NUMBER,
-} from "@/lib/whatsapp/config";
+import { useContactSocial } from "@/components/contact/ContactSocialProvider";
 import { WhatsAppIcon } from "./WhatsAppLink";
 
 export function WhatsAppFloatingButton() {
-  const href = buildWhatsAppUrl(WHATSAPP_NUMBER, DEFAULT_WHATSAPP_GREETING);
+  const { whatsAppUrlWithGreeting } = useContactSocial();
+
+  if (!whatsAppUrlWithGreeting) return null;
 
   return (
     <motion.a
-      href={href}
+      href={whatsAppUrlWithGreeting}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Chat on WhatsApp"

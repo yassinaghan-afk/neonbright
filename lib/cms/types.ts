@@ -174,6 +174,16 @@ export type CMSInstagramSettings = {
   url: string;
 };
 
+/** Curated Instagram post or reel shown in the homepage marquee. */
+export type CMSInstagramMediaItem = {
+  id: string;
+  thumbnail: string;
+  url: string;
+  alt: string;
+  enabled: boolean;
+  sortOrder: number;
+};
+
 export type CMSSectionCopy = {
   portfolio: { title: string; headline: string; headlineAccent: string; subtitle: string };
   services: { title: string; headline: string; subtitle: string };
@@ -243,6 +253,8 @@ export type CMSContent = {
   processSteps: CMSProcessStep[];
   sectionCopy: CMSSectionCopy;
   instagram: CMSInstagramSettings;
+  instagramPosts: CMSInstagramMediaItem[];
+  instagramReels: CMSInstagramMediaItem[];
   nav: CMSNavLink[];
   company: CompanyInfo;
   contact: ContactInfo;
@@ -265,6 +277,8 @@ export type CMSSection =
   | "processSteps"
   | "sectionCopy"
   | "instagram"
+  | "instagramPosts"
+  | "instagramReels"
   | "nav"
   | "company"
   | "contact"

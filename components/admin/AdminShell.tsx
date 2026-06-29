@@ -35,7 +35,8 @@ const NAV: NavItem[] = [
   { href: "/admin/media", label: "Médiathèque", icon: "🖼", roles: ["owner"], exact: true },
   { href: "/admin/media/logos", label: "Logos partenaires", icon: "◎", roles: ["owner"] },
   { href: "/admin/services", label: "Services (court)", icon: "◇", roles: ["owner"] },
-  { href: "/admin/company", label: "Entreprise & Contact", icon: "◇", roles: ["owner"] },
+  { href: "/admin/company", label: "Entreprise", icon: "◇", roles: ["owner"] },
+  { href: "/admin/settings/social-contact", label: "Social & Contact", icon: "◎", roles: ["owner"] },
   { href: "/admin/seo", label: "SEO", icon: "◐", roles: ["owner"] },
 ];
 

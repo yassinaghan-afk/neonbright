@@ -28,9 +28,6 @@ export default async function Home() {
     faq,
     sectionCopy,
     nav,
-    company,
-    contact,
-    social,
   } = await getPublicHomepageContent();
 
   return (
@@ -48,7 +45,7 @@ export default async function Home() {
         <FAQ items={faq} copy={sectionCopy.faq} />
         <QuoteCTA />
       </main>
-      <Footer company={company} contact={contact} social={social} />
+      <Footer />
     </>
   );
 }
