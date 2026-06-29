@@ -1,4 +1,5 @@
 import path from "path";
+import { resolvePublicAsset } from "@/lib/media/public-asset";
 import type { CMSHeroSlide } from "@/lib/cms/types";
 
 export type HeroMediaSyncResult = {
@@ -17,7 +18,8 @@ export function isBrandHeroUrl(src: string): boolean {
 }
 
 export function heroSlideSrc(slide: CMSHeroSlide): string {
-  return slide.src.split("?")[0];
+  const raw = slide.src.split("?")[0];
+  return resolvePublicAsset(raw) ?? raw;
 }
 
 /** Hero media sync from MEDIA/ → public/ runs only in local development. */

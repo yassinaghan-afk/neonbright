@@ -35,11 +35,17 @@ export async function middleware(request: NextRequest) {
     !pathname.startsWith("/api/admin/auth/login")
   ) {
     if (!session.valid || !session.role) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
     if (!canAccessApiPath(session.role, pathname)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Forbidden" },
+        { status: 403 }
+      );
     }
   }
 

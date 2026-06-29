@@ -7,11 +7,9 @@ import {
 } from "@/lib/cms/api";
 import {
   deleteUploadFile,
-  getUploadPublicUrl,
   listUploadFiles,
   mediaTypeOf,
   resolveUploadFilename,
-  statUploadFile,
 } from "@/lib/cms/upload-storage";
 
 export const dynamic = "force-dynamic";
@@ -29,23 +27,14 @@ export async function GET(_req: NextRequest) {
     const { error } = await requireAdmin();
     if (error) return jsonFailure("Unauthorized", 401);
 
-    const filenames = await listUploadFiles();
-    const results: MediaFile[] = [];
-
-    for (const filename of filenames) {
-      try {
-        const stat = await statUploadFile(filename);
-        results.push({
-          filename,
-          url: getUploadPublicUrl(filename),
-          type: mediaTypeOf(filename),
-          size: stat.size,
-          createdAt: stat.birthtime.toISOString(),
-        });
-      } catch (err) {
-        console.error("[GET /api/admin/media] skip file:", filename, err);
-      }
-    }
+    const stored = await listUploadFiles();
+    const results: MediaFile[] = stored.map((file) => ({
+      filename: file.filename,
+      url: file.url,
+      type: mediaTypeOf(file.filename),
+      size: file.size,
+      createdAt: file.createdAt,
+    }));
 
     results.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     return jsonSuccess(results);

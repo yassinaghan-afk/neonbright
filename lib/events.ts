@@ -51,7 +51,7 @@ export const eventsCategory: PortfolioCategory = {
   titleAccent: "événements",
   description:
     "Festivals, concerts, soirées VIP, activations de marque, salons professionnels et expériences immersives conçues pour marquer les esprits.",
-  coverImage: "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp",
+  coverImage: "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.jpg",
   coverAlt: "Installation néon LED pour festival et événement premium",
   href: "/realisations/events",
 };

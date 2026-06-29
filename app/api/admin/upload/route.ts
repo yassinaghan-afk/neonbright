@@ -10,10 +10,7 @@ import {
   jsonSuccess,
   requireOwner,
 } from "@/lib/cms/api";
-import {
-  getUploadPublicUrl,
-  writeUploadFile,
-} from "@/lib/cms/upload-storage";
+import { writeUploadFile } from "@/lib/cms/upload-storage";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -65,9 +62,9 @@ async function saveFile(
   if (isVideo) {
     const ext = file.name.split(".").pop()?.toLowerCase() ?? "mp4";
     const filename = `${createId("vid")}.${ext}`;
-    await writeUploadFile(filename, raw);
+    const url = await writeUploadFile(filename, raw);
     return {
-      url: getUploadPublicUrl(filename),
+      url,
       filename,
       label: filenameToLabel(file.name),
       type: "video",
@@ -99,10 +96,10 @@ async function saveFile(
 
   const optimized = await optimizeUploadedImage(raw, file.type, imagePreset);
   const filename = `${createId("img")}.${optimized.ext}`;
-  await writeUploadFile(filename, optimized.buffer);
+  const url = await writeUploadFile(filename, optimized.buffer);
 
   return {
-    url: getUploadPublicUrl(filename),
+    url,
     filename,
     label: filenameToLabel(file.name),
     type: "image",

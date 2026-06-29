@@ -1,10 +1,6 @@
 import { promises as fs } from "fs";
 import path from "path";
-import {
-  getUploadPublicUrl,
-  usesRuntimeUploadStorage,
-  writeUploadFile,
-} from "@/lib/cms/upload-storage";
+import { usesRuntimeUploadStorage, writeUploadFile } from "@/lib/cms/upload-storage";
 import { createId } from "@/lib/cms/id";
 
 const LOGO_EXT = /\.(png|jpe?g|svg|webp)$/i;
@@ -45,8 +41,7 @@ export async function saveLogoUpload(
   if (usesRuntimeUploadStorage()) {
     const ext = path.extname(safeName).slice(1) || "png";
     const filename = `${createId("logo")}.${ext}`;
-    await writeUploadFile(filename, buffer);
-    const src = getUploadPublicUrl(filename);
+    const src = await writeUploadFile(filename, buffer);
     return {
       id: logoIdFromFile(safeName),
       src,
