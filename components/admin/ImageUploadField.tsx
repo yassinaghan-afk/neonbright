@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
+import { uploadAdminFile } from "@/lib/admin/upload-client";
 import { AdminButton, AdminField } from "@/components/admin/ui/AdminForm";
 
 type ImageUploadFieldProps = {
@@ -10,6 +11,7 @@ type ImageUploadFieldProps = {
   onChange: (url: string) => void;
   hint?: string;
   className?: string;
+  preset?: "gallery" | "thumbnail" | "hero";
 };
 
 export function ImageUploadField({
@@ -18,6 +20,7 @@ export function ImageUploadField({
   onChange,
   hint,
   className,
+  preset = "gallery",
 }: ImageUploadFieldProps) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
@@ -28,12 +31,8 @@ export function ImageUploadField({
     setUploading(true);
     setError("");
     try {
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Upload échoué");
-      onChange(data.url);
+      const result = await uploadAdminFile(file, { preset });
+      onChange(result.url);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur upload");
     } finally {

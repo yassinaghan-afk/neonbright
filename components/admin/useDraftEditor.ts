@@ -100,13 +100,7 @@ export async function uploadMediaFiles(
   files: File[],
   preset: "hero" | "logo"
 ): Promise<{ url: string; filename: string; label: string }[]> {
-  const fd = new FormData();
-  files.forEach((f) => fd.append("files", f));
-  fd.append("preset", preset);
-
-  const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error ?? "Upload failed");
-
-  return data.files as { url: string; filename: string; label: string }[];
+  const { uploadAdminFiles } = await import("@/lib/admin/upload-client");
+  const results = await uploadAdminFiles(files, preset);
+  return results.map(({ url, filename, label }) => ({ url, filename, label }));
 }

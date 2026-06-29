@@ -9,6 +9,7 @@ import {
   AdminInput,
 } from "@/components/admin/ui/AdminForm";
 import { adminFetch } from "@/components/admin/useCMS";
+import { uploadAdminFile } from "@/lib/admin/upload-client";
 
 type MediaFile = {
   filename: string;
@@ -39,8 +40,18 @@ export default function AdminMediaPage() {
 
   const load = useCallback(() => {
     fetch("/api/admin/media")
-      .then((r) => r.json())
-      .then((data) => { if (Array.isArray(data)) setFiles(data); });
+      .then(async (r) => {
+        const text = await r.text();
+        if (!text) return;
+        try {
+          const data = JSON.parse(text);
+          const list = data.success === true ? data.data : data;
+          if (Array.isArray(list)) setFiles(list);
+        } catch (err) {
+          console.error("[media] load parse failed:", err);
+        }
+      })
+      .catch((err) => console.error("[media] load failed:", err));
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -55,14 +66,9 @@ export default function AdminMediaPage() {
     setUploading(true);
     setMsg(null);
     try {
-      const fd = new FormData();
       const isVideo = file.type.startsWith("video/");
-      fd.append("file", file);
-      if (isVideo) fd.append("preset", "video");
-      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Upload échoué");
-      setMsg({ type: "success", text: `Fichier uploadé : ${data.filename}` });
+      const result = await uploadAdminFile(file, isVideo ? { preset: "video" } : undefined);
+      setMsg({ type: "success", text: `Fichier uploadé : ${result.filename}` });
       load();
     } catch (err) {
       setMsg({ type: "error", text: err instanceof Error ? err.message : "Erreur" });

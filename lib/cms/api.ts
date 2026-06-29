@@ -42,9 +42,24 @@ export function jsonError(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
 }
 
-export function jsonErrorFromUnknown(err: unknown, status = 500) {
-  console.error(err);
+export function jsonSuccess<T>(data: T, status = 200) {
+  return NextResponse.json({ success: true, data }, { status });
+}
+
+export function jsonFailure(message: string, status = 400) {
+  return NextResponse.json({ success: false, error: message }, { status });
+}
+
+export function jsonFailureFromUnknown(err: unknown, status = 500) {
+  if (err instanceof Error) {
+    console.error("[api]", err.stack ?? err.message);
+  } else {
+    console.error("[api]", err);
+  }
   const message =
     err instanceof Error ? err.message : "Internal server error";
-  return jsonError(message, status);
+  return jsonFailure(message, status);
 }
+
+/** @deprecated Use jsonFailureFromUnknown */
+export const jsonErrorFromUnknown = jsonFailureFromUnknown;

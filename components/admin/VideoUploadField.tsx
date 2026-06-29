@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { uploadAdminFile } from "@/lib/admin/upload-client";
 import { AdminButton, AdminField } from "@/components/admin/ui/AdminForm";
 
 type VideoUploadFieldProps = {
@@ -20,13 +21,8 @@ export function VideoUploadField({ label, value, onChange, hint }: VideoUploadFi
     setUploading(true);
     setError("");
     try {
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("preset", "video");
-      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Upload échoué");
-      onChange([...value, data.url]);
+      const result = await uploadAdminFile(file, { preset: "video" });
+      onChange([...value, result.url]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur upload");
     } finally {
@@ -91,7 +87,7 @@ export function VideoUploadField({ label, value, onChange, hint }: VideoUploadFi
           <span className="text-sm text-white/40">
             {uploading ? "Upload en cours..." : "Ajouter une vidéo"}
           </span>
-          <span className="text-xs text-white/25">MP4, WebM, MOV — max 100 Mo</span>
+          <span className="text-xs text-white/25">MP4, WebM, MOV — max 200 Mo</span>
           <input ref={inputRef} type="file" accept="video/*" className="hidden" onChange={handleFile} disabled={uploading} />
         </label>
 

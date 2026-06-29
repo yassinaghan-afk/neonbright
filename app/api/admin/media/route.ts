@@ -1,23 +1,20 @@
-import { promises as fs } from "fs";
-import path from "path";
-import { requireAdmin, jsonOk, jsonError } from "@/lib/cms/api";
 import { NextRequest } from "next/server";
+import {
+  jsonFailure,
+  jsonFailureFromUnknown,
+  jsonSuccess,
+  requireAdmin,
+} from "@/lib/cms/api";
+import {
+  deleteUploadFile,
+  getUploadPublicUrl,
+  listUploadFiles,
+  mediaTypeOf,
+  resolveUploadFilename,
+  statUploadFile,
+} from "@/lib/cms/upload-storage";
 
-const UPLOAD_DIR = path.join(process.cwd(), "public/uploads/cms");
-
-const IMAGE_EXTS = new Set(["png", "jpg", "jpeg", "webp", "svg", "gif", "avif"]);
-const VIDEO_EXTS = new Set(["mp4", "webm", "mov", "avi", "mpeg", "mkv"]);
-
-function extOf(name: string) {
-  return name.split(".").pop()?.toLowerCase() ?? "";
-}
-
-function typeOf(name: string): "image" | "video" | "other" {
-  const ext = extOf(name);
-  if (IMAGE_EXTS.has(ext)) return "image";
-  if (VIDEO_EXTS.has(ext)) return "video";
-  return "other";
-}
+export const dynamic = "force-dynamic";
 
 export type MediaFile = {
   filename: string;
@@ -28,42 +25,56 @@ export type MediaFile = {
 };
 
 export async function GET(_req: NextRequest) {
-  const { error } = await requireAdmin();
-  if (error) return error;
+  try {
+    const { error } = await requireAdmin();
+    if (error) return jsonFailure("Unauthorized", 401);
 
-  await fs.mkdir(UPLOAD_DIR, { recursive: true });
+    const filenames = await listUploadFiles();
+    const results: MediaFile[] = [];
 
-  const files = await fs.readdir(UPLOAD_DIR);
-  const results: MediaFile[] = await Promise.all(
-    files
-      .filter((f) => !f.startsWith("."))
-      .map(async (filename) => {
-        const stat = await fs.stat(path.join(UPLOAD_DIR, filename));
-        return {
+    for (const filename of filenames) {
+      try {
+        const stat = await statUploadFile(filename);
+        results.push({
           filename,
-          url: `/uploads/cms/${filename}`,
-          type: typeOf(filename),
+          url: getUploadPublicUrl(filename),
+          type: mediaTypeOf(filename),
           size: stat.size,
           createdAt: stat.birthtime.toISOString(),
-        };
-      })
-  );
+        });
+      } catch (err) {
+        console.error("[GET /api/admin/media] skip file:", filename, err);
+      }
+    }
 
-  results.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  return jsonOk(results);
+    results.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    return jsonSuccess(results);
+  } catch (err) {
+    return jsonFailureFromUnknown(err);
+  }
 }
 
 export async function DELETE(req: NextRequest) {
-  const { error } = await requireAdmin();
-  if (error) return error;
+  try {
+    const { error } = await requireAdmin();
+    if (error) return jsonFailure("Unauthorized", 401);
 
-  const body = await req.json().catch(() => ({}));
-  const filename = body.filename as string;
-  if (!filename || filename.includes("..") || filename.includes("/")) {
-    return jsonError("Filename invalide");
+    const body = await req.json().catch(() => null);
+    const filename = body?.filename as string | undefined;
+    if (!filename) {
+      return jsonFailure("Filename requis", 400);
+    }
+
+    const safe = resolveUploadFilename(filename);
+    if (!safe) return jsonFailure("Filename invalide", 400);
+
+    const deleted = await deleteUploadFile(safe);
+    if (!deleted) {
+      return jsonFailure("Fichier introuvable", 404);
+    }
+
+    return jsonSuccess({ deleted: safe });
+  } catch (err) {
+    return jsonFailureFromUnknown(err);
   }
-
-  const target = path.join(UPLOAD_DIR, filename);
-  await fs.unlink(target).catch(() => {});
-  return jsonOk({ deleted: filename });
 }

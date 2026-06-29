@@ -2,7 +2,8 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
-import { AdminButton, AdminField } from "@/components/admin/ui/AdminForm";
+import { uploadAdminFile } from "@/lib/admin/upload-client";
+import { AdminField } from "@/components/admin/ui/AdminForm";
 
 type GalleryUploadFieldProps = {
   label: string;
@@ -23,16 +24,11 @@ export function GalleryUploadField({ label, value, onChange, hint }: GalleryUplo
     setUploading(true);
     setError("");
     try {
-      const urls = await Promise.all(
-        images.map(async (file) => {
-          const fd = new FormData();
-          fd.append("file", file);
-          const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error ?? "Upload échoué");
-          return data.url as string;
-        })
-      );
+      const urls: string[] = [];
+      for (const file of images) {
+        const result = await uploadAdminFile(file, { preset: "gallery" });
+        urls.push(result.url);
+      }
       onChange([...value, ...urls]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur upload");

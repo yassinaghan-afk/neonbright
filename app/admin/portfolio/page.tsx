@@ -531,11 +531,13 @@ export default function AdminPortfolioPage() {
                     label="Image principale (featured)"
                     value={editingProject.featuredImage ?? ""}
                     onChange={(url) => setEP({ featuredImage: url, coverImage: url })}
+                    preset="gallery"
                   />
                   <ImageUploadField
                     label="Miniature"
                     value={editingProject.thumbnail ?? ""}
                     onChange={(url) => setEP({ thumbnail: url })}
+                    preset="thumbnail"
                   />
                   <AdminField label="Alt image principale">
                     <AdminInput value={editingProject.imageAlt ?? ""} onChange={(e) => setEP({ imageAlt: e.target.value })} />

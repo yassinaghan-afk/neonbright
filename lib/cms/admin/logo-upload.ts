@@ -1,5 +1,11 @@
 import { promises as fs } from "fs";
 import path from "path";
+import {
+  getUploadPublicUrl,
+  usesRuntimeUploadStorage,
+  writeUploadFile,
+} from "@/lib/cms/upload-storage";
+import { createId } from "@/lib/cms/id";
 
 const LOGO_EXT = /\.(png|jpe?g|svg|webp)$/i;
 
@@ -26,21 +32,33 @@ export type LogoUploadResult = {
   alt: string;
 };
 
-/** Admin-only: writes a logo upload to MEDIA/logo and public/media/logo at request time. */
+/** Admin-only: writes a logo upload to MEDIA/logo and public/media/logo (dev) or CMS uploads (Vercel). */
 export async function saveLogoUpload(
   buffer: Buffer,
   originalName: string
 ): Promise<LogoUploadResult> {
+  const safeName = path.basename(originalName);
+  if (!LOGO_EXT.test(safeName)) {
+    throw new Error("Formats autorisés : PNG, JPG, JPEG, SVG, WebP");
+  }
+
+  if (usesRuntimeUploadStorage()) {
+    const ext = path.extname(safeName).slice(1) || "png";
+    const filename = `${createId("logo")}.${ext}`;
+    await writeUploadFile(filename, buffer);
+    const src = getUploadPublicUrl(filename);
+    return {
+      id: logoIdFromFile(safeName),
+      src,
+      alt: logoAltFromFile(safeName),
+    };
+  }
+
   const root = process.cwd();
   const mediaDir = path.join(root, "MEDIA", "logo");
   const pubDir = path.join(/* turbopackIgnore: true */ root, "public", "media", "logo");
   await fs.mkdir(mediaDir, { recursive: true });
   await fs.mkdir(pubDir, { recursive: true });
-
-  const safeName = path.basename(originalName);
-  if (!LOGO_EXT.test(safeName)) {
-    throw new Error("Formats autorisés : PNG, JPG, JPEG, SVG, WebP");
-  }
 
   await fs.writeFile(path.join(mediaDir, safeName), buffer);
   await fs.writeFile(path.join(pubDir, safeName), buffer);
