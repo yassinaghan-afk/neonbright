@@ -74,7 +74,7 @@ export function Hero({ slides = [], hero }: HeroProps) {
               {headlineWords.map((word, i) => (
                 <motion.span
                   key={word}
-                  className="mr-[0.2em] inline-block text-5xl sm:text-6xl md:text-7xl lg:text-[5.5rem] xl:text-[6.5rem]"
+                  className="mr-[0.2em] inline-block text-4xl sm:text-6xl md:text-7xl lg:text-[5.5rem] xl:text-[6.5rem]"
                   initial={{ opacity: 0, y: 80 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{
@@ -88,7 +88,7 @@ export function Hero({ slides = [], hero }: HeroProps) {
               ))}
             </span>
             <motion.span
-              className="mt-1 block text-5xl sm:text-6xl md:text-7xl lg:text-[5.5rem] xl:text-[6.5rem] neon-text-gradient"
+              className="mt-1 block text-4xl sm:text-6xl md:text-7xl lg:text-[5.5rem] xl:text-[6.5rem] neon-text-gradient"
               initial={{ opacity: 0, y: 80, filter: "blur(12px)" }}
               animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
               transition={{
@@ -105,7 +105,7 @@ export function Hero({ slides = [], hero }: HeroProps) {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.55, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-8 max-w-xl text-lg leading-relaxed text-white/75 sm:text-xl"
+            className="mt-8 max-w-xl text-base leading-relaxed text-white/75 sm:text-xl"
           >
             {content.subheadline}
           </motion.p>

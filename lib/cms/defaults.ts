@@ -10,7 +10,7 @@ export function getDefaultCMSContent(): CMSContent {
       headline: "Leader du néon sur mesure",
       headlineAccent: "et de l'enseigne personnalisée",
       subheadline:
-        "Créez votre néon LED ou votre enseigne lumineuse sur mesure. Visualisez votre projet en temps réel grâce à notre designer interactif.",
+        "D'une idée à la réalisation, nous illuminons vos évènements, commerces et établissements avec des solutions sur-mesure.",
       primaryCta: "Créer Mon Néon",
       secondaryCta: "Créer Mon Enseigne",
       backgroundImage: "",
