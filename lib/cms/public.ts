@@ -42,8 +42,18 @@ export type PublicHomepageContent = {
   social: SocialLinks;
 };
 
+function partnerLogosFromCMS(partners: CMSPartner[]): PartnerLogo[] {
+  return partners
+    .filter((p) => p.logoUrl)
+    .map((p) => ({
+      id: p.id,
+      src: p.logoUrl.split("?")[0],
+      alt: p.name,
+    }));
+}
+
 export async function getPublicHomepageContent(): Promise<PublicHomepageContent> {
-  const [content, partnerLogos] = await Promise.all([
+  const [content, filesystemLogos] = await Promise.all([
     readCMSContent(),
     getPartnerLogosFromMedia(),
   ]);
@@ -56,6 +66,8 @@ export async function getPublicHomepageContent(): Promise<PublicHomepageContent>
     }));
 
   const partners = sortByOrder(content.partners).filter((p) => p.enabled && p.name);
+  const partnerLogos =
+    filesystemLogos.length > 0 ? filesystemLogos : partnerLogosFromCMS(partners);
 
   const features = sortByOrder(content.features).filter((f) => f.enabled);
   const industries = sortByOrder(content.industries).filter((i) => i.enabled);

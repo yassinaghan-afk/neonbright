@@ -33,6 +33,11 @@ function publicLogoSrc(filename: string): string {
   return `/media/logo/${encodeURIComponent(filename)}`;
 }
 
+/** Vercel Lambda excludes public/media from the server bundle — no fs access at runtime. */
+export function isPublicMediaFsAvailable(): boolean {
+  return !process.env.VERCEL;
+}
+
 async function resolveMediaDir(root: string): Promise<string | null> {
   for (const dir of MEDIA_DIRS) {
     const full = path.join(root, dir);
@@ -107,8 +112,16 @@ async function purgeStalePublicFiles(pubDir: string, keepNames: Set<string>) {
   );
 }
 
+function logosFromPublicDir(files: string[]): PartnerLogo[] {
+  return files.map((file) => ({
+    id: logoIdFromFile(file),
+    src: publicLogoSrc(file),
+    alt: logoAltFromFile(file),
+  }));
+}
+
 export async function syncLogosFromMedia(): Promise<PartnerLogo[]> {
-  if (!isLogoMediaSyncEnabled()) {
+  if (!isPublicMediaFsAvailable()) {
     return [];
   }
 
@@ -116,36 +129,34 @@ export async function syncLogosFromMedia(): Promise<PartnerLogo[]> {
   const pubDir = path.join(root, PUBLIC_DIR);
   await fs.mkdir(pubDir, { recursive: true });
 
-  const sourceDir = await resolveMediaDir(root);
-  const publishedNames = new Set<string>();
-  const logos: PartnerLogo[] = [];
+  if (isLogoMediaSyncEnabled()) {
+    const sourceDir = await resolveMediaDir(root);
+    const publishedNames = new Set<string>();
+    const syncedLogos: PartnerLogo[] = [];
 
-  if (sourceDir) {
-    const files = await listLogoFiles(sourceDir);
-    for (const file of files) {
-      const destName = await publishLogo(
-        path.join(sourceDir, file),
-        pubDir,
-        file
-      );
-      publishedNames.add(destName);
-      logos.push({
-        id: logoIdFromFile(destName),
-        src: publicLogoSrc(destName),
-        alt: logoAltFromFile(destName),
-      });
+    if (sourceDir) {
+      const files = await listLogoFiles(sourceDir);
+      for (const file of files) {
+        const destName = await publishLogo(
+          path.join(sourceDir, file),
+          pubDir,
+          file
+        );
+        publishedNames.add(destName);
+        syncedLogos.push({
+          id: logoIdFromFile(destName),
+          src: publicLogoSrc(destName),
+          alt: logoAltFromFile(destName),
+        });
+      }
+      await purgeStalePublicFiles(pubDir, publishedNames);
     }
-    await purgeStalePublicFiles(pubDir, publishedNames);
+
+    if (syncedLogos.length > 0) return syncedLogos;
   }
 
-  if (logos.length > 0) return logos;
-
   const pubFiles = await listLogoFiles(pubDir);
-  return pubFiles.map((file) => ({
-    id: logoIdFromFile(file),
-    src: publicLogoSrc(file),
-    alt: logoAltFromFile(file),
-  }));
+  return logosFromPublicDir(pubFiles);
 }
 
 export async function getPartnerLogosFromMedia(): Promise<PartnerLogo[]> {
