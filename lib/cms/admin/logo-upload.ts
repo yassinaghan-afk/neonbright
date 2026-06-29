@@ -31,7 +31,8 @@ export type LogoUploadResult = {
 /** Admin-only: writes a logo upload to MEDIA/logo and public/media/logo (dev) or CMS uploads (Vercel). */
 export async function saveLogoUpload(
   buffer: Buffer,
-  originalName: string
+  originalName: string,
+  request?: Request
 ): Promise<LogoUploadResult> {
   const safeName = path.basename(originalName);
   if (!LOGO_EXT.test(safeName)) {
@@ -41,7 +42,7 @@ export async function saveLogoUpload(
   if (usesRuntimeUploadStorage()) {
     const ext = path.extname(safeName).slice(1) || "png";
     const filename = `${createId("logo")}.${ext}`;
-    const src = await writeUploadFile(filename, buffer);
+    const src = await writeUploadFile(filename, buffer, request);
     return {
       id: logoIdFromFile(safeName),
       src,

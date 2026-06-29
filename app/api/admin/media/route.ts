@@ -22,12 +22,12 @@ export type MediaFile = {
   createdAt: string;
 };
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
     const { error } = await requireAdmin();
     if (error) return jsonFailure("Unauthorized", 401);
 
-    const stored = await listUploadFiles();
+    const stored = await listUploadFiles(req);
     const results: MediaFile[] = stored.map((file) => ({
       filename: file.filename,
       url: file.url,
@@ -59,7 +59,7 @@ export async function DELETE(req: NextRequest) {
       return jsonFailure("Filename invalide", 400);
     }
 
-    const deleted = await deleteUploadFile(filename);
+    const deleted = await deleteUploadFile(filename, req);
     if (!deleted) {
       return jsonFailure("Fichier introuvable", 404);
     }

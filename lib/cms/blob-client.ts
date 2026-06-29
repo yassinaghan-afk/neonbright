@@ -5,9 +5,10 @@ type BlobCommandOptions = {
 };
 
 export class BlobNotConfiguredError extends Error {
-  constructor() {
+  constructor(detail?: string) {
     super(
-      "Blob storage is not configured. Connect a Blob store to this Vercel project (BLOB_STORE_ID + OIDC) or set BLOB_READ_WRITE_TOKEN."
+      detail ??
+        "Blob storage is not configured. Connect a Blob store to this Vercel project (BLOB_STORE_ID + OIDC) or set BLOB_READ_WRITE_TOKEN."
     );
     this.name = "BlobNotConfiguredError";
   }
@@ -32,7 +33,14 @@ export function shouldUseBlobStorage(): boolean {
   return Boolean(process.env.VERCEL && hasBlobCredentials());
 }
 
-async function readOidcTokenFromRequest(): Promise<string | undefined> {
+function readOidcTokenFromRequest(request?: Request): string | undefined {
+  return request?.headers.get("x-vercel-oidc-token")?.trim() || undefined;
+}
+
+async function resolveOidcToken(request?: Request): Promise<string | undefined> {
+  const fromRequest = readOidcTokenFromRequest(request);
+  if (fromRequest) return fromRequest;
+
   try {
     const { headers } = await import("next/headers");
     const value = (await headers()).get("x-vercel-oidc-token");
@@ -40,12 +48,6 @@ async function readOidcTokenFromRequest(): Promise<string | undefined> {
   } catch {
     /* not in a Next.js request context */
   }
-  return undefined;
-}
-
-async function resolveOidcToken(): Promise<string | undefined> {
-  const fromRequest = await readOidcTokenFromRequest();
-  if (fromRequest) return fromRequest;
 
   const fromEnv = readEnv("VERCEL_OIDC_TOKEN");
   if (fromEnv) return fromEnv;
@@ -64,17 +66,17 @@ async function resolveOidcToken(): Promise<string | undefined> {
 }
 
 /** Resolve Blob auth: OIDC + store id (modern) or read-write token (legacy). */
-export async function resolveBlobAuth(): Promise<BlobAuth> {
+export async function resolveBlobAuth(request?: Request): Promise<BlobAuth> {
   const storeId = readEnv("BLOB_STORE_ID");
   const readWrite = readEnv("BLOB_READ_WRITE_TOKEN");
 
   if (storeId) {
-    const oidcToken = await resolveOidcToken();
+    const oidcToken = await resolveOidcToken(request);
     if (oidcToken) {
       return { mode: "oidc", oidcToken, storeId };
     }
     console.error(
-      "[blob-client] BLOB_STORE_ID is set but no OIDC token is available (check store connection and redeploy)"
+      "[blob-client] BLOB_STORE_ID is set but x-vercel-oidc-token / VERCEL_OIDC_TOKEN is missing"
     );
   }
 
@@ -82,11 +84,23 @@ export async function resolveBlobAuth(): Promise<BlobAuth> {
     return { mode: "token", token: readWrite };
   }
 
-  throw new BlobNotConfiguredError();
+  const missing = [
+    !storeId ? "BLOB_STORE_ID" : null,
+    !readWrite ? "BLOB_READ_WRITE_TOKEN" : null,
+    storeId ? "x-vercel-oidc-token" : null,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  throw new BlobNotConfiguredError(
+    `Blob credentials incomplete (missing: ${missing}). Redeploy after connecting the Blob store, or add BLOB_READ_WRITE_TOKEN.`
+  );
 }
 
-export async function getBlobCommandOptions(): Promise<BlobCommandOptions> {
-  const auth = await resolveBlobAuth();
+export async function getBlobCommandOptions(
+  request?: Request
+): Promise<BlobCommandOptions> {
+  const auth = await resolveBlobAuth(request);
   if (auth.mode === "oidc") {
     return { oidcToken: auth.oidcToken, storeId: auth.storeId };
   }

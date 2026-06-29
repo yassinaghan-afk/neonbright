@@ -85,13 +85,14 @@ async function writeLocalFile(filename: string, buffer: Buffer): Promise<void> {
 
 async function writeBlobFile(
   filename: string,
-  buffer: Buffer
+  buffer: Buffer,
+  request?: Request
 ): Promise<{ url: string; size: number }> {
   const { put } = await import("@vercel/blob");
   const safe = resolveUploadFilename(filename);
   if (!safe) throw new Error("Invalid filename");
 
-  const auth = await getBlobCommandOptions();
+  const auth = await getBlobCommandOptions(request);
   const blob = await put(blobPathname(safe), buffer, {
     ...auth,
     access: "public",
@@ -106,13 +107,14 @@ async function writeBlobFile(
 /** Write file and return its public URL. */
 export async function writeUploadFile(
   filename: string,
-  buffer: Buffer
+  buffer: Buffer,
+  request?: Request
 ): Promise<string> {
   const safe = resolveUploadFilename(filename);
   if (!safe) throw new Error("Invalid filename");
 
   if (shouldUseBlobStorage()) {
-    const blob = await writeBlobFile(safe, buffer);
+    const blob = await writeBlobFile(safe, buffer, request);
     return blob.url;
   }
 
@@ -141,7 +143,8 @@ export async function readUploadFileForServe(filename: string): Promise<Buffer> 
 }
 
 export async function deleteUploadFile(
-  filenameOrUrl: string
+  filenameOrUrl: string,
+  request?: Request
 ): Promise<boolean> {
   let deleted = false;
 
@@ -149,7 +152,7 @@ export async function deleteUploadFile(
     if (!shouldUseBlobStorage()) return false;
     try {
       const { del } = await import("@vercel/blob");
-      const auth = await getBlobCommandOptions();
+      const auth = await getBlobCommandOptions(request);
       await del(filenameOrUrl, auth);
       return true;
     } catch (err) {
@@ -164,7 +167,7 @@ export async function deleteUploadFile(
   if (shouldUseBlobStorage()) {
     try {
       const { del } = await import("@vercel/blob");
-      const auth = await getBlobCommandOptions();
+      const auth = await getBlobCommandOptions(request);
       await del(blobPathname(safe), auth);
       deleted = true;
     } catch (err) {
@@ -182,9 +185,9 @@ export async function deleteUploadFile(
   return deleted;
 }
 
-async function listBlobUploads(): Promise<StoredUpload[]> {
+async function listBlobUploads(request?: Request): Promise<StoredUpload[]> {
   const { list } = await import("@vercel/blob");
-  const auth = await getBlobCommandOptions();
+  const auth = await getBlobCommandOptions(request);
   const { blobs } = await list({ ...auth, prefix: BLOB_PREFIX });
   return blobs.map((blob) => {
     const filename = blob.pathname.replace(BLOB_PREFIX, "");
@@ -226,9 +229,9 @@ async function listLocalUploads(): Promise<StoredUpload[]> {
   return results;
 }
 
-export async function listUploadFiles(): Promise<StoredUpload[]> {
+export async function listUploadFiles(request?: Request): Promise<StoredUpload[]> {
   if (shouldUseBlobStorage()) {
-    return listBlobUploads();
+    return listBlobUploads(request);
   }
   return listLocalUploads();
 }

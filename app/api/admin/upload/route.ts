@@ -41,7 +41,8 @@ export type UploadResult = {
 
 async function saveFile(
   file: File,
-  preset: string
+  preset: string,
+  request: Request
 ): Promise<UploadResult> {
   const isVideo = ALLOWED_VIDEOS.includes(file.type);
   const isImage = ALLOWED_IMAGES.includes(file.type);
@@ -62,7 +63,7 @@ async function saveFile(
   if (isVideo) {
     const ext = file.name.split(".").pop()?.toLowerCase() ?? "mp4";
     const filename = `${createId("vid")}.${ext}`;
-    const url = await writeUploadFile(filename, raw);
+    const url = await writeUploadFile(filename, raw, request);
     return {
       url,
       filename,
@@ -73,7 +74,7 @@ async function saveFile(
 
   if (preset === "logo") {
     const { saveLogoUpload } = await import("@/lib/cms/admin/logo-upload");
-    const logo = await saveLogoUpload(raw, file.name);
+    const logo = await saveLogoUpload(raw, file.name, request);
     return {
       url: logo.src,
       filename: logo.src.split("/").pop() ?? file.name,
@@ -96,7 +97,7 @@ async function saveFile(
 
   const optimized = await optimizeUploadedImage(raw, file.type, imagePreset);
   const filename = `${createId("img")}.${optimized.ext}`;
-  const url = await writeUploadFile(filename, optimized.buffer);
+  const url = await writeUploadFile(filename, optimized.buffer, request);
 
   return {
     url,
@@ -135,7 +136,9 @@ export async function POST(request: Request) {
       return jsonFailure("Aucun fichier fourni", 400);
     }
 
-    const results = await Promise.all(files.map((f) => saveFile(f, preset)));
+    const results = await Promise.all(
+      files.map((f) => saveFile(f, preset, request))
+    );
 
     if (files.length === 1 && !formData.get("files")) {
       return jsonSuccess(results[0]);
