@@ -138,7 +138,7 @@ export async function readCMSContent(): Promise<CMSContent> {
   } catch {
     const defaults = getDefaultCMSContent();
     if (!isHeroMediaSyncEnabled()) {
-      await writeCMSContent(defaults);
+      // Production/Vercel: read-only filesystem — never write defaults here.
       return defaults;
     }
     const result = await refreshBrandHeroSlides(true);

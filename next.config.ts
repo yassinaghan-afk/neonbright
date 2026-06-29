@@ -1,9 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Sharp is a native module used by Next.js for image optimization.
-  // Mark it external so it is never bundled — it must be loaded via require().
-  serverExternalPackages: ["sharp"],
+  // Ensure CMS JSON shipped with serverless functions (read via fs at runtime).
+  outputFileTracingIncludes: {
+    "**": ["./data/cms-content.json", "./data/seo-registry.json"],
+  },
 
   // Exclude static media from Lambda NFT bundles.
   // public/media/ and MEDIA/ are served by Vercel's CDN, not the Lambda.
