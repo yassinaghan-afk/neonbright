@@ -3,7 +3,12 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Ensure CMS JSON shipped with serverless functions (read via fs at runtime).
   outputFileTracingIncludes: {
-    "**": ["./data/cms-content.json", "./data/seo-registry.json"],
+    "**": [
+      "./data/cms-content.json",
+      "./data/seo-registry.json",
+      "./node_modules/@img/sharp-linux-x64/**/*",
+      "./node_modules/@img/sharp-libvips-linux-x64/**/*",
+    ],
   },
 
   // Exclude static media from Lambda NFT bundles.
