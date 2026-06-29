@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AdminAlert, AdminButton, AdminField, AdminInput } from "@/components/admin/ui/AdminForm";
 import { Logo } from "@/components/Logo";
+import { parseJsonResponse } from "@/lib/http/parse-json-response";
 
 export default function AdminLoginClient() {
   const router = useRouter();
@@ -23,11 +24,20 @@ export default function AdminLoginClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Login failed");
+      const data = await parseJsonResponse(res);
+      if (!res.ok) {
+        throw new Error(
+          typeof data.error === "string"
+            ? data.error
+            : typeof data.message === "string"
+              ? data.message
+              : "Login failed"
+        );
+      }
 
       const from = searchParams.get("from");
-      const defaultPath = data.role === "staff" ? "/admin/leads" : "/admin";
+      const role = typeof data.role === "string" ? data.role : "owner";
+      const defaultPath = role === "staff" ? "/admin/leads" : "/admin";
       router.push(from ?? defaultPath);
       router.refresh();
     } catch (err) {

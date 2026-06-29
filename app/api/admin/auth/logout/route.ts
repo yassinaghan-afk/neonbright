@@ -1,8 +1,13 @@
 import { clearSessionCookieOptions } from "@/lib/cms/session";
-import { jsonOk } from "@/lib/cms/api";
+import { jsonError, jsonOk } from "@/lib/cms/api";
 
 export async function POST() {
-  const response = jsonOk({ success: true });
-  response.cookies.set(clearSessionCookieOptions());
-  return response;
+  try {
+    const response = jsonOk({ success: true });
+    response.cookies.set(clearSessionCookieOptions());
+    return response;
+  } catch (err) {
+    console.error("[api/admin/auth/logout]", err);
+    return jsonError("Logout failed", 500);
+  }
 }

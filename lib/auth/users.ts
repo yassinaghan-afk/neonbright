@@ -7,13 +7,19 @@ import type { AdminUser, UserRole } from "./types";
 const DATA_DIR = path.join(process.cwd(), "data");
 const USERS_FILE = path.join(DATA_DIR, "admin-users.json");
 
+let memoryUsers: AdminUser[] | null = null;
+
+function canPersistUsers(): boolean {
+  return process.env.NODE_ENV === "development" && !process.env.VERCEL;
+}
+
 async function ensureDataDir() {
+  if (!canPersistUsers()) return;
   await fs.mkdir(DATA_DIR, { recursive: true });
 }
 
 async function readUsersFile(): Promise<AdminUser[]> {
   try {
-    await ensureDataDir();
     const raw = await fs.readFile(USERS_FILE, "utf-8");
     return JSON.parse(raw) as AdminUser[];
   } catch {
@@ -22,18 +28,23 @@ async function readUsersFile(): Promise<AdminUser[]> {
 }
 
 async function writeUsersFile(users: AdminUser[]): Promise<void> {
+  if (!canPersistUsers()) {
+    memoryUsers = users;
+    return;
+  }
   await ensureDataDir();
   await fs.writeFile(USERS_FILE, JSON.stringify(users, null, 2), "utf-8");
+  memoryUsers = users;
 }
 
-async function seedDefaultUsers(): Promise<AdminUser[]> {
+async function buildDefaultUsers(): Promise<AdminUser[]> {
   const now = new Date().toISOString();
   const ownerEmail = process.env.ADMIN_EMAIL ?? "admin@neonbright.ma";
   const ownerPassword = process.env.ADMIN_PASSWORD ?? "neonbright-admin";
   const staffEmail = process.env.STAFF_EMAIL ?? "staff@neonbright.ma";
   const staffPassword = process.env.STAFF_PASSWORD ?? "neonbright-staff";
 
-  const users: AdminUser[] = [
+  return [
     {
       id: createId("usr"),
       email: ownerEmail.toLowerCase(),
@@ -55,16 +66,19 @@ async function seedDefaultUsers(): Promise<AdminUser[]> {
       updatedAt: now,
     },
   ];
-
-  await writeUsersFile(users);
-  return users;
 }
 
 export async function getUsers(): Promise<AdminUser[]> {
+  if (memoryUsers?.length) return memoryUsers;
+
   let users = await readUsersFile();
   if (users.length === 0) {
-    users = await seedDefaultUsers();
+    users = await buildDefaultUsers();
+    await writeUsersFile(users);
+  } else {
+    memoryUsers = users;
   }
+
   return users;
 }
 
@@ -113,7 +127,7 @@ export async function createUser(input: {
     updatedAt: now,
   };
 
-  users.push(user);
-  await writeUsersFile(users);
+  const next = [...users, user];
+  await writeUsersFile(next);
   return user;
 }
