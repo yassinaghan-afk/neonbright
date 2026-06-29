@@ -49,20 +49,22 @@ export async function DELETE(req: NextRequest) {
     if (error) return jsonFailure("Unauthorized", 401);
 
     const body = await req.json().catch(() => null);
-    const filename = body?.filename as string | undefined;
+    const filename = (body?.filename as string | undefined) ?? (body?.url as string | undefined);
     if (!filename) {
       return jsonFailure("Filename requis", 400);
     }
 
     const safe = resolveUploadFilename(filename);
-    if (!safe) return jsonFailure("Filename invalide", 400);
+    if (!safe && !filename.includes(".blob.vercel-storage.com/")) {
+      return jsonFailure("Filename invalide", 400);
+    }
 
-    const deleted = await deleteUploadFile(safe);
+    const deleted = await deleteUploadFile(filename);
     if (!deleted) {
       return jsonFailure("Fichier introuvable", 404);
     }
 
-    return jsonSuccess({ deleted: safe });
+    return jsonSuccess({ deleted: filename });
   } catch (err) {
     return jsonFailureFromUnknown(err);
   }

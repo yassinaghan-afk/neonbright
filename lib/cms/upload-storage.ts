@@ -1,8 +1,12 @@
 import { promises as fs } from "fs";
 import path from "path";
+import {
+  BlobNotConfiguredError,
+  getBlobCommandOptions,
+  shouldUseBlobStorage,
+} from "@/lib/cms/blob-client";
 
 const PUBLIC_UPLOAD_DIR = path.join(process.cwd(), "public/uploads/cms");
-const RUNTIME_UPLOAD_DIR = path.join("/tmp", "neonbright-uploads/cms");
 const BLOB_PREFIX = "cms/";
 
 const IMAGE_EXTS = new Set(["png", "jpg", "jpeg", "webp", "svg", "gif", "avif"]);
@@ -31,13 +35,9 @@ type StoredUpload = {
   createdAt: string;
 };
 
-/** Local dev: write to public/uploads/cms. Vercel: Vercel Blob (durable) with /tmp fallback. */
+/** Local dev: public/uploads/cms. Vercel: Blob when store is linked. */
 export function usesRuntimeUploadStorage(): boolean {
-  return Boolean(process.env.VERCEL);
-}
-
-function getLocalUploadDir(): string {
-  return usesRuntimeUploadStorage() ? RUNTIME_UPLOAD_DIR : PUBLIC_UPLOAD_DIR;
+  return shouldUseBlobStorage();
 }
 
 export function extOf(name: string): string {
@@ -67,10 +67,13 @@ function blobPathname(filename: string): string {
   return `${BLOB_PREFIX}${filename}`;
 }
 
+function isBlobUrl(url: string): boolean {
+  return url.includes(".blob.vercel-storage.com/");
+}
+
 async function ensureLocalUploadDir(): Promise<string> {
-  const dir = getLocalUploadDir();
-  await fs.mkdir(dir, { recursive: true });
-  return dir;
+  await fs.mkdir(PUBLIC_UPLOAD_DIR, { recursive: true });
+  return PUBLIC_UPLOAD_DIR;
 }
 
 async function writeLocalFile(filename: string, buffer: Buffer): Promise<void> {
@@ -78,13 +81,6 @@ async function writeLocalFile(filename: string, buffer: Buffer): Promise<void> {
   if (!safe) throw new Error("Invalid filename");
   const dir = await ensureLocalUploadDir();
   await fs.writeFile(path.join(dir, safe), buffer);
-
-  if (!usesRuntimeUploadStorage()) {
-    await fs.mkdir(PUBLIC_UPLOAD_DIR, { recursive: true });
-    if (dir !== PUBLIC_UPLOAD_DIR) {
-      await fs.writeFile(path.join(PUBLIC_UPLOAD_DIR, safe), buffer);
-    }
-  }
 }
 
 async function writeBlobFile(
@@ -95,7 +91,9 @@ async function writeBlobFile(
   const safe = resolveUploadFilename(filename);
   if (!safe) throw new Error("Invalid filename");
 
+  const auth = await getBlobCommandOptions();
   const blob = await put(blobPathname(safe), buffer, {
+    ...auth,
     access: "public",
     addRandomSuffix: false,
     allowOverwrite: true,
@@ -113,9 +111,13 @@ export async function writeUploadFile(
   const safe = resolveUploadFilename(filename);
   if (!safe) throw new Error("Invalid filename");
 
-  if (usesRuntimeUploadStorage()) {
+  if (shouldUseBlobStorage()) {
     const blob = await writeBlobFile(safe, buffer);
     return blob.url;
+  }
+
+  if (process.env.VERCEL) {
+    throw new BlobNotConfiguredError();
   }
 
   await writeLocalFile(safe, buffer);
@@ -124,9 +126,6 @@ export async function writeUploadFile(
 
 export function getUploadPublicUrl(filename: string): string {
   const safe = path.basename(filename);
-  if (usesRuntimeUploadStorage()) {
-    return `/api/media/cms/${encodeURIComponent(safe)}`;
-  }
   return `/uploads/cms/${encodeURIComponent(safe)}`;
 }
 
@@ -134,49 +133,50 @@ export async function readUploadFileForServe(filename: string): Promise<Buffer> 
   const safe = resolveUploadFilename(filename);
   if (!safe) throw new Error("Invalid filename");
 
-  const candidates = [
-    path.join(getLocalUploadDir(), safe),
-    path.join(PUBLIC_UPLOAD_DIR, safe),
-  ];
+  try {
+    return await fs.readFile(path.join(PUBLIC_UPLOAD_DIR, safe));
+  } catch {
+    throw new Error(`File not found: ${safe}`);
+  }
+}
 
-  for (const filePath of candidates) {
+export async function deleteUploadFile(
+  filenameOrUrl: string
+): Promise<boolean> {
+  let deleted = false;
+
+  if (isBlobUrl(filenameOrUrl)) {
+    if (!shouldUseBlobStorage()) return false;
     try {
-      return await fs.readFile(filePath);
-    } catch {
-      continue;
+      const { del } = await import("@vercel/blob");
+      const auth = await getBlobCommandOptions();
+      await del(filenameOrUrl, auth);
+      return true;
+    } catch (err) {
+      console.error("[upload-storage] blob delete by URL failed:", err);
+      return false;
     }
   }
 
-  throw new Error(`File not found: ${safe}`);
-}
-
-export async function deleteUploadFile(filename: string): Promise<boolean> {
-  const safe = resolveUploadFilename(filename);
+  const safe = resolveUploadFilename(filenameOrUrl);
   if (!safe) return false;
 
-  let deleted = false;
-
-  if (usesRuntimeUploadStorage()) {
+  if (shouldUseBlobStorage()) {
     try {
-      const { del, list } = await import("@vercel/blob");
-      const { blobs } = await list({ prefix: blobPathname(safe) });
-      const match = blobs.find((b) => b.pathname === blobPathname(safe));
-      if (match) {
-        await del(match.url);
-        deleted = true;
-      }
+      const { del } = await import("@vercel/blob");
+      const auth = await getBlobCommandOptions();
+      await del(blobPathname(safe), auth);
+      deleted = true;
     } catch (err) {
       console.error("[upload-storage] blob delete failed:", err);
     }
   }
 
-  for (const dir of [getLocalUploadDir(), PUBLIC_UPLOAD_DIR]) {
-    try {
-      await fs.unlink(path.join(dir, safe));
-      deleted = true;
-    } catch {
-      /* may only exist in one location */
-    }
+  try {
+    await fs.unlink(path.join(PUBLIC_UPLOAD_DIR, safe));
+    deleted = true;
+  } catch {
+    /* file may only exist in blob */
   }
 
   return deleted;
@@ -184,7 +184,8 @@ export async function deleteUploadFile(filename: string): Promise<boolean> {
 
 async function listBlobUploads(): Promise<StoredUpload[]> {
   const { list } = await import("@vercel/blob");
-  const { blobs } = await list({ prefix: BLOB_PREFIX });
+  const auth = await getBlobCommandOptions();
+  const { blobs } = await list({ ...auth, prefix: BLOB_PREFIX });
   return blobs.map((blob) => {
     const filename = blob.pathname.replace(BLOB_PREFIX, "");
     return {
@@ -198,22 +199,20 @@ async function listBlobUploads(): Promise<StoredUpload[]> {
 
 async function listLocalUploads(): Promise<StoredUpload[]> {
   const names = new Set<string>();
-  for (const dir of [getLocalUploadDir(), PUBLIC_UPLOAD_DIR]) {
-    try {
-      await fs.mkdir(dir, { recursive: true });
-      const files = await fs.readdir(dir);
-      for (const f of files) {
-        if (!f.startsWith(".")) names.add(f);
-      }
-    } catch {
-      continue;
+  try {
+    await fs.mkdir(PUBLIC_UPLOAD_DIR, { recursive: true });
+    const files = await fs.readdir(PUBLIC_UPLOAD_DIR);
+    for (const f of files) {
+      if (!f.startsWith(".")) names.add(f);
     }
+  } catch {
+    return [];
   }
 
   const results: StoredUpload[] = [];
   for (const filename of names) {
     try {
-      const stat = await statUploadFile(filename);
+      const stat = await fs.stat(path.join(PUBLIC_UPLOAD_DIR, filename));
       results.push({
         filename,
         url: getUploadPublicUrl(filename),
@@ -228,13 +227,8 @@ async function listLocalUploads(): Promise<StoredUpload[]> {
 }
 
 export async function listUploadFiles(): Promise<StoredUpload[]> {
-  if (usesRuntimeUploadStorage()) {
-    try {
-      const blobFiles = await listBlobUploads();
-      if (blobFiles.length > 0) return blobFiles;
-    } catch (err) {
-      console.error("[upload-storage] blob list failed:", err);
-    }
+  if (shouldUseBlobStorage()) {
+    return listBlobUploads();
   }
   return listLocalUploads();
 }
@@ -243,15 +237,7 @@ export async function statUploadFile(filename: string) {
   const safe = resolveUploadFilename(filename);
   if (!safe) throw new Error("Invalid filename");
 
-  for (const dir of [getLocalUploadDir(), PUBLIC_UPLOAD_DIR]) {
-    try {
-      return await fs.stat(path.join(dir, safe));
-    } catch {
-      continue;
-    }
-  }
-
-  if (usesRuntimeUploadStorage()) {
+  if (shouldUseBlobStorage()) {
     const files = await listBlobUploads();
     const match = files.find((f) => f.filename === safe);
     if (match) {
@@ -262,5 +248,9 @@ export async function statUploadFile(filename: string) {
     }
   }
 
-  throw new Error(`File not found: ${safe}`);
+  try {
+    return await fs.stat(path.join(PUBLIC_UPLOAD_DIR, safe));
+  } catch {
+    throw new Error(`File not found: ${safe}`);
+  }
 }
