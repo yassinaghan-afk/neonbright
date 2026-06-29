@@ -17,6 +17,7 @@ export default function AdminDashboardClient() {
   const { content, loading: cmsLoading } = useCMSContent({ enabled: isOwner });
   const [leadStats, setLeadStats] = useState<LeadStats | null>(null);
   const [orderStats, setOrderStats] = useState<OrderStats | null>(null);
+  const [portfolioCount, setPortfolioCount] = useState<number | null>(null);
 
   const denied = searchParams.get("denied") === "1";
 
@@ -30,17 +31,37 @@ export default function AdminDashboardClient() {
     });
   }, []);
 
-  const loading = sessionLoading || (isOwner && cmsLoading);
+  useEffect(() => {
+    if (!isOwner) return;
+    fetch("/api/portfolio")
+      .then(async (r) => {
+        const data = await r.json().catch(() => null);
+        if (r.ok && data && Array.isArray(data.projects)) {
+          setPortfolioCount(data.projects.length);
+        }
+      })
+      .catch(() => {});
+  }, [isOwner]);
+
+  const loading = sessionLoading || (isOwner && cmsLoading && portfolioCount === null);
 
   const stats = [
     { label: "New Leads", count: leadStats?.new ?? 0, href: "/admin/leads?status=new", highlight: true },
     { label: "Active Orders", count: orderStats?.active ?? 0, href: "/admin/orders", highlight: true },
     { label: "In Production", count: orderStats?.in_production ?? 0, href: "/admin/orders?status=in_production" },
     { label: "Total Leads", count: leadStats?.total ?? 0, href: "/admin/leads" },
-    ...(isOwner && content
+    ...(isOwner
       ? [
-          { label: "Projects", count: content.portfolioProjects?.length ?? content.projects?.length ?? 0, href: "/admin/portfolio" },
-          { label: "Services", count: content.services.length, href: "/admin/services" },
+          {
+            label: "Projects",
+            count: portfolioCount ?? content?.portfolioProjects?.length ?? 0,
+            href: "/admin/portfolio",
+          },
+          {
+            label: "Services",
+            count: content?.services.length ?? 0,
+            href: "/admin/services",
+          },
         ]
       : []),
   ];

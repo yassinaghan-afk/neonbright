@@ -10,7 +10,7 @@ export async function GET(_req: Request, { params }: Params) {
   const { id } = await params;
 
   const content = await readCMSContent();
-  const projects = content.portfolioProjects ?? content.projects ?? [];
+  const projects = content.portfolioProjects ?? [];
   const project = projects.find((p) => p.id === id);
   if (!project) return jsonError("Project not found", 404);
   return jsonOk(project);

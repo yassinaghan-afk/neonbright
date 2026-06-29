@@ -6,7 +6,7 @@ export async function GET() {
   const { error } = await requireOwner();
   if (error) return error;
   const content = await readCMSContent();
-  return jsonOk(content.portfolioProjects ?? content.projects ?? []);
+  return jsonOk(content.portfolioProjects ?? []);
 }
 
 /** @deprecated Use /api/admin/portfolio/projects */

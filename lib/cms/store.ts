@@ -14,8 +14,16 @@ import type { CMSContent } from "@/lib/cms/types";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const CONTENT_FILE = path.join(DATA_DIR, "cms-content.json");
+const VERCEL_CMS_FILE = path.join("/tmp", "neonbright-cms-content.json");
+
+let memoryCMS: CMSContent | null = null;
+
+function canPersistCMS(): boolean {
+  return process.env.NODE_ENV === "development" && !process.env.VERCEL;
+}
 
 async function ensureDataDir() {
+  if (!canPersistCMS()) return;
   await fs.mkdir(DATA_DIR, { recursive: true });
 }
 
@@ -121,37 +129,74 @@ async function maybeSyncHeroFromMedia(
   return { content: next, changed };
 }
 
+async function readCMSFileFromDisk(): Promise<Partial<CMSContent> | null> {
+  const paths = canPersistCMS() ? [CONTENT_FILE] : [VERCEL_CMS_FILE, CONTENT_FILE];
+
+  for (const filePath of paths) {
+    try {
+      const raw = await fs.readFile(filePath, "utf-8");
+      return JSON.parse(raw) as Partial<CMSContent>;
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
+}
+
 export async function readCMSContent(): Promise<CMSContent> {
+  if (memoryCMS) return memoryCMS;
+
   try {
     await ensureDataDir();
-    const raw = await fs.readFile(CONTENT_FILE, "utf-8");
-    const parsed = JSON.parse(raw) as Partial<CMSContent>;
+    const parsed = await readCMSFileFromDisk();
+    if (!parsed) throw new Error("CMS content file not found");
+
     let content = mergeContent(parsed);
     const { content: synced, changed } = await maybeSyncHeroFromMedia(parsed, content);
     content = synced;
 
     if (changed) {
-      await writeCMSContent(content);
+      try {
+        content = await writeCMSContent(content);
+      } catch {
+        memoryCMS = content;
+      }
     }
 
     return content;
   } catch {
     const defaults = getDefaultCMSContent();
     if (!isHeroMediaSyncEnabled()) {
-      // Production/Vercel: read-only filesystem — never write defaults here.
       return defaults;
     }
     const result = await refreshBrandHeroSlides(true);
     const content = applyBrandHeroSlides(defaults, result.slides, result.mediaVersion);
-    await writeCMSContent(content);
-    return content;
+    try {
+      return await writeCMSContent(content);
+    } catch {
+      memoryCMS = content;
+      return content;
+    }
   }
 }
 
 export async function writeCMSContent(content: CMSContent): Promise<CMSContent> {
-  await ensureDataDir();
   const next = { ...content, updatedAt: new Date().toISOString() };
-  await fs.writeFile(CONTENT_FILE, JSON.stringify(next, null, 2), "utf-8");
+  memoryCMS = next;
+
+  if (canPersistCMS()) {
+    await ensureDataDir();
+    await fs.writeFile(CONTENT_FILE, JSON.stringify(next, null, 2), "utf-8");
+    return next;
+  }
+
+  try {
+    await fs.writeFile(VERCEL_CMS_FILE, JSON.stringify(next, null, 2), "utf-8");
+  } catch (err) {
+    console.warn("[cms] runtime CMS write failed (using in-memory overlay):", err);
+  }
+
   return next;
 }
 

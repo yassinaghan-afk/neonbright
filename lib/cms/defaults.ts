@@ -24,7 +24,7 @@ export function getDefaultCMSContent(): CMSContent {
     },
     heroSlides: [],
     portfolioCategories,
-    portfolioProjects: seedPortfolioProjects(portfolioCategories),
+    portfolioProjects: seedPortfolioProjects(),
     projects: [
       {
         id: createId("proj"),

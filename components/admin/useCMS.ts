@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { parseJsonResponse } from "@/lib/http/parse-json-response";
 import type { CMSContent } from "@/lib/cms/types";
 
 export function useCMSContent(options?: { enabled?: boolean }) {
@@ -18,8 +19,13 @@ export function useCMSContent(options?: { enabled?: boolean }) {
     setError("");
     try {
       const res = await fetch("/api/admin/content");
-      if (!res.ok) throw new Error("Failed to load content");
-      setContent(await res.json());
+      const data = await parseJsonResponse(res);
+      if (!res.ok) {
+        throw new Error(
+          typeof data.error === "string" ? data.error : "Failed to load content"
+        );
+      }
+      setContent(data as unknown as CMSContent);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error");
     } finally {

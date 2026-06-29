@@ -1,7 +1,5 @@
 import { sectionCopy as staticCopy } from "@/lib/data";
 import type { PortfolioCategory } from "@/lib/portfolio/types";
-import { brandsCategory } from "@/lib/brands/types";
-import { eventsCategory } from "@/lib/events";
 import { CategoryCard } from "@/components/portfolio/CategoryCard";
 import { Container } from "@/components/ui/Container";
 import { SectionDivider, SectionReveal } from "@/components/ui/SectionReveal";
@@ -20,10 +18,7 @@ type FeaturedProjectsProps = {
 
 export function FeaturedProjects({ copy, categories }: FeaturedProjectsProps) {
   const sectionsCopy = copy ?? staticCopy.portfolio;
-  const categoryItems =
-    categories && categories.length > 0
-      ? categories
-      : [eventsCategory, brandsCategory];
+  const categoryItems = categories ?? [];
 
   return (
     <>

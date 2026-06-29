@@ -84,12 +84,30 @@ export default function AdminPortfolioPage() {
   const [saving, setSaving] = useState(false);
 
   const load = async () => {
-    const [cats, projs] = await Promise.all([
-      fetch("/api/admin/portfolio/categories").then((r) => r.json()),
-      fetch("/api/admin/portfolio/projects").then((r) => r.json()),
-    ]);
-    if (Array.isArray(cats)) setCategories(cats.sort((a, b) => a.sortOrder - b.sortOrder));
-    if (Array.isArray(projs)) setProjects(projs.sort((a, b) => a.sortOrder - b.sortOrder));
+    const res = await fetch("/api/portfolio");
+    const data = await res.json().catch(() => null);
+
+    if (res.ok && data?.categories && data?.projects) {
+      setCategories(
+        (data.categories as CMSPortfolioCategory[]).sort(
+          (a, b) => a.sortOrder - b.sortOrder
+        )
+      );
+      setProjects(
+        (data.projects as CMSPortfolioProject[]).sort(
+          (a, b) => a.sortOrder - b.sortOrder
+        )
+      );
+      return;
+    }
+
+    setMsg({
+      type: "error",
+      text:
+        (data && typeof data === "object" && "error" in data
+          ? String(data.error)
+          : null) ?? "Impossible de charger le portfolio.",
+    });
   };
 
   useEffect(() => { load(); }, []);

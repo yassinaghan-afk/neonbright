@@ -1,9 +1,13 @@
-import { jsonOk } from "@/lib/cms/api";
+import { jsonOk, jsonErrorFromUnknown } from "@/lib/cms/api";
 import { getPublicHomepageContent } from "@/lib/cms/public";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const content = await getPublicHomepageContent();
-  return jsonOk(content);
+  try {
+    const content = await getPublicHomepageContent();
+    return jsonOk(content);
+  } catch (err) {
+    return jsonErrorFromUnknown(err);
+  }
 }

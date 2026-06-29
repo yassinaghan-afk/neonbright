@@ -1,14 +1,19 @@
 import { NextRequest } from "next/server";
-import { jsonOk, jsonError, requireOwner } from "@/lib/cms/api";
-import { readCMSContent, updateCMSContent } from "@/lib/cms/store";
+import { jsonOk, jsonError, jsonErrorFromUnknown, requireOwner } from "@/lib/cms/api";
+import { getPortfolioApiPayload } from "@/lib/cms/portfolio";
+import { updateCMSContent } from "@/lib/cms/store";
 import { createId } from "@/lib/cms/id";
 import type { CMSPortfolioCategory } from "@/lib/cms/types";
 
 export async function GET() {
-  const { error } = await requireOwner();
-  if (error) return error;
-  const content = await readCMSContent();
-  return jsonOk(content.portfolioCategories ?? []);
+  try {
+    const { error } = await requireOwner();
+    if (error) return error;
+    const { categories } = await getPortfolioApiPayload({ includeHidden: true });
+    return jsonOk(categories);
+  } catch (err) {
+    return jsonErrorFromUnknown(err);
+  }
 }
 
 export async function POST(req: NextRequest) {

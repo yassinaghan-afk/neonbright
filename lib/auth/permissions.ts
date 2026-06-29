@@ -18,6 +18,7 @@ export const OWNER_ONLY_API_PREFIXES = [
   "/api/admin/seo",
   "/api/admin/upload",
   "/api/admin/projects",
+  "/api/admin/portfolio",
   "/api/admin/services",
   "/api/admin/testimonials",
   "/api/admin/partners",

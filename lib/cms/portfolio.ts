@@ -180,3 +180,29 @@ export async function getAllPortfolioProjectsAdmin(): Promise<CMSPortfolioProjec
   const content = await readCMSContent();
   return sortByOrder(content.portfolioProjects);
 }
+
+export type PortfolioApiPayload = {
+  categories: CMSPortfolioCategory[];
+  projects: CMSPortfolioProject[];
+};
+
+/** Shared read model for GET /api/portfolio (public + admin). */
+export async function getPortfolioApiPayload(options?: {
+  includeHidden?: boolean;
+}): Promise<PortfolioApiPayload> {
+  const content = await readCMSContent();
+  const includeHidden = options?.includeHidden ?? false;
+
+  let categories = sortByOrder(content.portfolioCategories ?? []);
+  let projects = sortByOrder(content.portfolioProjects ?? []);
+
+  if (!includeHidden) {
+    categories = categories.filter((c) => c.enabled);
+    projects = projects.filter((p) => p.published);
+  }
+
+  return {
+    categories,
+    projects: projects.map(resolveProjectImages),
+  };
+}

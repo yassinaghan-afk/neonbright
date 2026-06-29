@@ -1,7 +1,7 @@
-import { brandsCategory, BRAND_PROFILES } from "@/lib/brands/types";
-import { eventsCategory, eventProjects } from "@/lib/events";
+import { eventsCategory } from "@/lib/events";
+import { brandsCategory } from "@/lib/brands/types";
 import { createId } from "@/lib/cms/id";
-import type { CMSPortfolioCategory, CMSPortfolioProject } from "@/lib/cms/types";
+import type { CMSPortfolioCategory } from "@/lib/cms/types";
 
 const PLACEHOLDER_CATEGORIES: Omit<CMSPortfolioCategory, "id">[] = [
   {
@@ -119,72 +119,10 @@ export function seedPortfolioCategories(): CMSPortfolioCategory[] {
   return [events, brands, ...placeholders];
 }
 
-export function seedPortfolioProjects(
-  categories: CMSPortfolioCategory[]
-): CMSPortfolioProject[] {
-  const eventsCat = categories.find((c) => c.slug === "evenements");
-  const brandsCat = categories.find((c) => c.slug === "marques-clients");
-
-  const eventItems: CMSPortfolioProject[] = eventsCat
-    ? eventProjects.map((p, i) => ({
-        id: createId("proj"),
-        categoryId: eventsCat.id,
-        slug: p.slug,
-        title: p.title,
-        description: p.fullDescription,
-        shortDescription: p.shortDescription,
-        client: p.client,
-        city: p.city,
-        country: p.country,
-        year: p.year,
-        images: [p.image],
-        videos: [],
-        gallery: p.gallery,
-        featuredImage: p.image,
-        coverImage: p.image,
-        thumbnail: p.image,
-        imageAlt: p.imageAlt,
-        tags: p.filters,
-        accent: p.accent,
-        published: true,
-        sortOrder: i,
-        technologies: p.technologies,
-        filters: p.filters,
-      }))
-    : [];
-
-  const brandItems: CMSPortfolioProject[] = brandsCat
-    ? BRAND_PROFILES.map((b, i) => ({
-        id: createId("proj"),
-        categoryId: brandsCat.id,
-        slug: b.slug,
-        title: b.name,
-        description: b.description,
-        shortDescription: b.description,
-        client: b.name,
-        city: b.city,
-        country: b.country,
-        year: b.year,
-        images: b.gallery,
-        videos: [],
-        gallery: b.gallery,
-        featuredImage: b.afterImage,
-        coverImage: b.afterImage,
-        thumbnail: b.beforeImage,
-        imageAlt: `Installation néon ${b.name}`,
-        tags: [b.typeLabel],
-        accent: "neon-pink" as const,
-        published: true,
-        sortOrder: i,
-        type: b.type,
-        typeLabel: b.typeLabel,
-        logoFile: b.logoFile,
-        installationType: b.installationType,
-        beforeImage: b.beforeImage,
-        afterImage: b.afterImage,
-        relatedProjectSlugs: b.relatedEventSlugs,
-      }))
-    : [];
-
-  return [...eventItems, ...brandItems];
+/**
+ * Projects are managed entirely through the Admin CMS.
+ * This seed is intentionally empty — existing data lives in data/cms-content.json.
+ */
+export function seedPortfolioProjects(): never[] {
+  return [];
 }

@@ -44,9 +44,10 @@ async function buildDefaultUsers(): Promise<AdminUser[]> {
   const staffEmail = process.env.STAFF_EMAIL ?? "staff@neonbright.ma";
   const staffPassword = process.env.STAFF_PASSWORD ?? "neonbright-staff";
 
+  // Stable IDs so session tokens survive Vercel serverless cold starts.
   return [
     {
-      id: createId("usr"),
+      id: "usr_owner",
       email: ownerEmail.toLowerCase(),
       passwordHash: await hashPassword(ownerPassword),
       role: "owner",
@@ -56,7 +57,7 @@ async function buildDefaultUsers(): Promise<AdminUser[]> {
       updatedAt: now,
     },
     {
-      id: createId("usr"),
+      id: "usr_staff",
       email: staffEmail.toLowerCase(),
       passwordHash: await hashPassword(staffPassword),
       role: "staff",
