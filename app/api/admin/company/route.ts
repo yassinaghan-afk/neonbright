@@ -1,6 +1,10 @@
 import { requireOwner, jsonError, jsonOk } from "@/lib/cms/api";
 import { updateCMSContent } from "@/lib/cms/store";
+import { revalidatePublicSite } from "@/lib/cms/revalidate-public";
 import type { CompanyInfo, ContactInfo, SocialLinks } from "@/lib/cms/types";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function PATCH(request: Request) {
   const { error } = await requireOwner();
@@ -15,6 +19,8 @@ export async function PATCH(request: Request) {
     ...(body.contact ? { contact: body.contact as ContactInfo } : {}),
     ...(body.social ? { social: body.social as SocialLinks } : {}),
   }));
+
+  revalidatePublicSite();
 
   return jsonOk({
     company: updated.company,

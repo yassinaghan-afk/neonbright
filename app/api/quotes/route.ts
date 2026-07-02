@@ -9,6 +9,7 @@ import {
 } from "@/lib/leads/store";
 import type { DesignerSnapshot } from "@/lib/designer/types";
 import { buildWhatsAppUrl, getSiteUrl } from "@/lib/whatsapp/config";
+import { resolveWhatsAppNumber } from "@/lib/cms/contact-social";
 import { readCMSContent } from "@/lib/cms/store";
 import { buildNewLeadWhatsAppMessage } from "@/lib/whatsapp/message";
 import {
@@ -127,8 +128,7 @@ export async function POST(request: Request) {
     const savedLead = (await getLeadById(lead.id))!;
     const whatsappMessage = buildNewLeadWhatsAppMessage(savedLead, siteUrl);
     const cms = await readCMSContent();
-    const whatsappNumber =
-      cms.contact.whatsapp?.trim() || cms.contact.phone?.trim() || "";
+    const whatsappNumber = resolveWhatsAppNumber(cms.contact);
     const whatsappUrl = buildWhatsAppUrl(whatsappNumber, whatsappMessage);
 
     return jsonOk(

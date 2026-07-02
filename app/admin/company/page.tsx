@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AdminShell } from "@/components/admin/AdminShell";
+import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import {
   AdminAlert,
   AdminButton,
@@ -55,6 +56,22 @@ export default function AdminCompanyPage() {
         <AdminButton variant="primary" onClick={save} disabled={saving}>{saving ? "Saving..." : "Save"}</AdminButton>
       </div>
       {msg && <div className="mb-4"><AdminAlert type={msg.type} message={msg.text} /></div>}
+
+      <div className="mb-6">
+        <AdminCard title="Logo officiel">
+          <p className="mb-4 text-sm text-white/45">
+            Logo affiché sur le site public (navbar, footer, pages designer). Enregistrez après
+            l&apos;upload pour publier immédiatement.
+          </p>
+          <ImageUploadField
+            label="Logo Neon Bright"
+            value={company.logoUrl ?? ""}
+            onChange={(url) => setCompany({ ...company, logoUrl: url })}
+            preset="gallery"
+            hint="PNG ou SVG transparent recommandé — stocké sur Vercel Blob en production."
+          />
+        </AdminCard>
+      </div>
 
       <AdminCard title="Company Information">
         <div className="space-y-3">

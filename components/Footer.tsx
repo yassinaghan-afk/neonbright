@@ -4,7 +4,7 @@ import { WhatsAppLink, WhatsAppIcon } from "@/components/whatsapp/WhatsAppLink";
 import { SocialIconLinks } from "@/components/contact/SocialIconLinks";
 import { Logo } from "@/components/Logo";
 import { readCMSContent } from "@/lib/cms/store";
-import { buildWhatsAppBaseUrl } from "@/lib/cms/contact-social";
+import { buildWhatsAppBaseUrl, resolveWhatsAppNumber } from "@/lib/cms/contact-social";
 import type { CompanyInfo, ContactInfo, SocialLinks } from "@/lib/cms/types";
 
 const staticFooterLinks = {
@@ -31,9 +31,7 @@ type FooterContentProps = {
 function FooterContent({ company, contact, social }: FooterContentProps) {
   const tagline = company.footerTagline ?? company.description;
   const year = new Date().getFullYear();
-  const whatsAppHref = buildWhatsAppBaseUrl(
-    contact.whatsapp?.trim() || contact.phone?.trim() || ""
-  );
+  const whatsAppHref = buildWhatsAppBaseUrl(resolveWhatsAppNumber(contact));
 
   const socialLinks = [
     social.instagram?.trim()

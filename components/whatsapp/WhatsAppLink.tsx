@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 import { useContactSocial } from "@/components/contact/ContactSocialProvider";
 import { DEFAULT_WHATSAPP_GREETING } from "@/lib/whatsapp/config";
-import { buildWhatsAppUrl } from "@/lib/cms/contact-social";
+import { buildWhatsAppUrl, resolveWhatsAppNumber } from "@/lib/cms/contact-social";
 
 type WhatsAppLinkProps = {
   message?: string;
@@ -22,7 +22,7 @@ export function WhatsAppLink({
   href: hrefOverride,
 }: WhatsAppLinkProps) {
   const { contact, whatsAppUrl } = useContactSocial();
-  const whatsappNumber = contact.whatsapp?.trim() || contact.phone?.trim() || "";
+  const whatsappNumber = resolveWhatsAppNumber(contact);
   const href =
     hrefOverride ??
     (message === DEFAULT_WHATSAPP_GREETING

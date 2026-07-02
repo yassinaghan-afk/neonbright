@@ -1,5 +1,5 @@
 import { requireOwner, jsonError, jsonOk } from "@/lib/cms/api";
-import { buildWhatsAppBaseUrl } from "@/lib/cms/contact-social";
+import { buildWhatsAppBaseUrl, resolveWhatsAppNumber } from "@/lib/cms/contact-social";
 import { updateCMSContent } from "@/lib/cms/store";
 import type { ContactInfo, SocialLinks } from "@/lib/cms/types";
 
@@ -34,8 +34,7 @@ export async function GET() {
 
   const { readCMSContent } = await import("@/lib/cms/store");
   const content = await readCMSContent();
-  const whatsappNumber =
-    content.contact.whatsapp?.trim() || content.contact.phone?.trim() || "";
+  const whatsappNumber = resolveWhatsAppNumber(content.contact);
 
   return jsonOk({
     contact: content.contact,
@@ -69,8 +68,7 @@ export async function PATCH(request: Request) {
     return { ...c, contact, social, instagram };
   });
 
-  const whatsappNumber =
-    updated.contact.whatsapp?.trim() || updated.contact.phone?.trim() || "";
+  const whatsappNumber = resolveWhatsAppNumber(updated.contact);
 
   return jsonOk({
     contact: updated.contact,

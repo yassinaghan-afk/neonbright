@@ -2,6 +2,7 @@ import type { ContactInfo, SocialLinks } from "@/lib/cms/types";
 import { normalizeWhatsAppNumber } from "@/lib/whatsapp/config";
 
 export const DEFAULT_WHATSAPP_NUMBER = "+212702688416";
+export const DEFAULT_WHATSAPP_URL = "https://wa.me/212702688416";
 export const DEFAULT_INSTAGRAM_URL =
   "https://www.instagram.com/_neonbright_?igsh=NHQxN3MzcjJhdGZ0";
 export const DEFAULT_FACEBOOK_URL =
@@ -17,10 +18,18 @@ export type SocialContactSettings = {
   facebookUrl: string;
 };
 
+export function resolveWhatsAppNumber(contact: ContactInfo): string {
+  return (
+    contact.whatsapp?.trim() ||
+    contact.phone?.trim() ||
+    DEFAULT_WHATSAPP_NUMBER
+  );
+}
+
 /** Build a wa.me URL from a phone number (digits only in path). */
 export function buildWhatsAppBaseUrl(phone: string): string {
   const digits = normalizeWhatsAppNumber(phone);
-  return digits ? `https://wa.me/${digits}` : "";
+  return digits ? `https://wa.me/${digits}` : DEFAULT_WHATSAPP_URL;
 }
 
 /** Build a wa.me URL with an optional pre-filled message. */
@@ -48,7 +57,7 @@ export function resolveSocialContactSettings(
   social: SocialLinks,
   instagramSettingsUrl?: string
 ): SocialContactSettings {
-  const whatsappNumber = contact.whatsapp?.trim() || contact.phone?.trim() || "";
+  const whatsappNumber = resolveWhatsAppNumber(contact);
   return {
     contact,
     social,

@@ -5,6 +5,7 @@ import type { ContactInfo, SocialLinks } from "@/lib/cms/types";
 import {
   resolveSocialContactSettings,
   buildWhatsAppUrl,
+  resolveWhatsAppNumber,
   type SocialContactSettings,
 } from "@/lib/cms/contact-social";
 import { DEFAULT_WHATSAPP_GREETING } from "@/lib/whatsapp/config";
@@ -36,8 +37,7 @@ export function ContactSocialProvider({
       social,
       instagramSettingsUrl
     );
-    const whatsappNumber =
-      contact.whatsapp?.trim() || contact.phone?.trim() || "";
+    const whatsappNumber = resolveWhatsAppNumber(contact);
     return {
       ...resolved,
       whatsAppUrlWithGreeting: buildWhatsAppUrl(
