@@ -288,7 +288,9 @@ async function loadCMSContent(options?: LoadCMSOptions): Promise<CMSContent> {
       parsed = await readCMSFileFromDisk();
     }
 
+    // Skip the in-memory overlay when the caller explicitly requests fresh data.
     if (
+      !options?.bypassMemory &&
       memoryCMS &&
       isContentAtLeastAsFresh(memoryCMS, parsed)
     ) {
@@ -368,6 +370,7 @@ export async function writeCMSContent(content: CMSContent): Promise<CMSContent> 
   }
 
   memoryCMS = next;
+  tryRevalidateCMS();
 
   if (canPersistCMS()) {
     await ensureDataDir();

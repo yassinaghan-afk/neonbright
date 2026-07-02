@@ -1,15 +1,18 @@
 import { revalidatePath } from "next/cache";
 
-const PUBLIC_PATHS = ["/", "/realisations/events", "/realisations/brands"];
-
 /** Bust Next.js route/layout caches after CMS writes. */
 export function revalidatePublicSite(): void {
   try {
-    for (const p of PUBLIC_PATHS) {
-      revalidatePath(p, "page");
-    }
+    // Invalidate all public page segments.
+    revalidatePath("/", "page");
+    revalidatePath("/realisations/events", "page");
+    revalidatePath("/realisations/brands", "page");
+    // Invalidate all dynamic slug pages under these routes.
+    revalidatePath("/realisations/events/[slug]", "page");
+    revalidatePath("/realisations/brands/[slug]", "page");
+    // Invalidate the root layout (covers contact, company, nav across all routes).
     revalidatePath("/", "layout");
   } catch {
-    // OK during build or non-revalidatable contexts
+    // OK during build or non-revalidatable contexts.
   }
 }
