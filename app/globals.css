@@ -621,10 +621,10 @@ body {
 
 @media (max-width: 640px) {
   .instagram-marquee-track--rtl {
-    animation-duration: 40s;
+    animation-duration: 70s;
   }
   .instagram-marquee-track--ltr {
-    animation-duration: 44s;
+    animation-duration: 75s;
   }
 }
 

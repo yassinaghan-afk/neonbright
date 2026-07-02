@@ -79,6 +79,7 @@ type Props = {
   activeIndex: number | null;
   onNavigate: (index: number) => void;
   onClose: () => void;
+  profileUrl?: string;
 };
 
 export function InstagramShowcasePostModal({
@@ -86,6 +87,7 @@ export function InstagramShowcasePostModal({
   activeIndex,
   onNavigate,
   onClose,
+  profileUrl,
 }: Props) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
@@ -154,7 +156,7 @@ export function InstagramShowcasePostModal({
       (isLocalPublicAsset(currentImage) || isRemoteCmsAsset(currentImage))
   );
 
-  const instagramUrl = currentPost?.instagramUrl?.trim();
+  const instagramUrl = currentPost?.instagramUrl?.trim() || profileUrl?.trim() || "";
 
   if (!mounted) return null;
 
@@ -164,7 +166,7 @@ export function InstagramShowcasePostModal({
         <motion.div
           key="instagram-gallery-modal"
           ref={dialogRef}
-          className="fixed inset-0 z-[200] flex flex-col"
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -175,19 +177,19 @@ export function InstagramShowcasePostModal({
         >
           <button
             type="button"
-            className="absolute inset-0 bg-black/88 backdrop-blur-2xl"
+            className="absolute inset-0 bg-black/85 backdrop-blur-2xl"
             onClick={onClose}
             aria-label="Fermer"
             tabIndex={-1}
           />
 
-          <div className="relative z-10 flex min-h-0 flex-1 flex-col pointer-events-none">
-            <div className="flex shrink-0 justify-end p-4 sm:p-6 pointer-events-auto">
+          <div className="relative z-10 flex w-full max-w-5xl flex-col pointer-events-none">
+            <div className="pointer-events-auto mb-3 flex justify-end sm:mb-4">
               <button
                 type="button"
                 onClick={onClose}
                 aria-label="Fermer"
-                className="flex h-11 w-11 items-center justify-center rounded-full border border-white/12 bg-black/50 text-white backdrop-blur-md transition duration-300 hover:border-white/25 hover:bg-black/70"
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-white/12 bg-black/55 text-white backdrop-blur-md transition duration-300 hover:border-white/25 hover:bg-black/75 hover:shadow-[0_0_24px_rgba(236,72,153,0.2)]"
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden>
                   <path
@@ -201,7 +203,7 @@ export function InstagramShowcasePostModal({
             </div>
 
             <div
-              className="relative flex min-h-0 flex-1 items-center justify-center px-14 sm:px-20 pointer-events-auto"
+              className="relative flex items-center justify-center pointer-events-auto"
               onTouchStart={swipe.onTouchStart}
               onTouchEnd={swipe.onTouchEnd}
             >
@@ -211,9 +213,9 @@ export function InstagramShowcasePostModal({
                   onClick={goPrev}
                   aria-label="Publication précédente"
                   className={cn(
-                    "absolute left-3 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full sm:left-6 sm:h-14 sm:w-14",
-                    "border border-white/12 bg-black/45 text-white backdrop-blur-md",
-                    "transition duration-300 hover:border-neon-pink/40 hover:bg-black/65 hover:shadow-[0_0_28px_rgba(236,72,153,0.25)]"
+                    "absolute -left-1 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full sm:-left-5 sm:h-14 sm:w-14",
+                    "border border-white/12 bg-black/55 text-white backdrop-blur-md",
+                    "transition duration-300 hover:border-neon-pink/45 hover:bg-black/75 hover:shadow-[0_0_28px_rgba(236,72,153,0.28)]"
                   )}
                 >
                   <span className="text-2xl leading-none sm:text-3xl" aria-hidden>
@@ -224,28 +226,51 @@ export function InstagramShowcasePostModal({
 
               <motion.div
                 key={currentPost.id}
-                className="relative flex h-full max-h-[calc(100vh-220px)] w-full max-w-6xl items-center justify-center"
-                initial={{ opacity: 0, scale: 0.94 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.96 }}
+                className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-[#0a0a0a]/80 shadow-[0_24px_80px_rgba(0,0,0,0.65),0_0_60px_rgba(168,85,247,0.08)] backdrop-blur-sm sm:rounded-3xl"
+                initial={{ opacity: 0, scale: 0.96, y: 12 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.97, y: 8 }}
                 transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
               >
-                <div className="relative h-full w-full max-h-[calc(100vh-220px)] min-h-[200px]">
+                <div className="relative aspect-[4/5] w-full max-h-[min(72vh,720px)] sm:aspect-square sm:max-h-[min(68vh,680px)]">
                   {currentImage && !imageFailed ? (
                     <Image
                       src={currentImage}
                       alt=""
                       fill
-                      className="object-contain"
-                      sizes="100vw"
+                      className="object-contain p-2 sm:p-3"
+                      sizes="(max-width: 768px) 100vw, 900px"
                       unoptimized={unoptimized}
                       priority
                       draggable={false}
                       onError={() => setImageFailed(true)}
                     />
                   ) : (
-                    <div className="absolute inset-0 rounded-lg bg-white/[0.03]" aria-hidden />
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] to-white/[0.02]" aria-hidden />
                   )}
+                </div>
+
+                <div className="flex flex-col items-center gap-4 border-t border-white/8 bg-black/40 px-6 py-5 sm:gap-5 sm:py-6">
+                  <p className="font-display text-sm font-semibold tracking-[0.22em] text-white/90 sm:text-base">
+                    {HANDLE}
+                  </p>
+                  {instagramUrl ? (
+                    <a
+                      href={instagramUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={cn(
+                        "group relative inline-flex items-center gap-2.5 overflow-hidden rounded-full px-8 py-3.5",
+                        "border border-neon-pink/40 bg-gradient-to-r from-neon-pink/15 via-neon-purple/10 to-neon-pink/15",
+                        "text-sm font-semibold text-white shadow-[0_0_32px_rgba(236,72,153,0.15)]",
+                        "transition duration-300 hover:border-neon-pink/60 hover:shadow-[0_0_40px_rgba(236,72,153,0.28)] hover:scale-[1.02] active:scale-[0.98]"
+                      )}
+                    >
+                      <span className="pointer-events-none absolute inset-0 bg-gradient-to-r from-neon-pink/20 via-transparent to-neon-purple/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                      <InstagramIcon className="relative h-4 w-4 text-neon-pink" />
+                      <span className="relative">Voir sur Instagram</span>
+                    </a>
+                  ) : null}
                 </div>
               </motion.div>
 
@@ -255,9 +280,9 @@ export function InstagramShowcasePostModal({
                   onClick={goNext}
                   aria-label="Publication suivante"
                   className={cn(
-                    "absolute right-3 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full sm:right-6 sm:h-14 sm:w-14",
-                    "border border-white/12 bg-black/45 text-white backdrop-blur-md",
-                    "transition duration-300 hover:border-neon-pink/40 hover:bg-black/65 hover:shadow-[0_0_28px_rgba(236,72,153,0.25)]"
+                    "absolute -right-1 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full sm:-right-5 sm:h-14 sm:w-14",
+                    "border border-white/12 bg-black/55 text-white backdrop-blur-md",
+                    "transition duration-300 hover:border-neon-pink/45 hover:bg-black/75 hover:shadow-[0_0_28px_rgba(236,72,153,0.28)]"
                   )}
                 >
                   <span className="text-2xl leading-none sm:text-3xl" aria-hidden>
@@ -265,27 +290,6 @@ export function InstagramShowcasePostModal({
                   </span>
                 </button>
               )}
-            </div>
-
-            <div className="relative z-10 flex shrink-0 flex-col items-center gap-4 px-6 pb-8 pt-4 sm:gap-5 sm:pb-10 pointer-events-auto">
-              <p className="font-display text-sm font-semibold tracking-[0.2em] text-white/90 sm:text-base">
-                {HANDLE}
-              </p>
-              {instagramUrl ? (
-                <a
-                  href={instagramUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={cn(
-                    "inline-flex items-center gap-2.5 rounded-full border border-neon-pink/35 bg-neon-pink/10 px-8 py-3.5",
-                    "text-sm font-semibold text-white transition duration-300",
-                    "hover:border-neon-pink/55 hover:bg-neon-pink/18 hover:shadow-[0_0_32px_rgba(236,72,153,0.22)]"
-                  )}
-                >
-                  <InstagramIcon className="h-4 w-4" />
-                  Voir sur Instagram
-                </a>
-              ) : null}
             </div>
           </div>
         </motion.div>

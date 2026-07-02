@@ -131,6 +131,7 @@ export function InstagramMarqueeShowcase({ data }: Props) {
         activeIndex={activePostIndex}
         onNavigate={handleNavigate}
         onClose={closePostModal}
+        profileUrl={instagramProfileUrl}
       />
     </>
   );

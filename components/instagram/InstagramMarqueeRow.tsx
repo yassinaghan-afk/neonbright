@@ -102,15 +102,23 @@ export function InstagramPostsMarqueeRow({
     setFailedIds((prev) => new Set(prev).add(id));
   };
 
+  const trackPosts = useMemo(
+    () => [...visiblePosts, ...visiblePosts],
+    [visiblePosts]
+  );
+
   if (visiblePosts.length === 0) return null;
 
   return (
-    <div className="instagram-marquee-row relative py-3 sm:py-4" aria-label="Galerie Instagram">
-      <div className="instagram-marquee-mask -mx-4 overflow-x-auto px-4 sm:-mx-6 sm:px-6">
-        <div className="flex w-max items-stretch gap-4 sm:gap-6">
-          {visiblePosts.map((post) => (
+    <div
+      className="instagram-marquee-row relative py-3 sm:py-4"
+      aria-label="Galerie Instagram"
+    >
+      <div className="instagram-marquee-mask overflow-hidden">
+        <div className="instagram-marquee-track instagram-marquee-track--rtl flex w-max items-stretch gap-4 px-4 sm:gap-6 sm:px-6">
+          {trackPosts.map((post, index) => (
             <PostCard
-              key={post.id}
+              key={`${post.id}-${index}`}
               post={post}
               onSelect={onPostSelect}
               imageFailed={failedIds.has(post.id)}
