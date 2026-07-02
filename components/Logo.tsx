@@ -1,11 +1,7 @@
-"use client";
-
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { useBrandLogo } from "@/components/brand/BrandLogoProvider";
-import { BRAND_LOGO_DIMENSIONS, BRAND_NAME } from "@/lib/brand";
-import { isLocalPublicAsset, isRemoteCmsAsset } from "@/lib/media/local-image";
+import { BRAND_LOGO_DIMENSIONS, BRAND_LOGO_WIDE, BRAND_NAME } from "@/lib/brand";
 
 const HEIGHTS: Record<LogoVariant, { h: number; cls: string }> = {
   nav: { h: 40, cls: "h-[40px] sm:h-[44px]" },
@@ -23,31 +19,26 @@ type LogoProps = {
   className?: string;
   priority?: boolean;
   onClick?: () => void;
-  /** Override CMS logo (optional) */
-  src?: string | null;
 };
 
 function LogoImage({
   variant,
   className,
   priority = false,
-  src,
 }: {
   variant: LogoVariant;
   className?: string;
   priority?: boolean;
-  src: string;
 }) {
   const { h, cls } = HEIGHTS[variant];
   const aspect = BRAND_LOGO_DIMENSIONS.width / BRAND_LOGO_DIMENSIONS.height;
   const w = Math.round(h * aspect);
   const w2x = w * 2;
   const h2x = h * 2;
-  const unoptimized = isLocalPublicAsset(src) || isRemoteCmsAsset(src);
 
   return (
     <Image
-      src={src}
+      src={BRAND_LOGO_WIDE}
       alt={BRAND_NAME}
       width={w2x}
       height={h2x}
@@ -55,7 +46,7 @@ function LogoImage({
       className={cn("w-auto max-w-none object-contain object-left", cls, className)}
       style={{ width: w, height: h }}
       sizes={`${w}px`}
-      unoptimized={unoptimized}
+      unoptimized={false}
     />
   );
 }
@@ -66,31 +57,9 @@ export function Logo({
   className,
   priority = variant === "nav",
   onClick,
-  src: srcProp,
 }: LogoProps) {
-  const { logoUrl: cmsLogoUrl } = useBrandLogo();
-  const src = (srcProp ?? cmsLogoUrl).trim();
-
-  if (!src) {
-    return (
-      <span
-        className={cn(
-          "inline-flex shrink-0 items-center font-display text-sm font-bold tracking-tight text-white",
-          className
-        )}
-      >
-        {BRAND_NAME}
-      </span>
-    );
-  }
-
   const img = (
-    <LogoImage
-      variant={variant}
-      className={className}
-      priority={priority}
-      src={src}
-    />
+    <LogoImage variant={variant} className={className} priority={priority} />
   );
 
   if (href) {
