@@ -24,7 +24,8 @@ export function normalizePartners(
   partners: Partial<CMSPartner>[] | undefined,
   fallback: CMSPartner[]
 ): CMSPartner[] {
-  if (!partners?.length) return fallback;
+  if (!Array.isArray(partners)) return fallback;
+  if (partners.length === 0) return [];
   return sortByOrder(
     partners.map((p, i) => ({
       id: p.id ?? `partner_${i}`,

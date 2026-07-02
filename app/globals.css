@@ -609,6 +609,16 @@ body {
   animation-play-state: paused;
 }
 
+.instagram-marquee-row--paused .instagram-marquee-track {
+  animation-play-state: paused !important;
+}
+
+.instagram-marquee-item {
+  pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
 @media (max-width: 640px) {
   .instagram-marquee-track--rtl {
     animation-duration: 40s;
@@ -624,6 +634,31 @@ body {
     animation: none !important;
     transform: none !important;
   }
+
+  .instagram-skeleton-shimmer {
+    animation: none !important;
+  }
+}
+
+@keyframes instagram-skeleton-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.instagram-skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.06) 45%,
+    rgba(236, 72, 153, 0.08) 50%,
+    rgba(255, 255, 255, 0.06) 55%,
+    transparent 100%
+  );
+  animation: instagram-skeleton-shimmer 2.2s ease-in-out infinite;
 }
 
 /* ── Instagram feed carousel (Embla) — legacy ── */

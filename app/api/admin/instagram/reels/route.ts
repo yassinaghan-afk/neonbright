@@ -1,24 +1,13 @@
 import { requireOwner, jsonError, jsonOk } from "@/lib/cms/api";
-import { createId } from "@/lib/cms/id";
+import { normalizeInstagramReels } from "@/lib/cms/instagram-normalize";
 import { readCMSContent, updateCMSContent } from "@/lib/cms/store";
-import type { CMSInstagramMediaItem } from "@/lib/cms/types";
-
-function normalizeItems(items: Partial<CMSInstagramMediaItem>[]): CMSInstagramMediaItem[] {
-  return items.map((item, i) => ({
-    id: item.id ?? createId("ig"),
-    thumbnail: String(item.thumbnail ?? "").trim(),
-    url: String(item.url ?? "").trim(),
-    alt: String(item.alt ?? "").trim(),
-    enabled: item.enabled !== false,
-    sortOrder: i,
-  }));
-}
+import type { CMSInstagramReel } from "@/lib/cms/types";
 
 export async function GET() {
   const { error } = await requireOwner();
   if (error) return error;
   const content = await readCMSContent();
-  return jsonOk(content.instagramReels ?? []);
+  return jsonOk(normalizeInstagramReels(content.instagramReels ?? []));
 }
 
 export async function PUT(request: Request) {
@@ -30,11 +19,12 @@ export async function PUT(request: Request) {
     return jsonError("items array is required");
   }
 
-  let saved: CMSInstagramMediaItem[] = [];
-  await updateCMSContent((c) => {
-    saved = normalizeItems(body.items as Partial<CMSInstagramMediaItem>[]);
-    return { ...c, instagramReels: saved };
-  });
+  const saved = normalizeInstagramReels(body.items as Partial<CMSInstagramReel>[]);
+
+  await updateCMSContent((c) => ({
+    ...c,
+    instagramReels: saved,
+  }));
 
   return jsonOk(saved);
 }

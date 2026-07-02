@@ -1,132 +1,120 @@
 "use client";
 
 import Image from "next/image";
+import { useMemo, useState } from "react";
+import type { CMSInstagramPost } from "@/lib/cms/types";
 import { isLocalPublicAsset, isRemoteCmsAsset } from "@/lib/media/local-image";
-import type { CMSInstagramMediaItem } from "@/lib/cms/types";
 import { cn } from "@/lib/utils";
 
-type MarqueeDirection = "rtl" | "ltr";
+const CARD_CLASS =
+  "instagram-marquee-card relative overflow-hidden rounded-2xl border border-white/10 bg-[#0a0a0a] shadow-[0_8px_32px_rgba(0,0,0,0.45)] transition-all duration-500 ease-out group-hover:border-neon-pink/45 group-hover:shadow-[0_0_36px_rgba(236,72,153,0.28),0_0_64px_rgba(168,85,247,0.12),0_12px_48px_rgba(0,0,0,0.5)] group-hover:scale-[1.05] group-focus-visible:ring-2 group-focus-visible:ring-neon-pink/50 aspect-square w-[200px] sm:w-[220px] md:w-[240px] lg:w-[260px]";
 
-type InstagramMarqueeCardProps = {
-  item: CMSInstagramMediaItem;
-  variant: "post" | "reel";
-};
-
-function InstagramMarqueeCard({ item, variant }: InstagramMarqueeCardProps) {
-  const href = item.url?.trim();
-  const unoptimized =
-    isLocalPublicAsset(item.thumbnail) || isRemoteCmsAsset(item.thumbnail);
-
-  const inner = (
-    <>
-      <div
-        className={cn(
-          "instagram-marquee-card relative overflow-hidden rounded-2xl border border-white/10 bg-[#0a0a0a] shadow-[0_8px_32px_rgba(0,0,0,0.45)] transition-all duration-500 ease-out",
-          "group-hover:border-neon-pink/40 group-hover:shadow-[0_0_40px_rgba(236,72,153,0.2),0_12px_48px_rgba(0,0,0,0.5)]",
-          "group-hover:scale-[1.04] group-hover:-translate-y-1",
-          variant === "post"
-            ? "aspect-[4/5] w-[200px] sm:w-[240px] md:w-[260px] lg:w-[280px]"
-            : "aspect-[9/16] w-[140px] sm:w-[160px] md:w-[180px] lg:w-[200px]"
-        )}
-      >
-        <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-80 transition-opacity duration-500 group-hover:opacity-100" />
-        <div className="pointer-events-none absolute inset-0 z-10 rounded-2xl ring-1 ring-inset ring-white/5 transition-all duration-500 group-hover:ring-neon-purple/30" />
-
-        {item.thumbnail ? (
-          <Image
-            src={item.thumbnail}
-            alt={item.alt || "Instagram"}
-            fill
-            loading="lazy"
-            sizes={
-              variant === "post"
-                ? "(max-width: 640px) 200px, (max-width: 1024px) 240px, 280px"
-                : "(max-width: 640px) 140px, (max-width: 1024px) 160px, 200px"
-            }
-            className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-            unoptimized={unoptimized}
-            draggable={false}
-          />
-        ) : null}
-
-        {variant === "reel" && (
-          <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/15 backdrop-blur-sm ring-1 ring-white/25 transition-transform duration-500 group-hover:scale-110">
-              <svg className="ml-0.5 h-5 w-5 text-white" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            </div>
-          </div>
-        )}
-
-        <div className="absolute bottom-0 left-0 right-0 z-20 p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-          <p className="line-clamp-2 text-[11px] font-medium text-white/90">
-            {item.alt || "Voir sur Instagram"}
-          </p>
-        </div>
-      </div>
-    </>
-  );
-
-  if (!href) {
-    return (
-      <div className="instagram-marquee-item group mx-3 shrink-0 sm:mx-4" aria-hidden>
-        {inner}
-      </div>
-    );
-  }
-
+function PostImagePlaceholder() {
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="instagram-marquee-item group mx-3 block shrink-0 sm:mx-4"
-      aria-label={item.alt || "Ouvrir sur Instagram"}
+    <div
+      className="absolute inset-0 bg-gradient-to-br from-white/[0.04] to-white/[0.02]"
+      aria-hidden
     >
-      {inner}
-    </a>
+      <svg
+        className="absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 text-white/15"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        aria-hidden
+      >
+        <rect x="3" y="3" width="18" height="18" rx="3" />
+        <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" stroke="none" />
+        <path d="M21 15l-5-5L5 21" />
+      </svg>
+    </div>
   );
 }
 
-type InstagramMarqueeRowProps = {
-  items: CMSInstagramMediaItem[];
-  direction: MarqueeDirection;
-  variant: "post" | "reel";
-  label: string;
+type PostCardProps = {
+  post: CMSInstagramPost;
+  onSelect: (post: CMSInstagramPost) => void;
+  imageFailed: boolean;
+  onImageError: (id: string) => void;
+  className?: string;
 };
 
-export function InstagramMarqueeRow({
-  items,
-  direction,
-  variant,
-  label,
-}: InstagramMarqueeRowProps) {
-  if (items.length === 0) return null;
+function PostCard({
+  post,
+  onSelect,
+  imageFailed,
+  onImageError,
+  className,
+}: PostCardProps) {
+  const unoptimized =
+    isLocalPublicAsset(post.image) || isRemoteCmsAsset(post.image);
 
-  const minCopies = items.length < 4 ? 4 : 2;
-  const copies = Array.from({ length: minCopies }, () => items).flat();
-  const track = [...copies, ...copies];
+  const openPost = () => onSelect(post);
 
   return (
-    <div
-      className="instagram-marquee-row relative py-3 sm:py-4"
-      aria-label={label}
+    <button
+      type="button"
+      onClick={() => openPost()}
+      className={cn(
+        "instagram-marquee-item group relative z-10 shrink-0 cursor-pointer border-0 bg-transparent p-0",
+        className
+      )}
+      aria-label="Ouvrir"
     >
-      <div className="instagram-marquee-mask overflow-hidden">
-        <div
-          className={cn(
-            "instagram-marquee-track flex w-max items-stretch",
-            direction === "rtl"
-              ? "instagram-marquee-track--rtl"
-              : "instagram-marquee-track--ltr"
-          )}
-        >
-          {track.map((item, i) => (
-            <InstagramMarqueeCard
-              key={`${item.id}-${i}`}
-              item={item}
-              variant={variant}
+      <div className={CARD_CLASS}>
+        {imageFailed ? (
+          <PostImagePlaceholder />
+        ) : (
+          <Image
+            src={post.image}
+            alt=""
+            fill
+            loading="lazy"
+            sizes="(max-width: 640px) 200px, (max-width: 1024px) 240px, 260px"
+            className="pointer-events-none object-cover"
+            unoptimized={unoptimized}
+            draggable={false}
+            onError={() => onImageError(post.id)}
+          />
+        )}
+      </div>
+    </button>
+  );
+}
+
+type PostsMarqueeRowProps = {
+  posts: CMSInstagramPost[];
+  onPostSelect: (post: CMSInstagramPost) => void;
+};
+
+export function InstagramPostsMarqueeRow({
+  posts,
+  onPostSelect,
+}: PostsMarqueeRowProps) {
+  const [failedIds, setFailedIds] = useState<Set<string>>(() => new Set());
+
+  const visiblePosts = useMemo(
+    () => posts.filter((post) => Boolean(post.image?.trim())),
+    [posts]
+  );
+
+  const handleImageError = (id: string) => {
+    setFailedIds((prev) => new Set(prev).add(id));
+  };
+
+  if (visiblePosts.length === 0) return null;
+
+  return (
+    <div className="instagram-marquee-row relative py-3 sm:py-4" aria-label="Galerie Instagram">
+      <div className="instagram-marquee-mask -mx-4 overflow-x-auto px-4 sm:-mx-6 sm:px-6">
+        <div className="flex w-max items-stretch gap-4 sm:gap-6">
+          {visiblePosts.map((post) => (
+            <PostCard
+              key={post.id}
+              post={post}
+              onSelect={onPostSelect}
+              imageFailed={failedIds.has(post.id)}
+              onImageError={handleImageError}
             />
           ))}
         </div>

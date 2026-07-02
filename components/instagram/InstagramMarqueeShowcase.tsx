@@ -1,10 +1,15 @@
 "use client";
 
+import { useCallback, useMemo, useState } from "react";
 import { SectionReveal, SectionDivider } from "@/components/ui/SectionReveal";
 import { Container } from "@/components/ui/Container";
-import { InstagramMarqueeRow } from "@/components/instagram/InstagramMarqueeRow";
+import { InstagramPostsMarqueeRow } from "@/components/instagram/InstagramMarqueeRow";
+import { InstagramShowcasePostModal } from "@/components/instagram/InstagramShowcasePostModal";
+import type { CMSInstagramPost } from "@/lib/cms/types";
 import type { InstagramShowcaseData } from "@/lib/instagram/showcase";
 import { cn } from "@/lib/utils";
+
+const DEFAULT_PROFILE_URL = "https://www.instagram.com/_neonbright_/";
 
 function InstagramIcon({ className }: { className?: string }) {
   return (
@@ -25,15 +30,42 @@ type Props = {
 };
 
 export function InstagramMarqueeShowcase({ data }: Props) {
-  const { settings, posts, reels, profileUrl } = data;
+  const { settings, posts, profileUrl, isEmpty } = data;
+  const [activePostIndex, setActivePostIndex] = useState<number | null>(null);
 
-  if (!settings.enabled) return null;
-  if (posts.length === 0 && reels.length === 0) return null;
+  const galleryPosts = useMemo(
+    () => posts.filter((post) => post.enabled && Boolean(post.image?.trim())),
+    [posts]
+  );
 
   const title = settings.title || "Suivez-nous sur Instagram";
   const subtitle =
     settings.subtitle ||
     "Découvrez nos dernières réalisations et créations lumineuses.";
+  const ctaLabel = settings.buttonText || "Voir tout sur Instagram";
+  const instagramProfileUrl = profileUrl?.trim() || DEFAULT_PROFILE_URL;
+
+  const handlePostSelect = useCallback(
+    (post: CMSInstagramPost) => {
+      const index = galleryPosts.findIndex((item) => item.id === post.id);
+      if (index >= 0) setActivePostIndex(index);
+    },
+    [galleryPosts]
+  );
+
+  const closePostModal = useCallback(() => setActivePostIndex(null), []);
+
+  const handleNavigate = useCallback(
+    (index: number) => {
+      if (galleryPosts.length === 0) return;
+      const next = ((index % galleryPosts.length) + galleryPosts.length) % galleryPosts.length;
+      setActivePostIndex(next);
+    },
+    [galleryPosts.length]
+  );
+
+  if (settings.enabled === false) return null;
+  if (isEmpty || galleryPosts.length === 0) return null;
 
   return (
     <>
@@ -73,40 +105,33 @@ export function InstagramMarqueeShowcase({ data }: Props) {
           </SectionReveal>
         </Container>
 
-        <div className="relative mt-12 space-y-2 sm:mt-16 sm:space-y-4">
-          {posts.length > 0 && (
-            <InstagramMarqueeRow
-              items={posts}
-              direction="rtl"
-              variant="post"
-              label="Instagram Posts"
-            />
-          )}
-          {reels.length > 0 && (
-            <InstagramMarqueeRow
-              items={reels}
-              direction="ltr"
-              variant="reel"
-              label="Instagram Reels"
-            />
-          )}
+        <div className="relative mt-12 sm:mt-16">
+          <InstagramPostsMarqueeRow
+            posts={galleryPosts}
+            onPostSelect={handlePostSelect}
+          />
         </div>
 
-        {profileUrl ? (
-          <SectionReveal className="mt-12 flex justify-center sm:mt-16">
-            <a
-              href={profileUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group relative inline-flex min-w-[220px] items-center justify-center gap-2.5 overflow-hidden rounded-full border border-white/10 bg-white/[0.03] px-9 py-4 text-base font-semibold tracking-wide text-white backdrop-blur-sm transition-all duration-300 hover:scale-[1.02] hover:border-neon-purple/50 hover:shadow-[0_0_40px_rgba(168,85,247,0.2)] active:scale-[0.98]"
-            >
-              <span className="pointer-events-none absolute inset-0 bg-gradient-to-r from-neon-pink/10 via-transparent to-neon-purple/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-              <InstagramIcon className="relative h-4 w-4" />
-              <span className="relative">{settings.buttonText || "Voir sur Instagram"}</span>
-            </a>
-          </SectionReveal>
-        ) : null}
+        <SectionReveal className="mt-12 flex justify-center sm:mt-16">
+          <a
+            href={instagramProfileUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group relative inline-flex min-w-[220px] items-center justify-center gap-2.5 overflow-hidden rounded-full border border-white/10 bg-white/[0.03] px-9 py-4 text-base font-semibold tracking-wide text-white backdrop-blur-sm transition-all duration-300 hover:scale-[1.02] hover:border-neon-purple/50 hover:shadow-[0_0_40px_rgba(168,85,247,0.2)] active:scale-[0.98]"
+          >
+            <span className="pointer-events-none absolute inset-0 bg-gradient-to-r from-neon-pink/10 via-transparent to-neon-purple/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+            <InstagramIcon className="relative h-4 w-4" />
+            <span className="relative">{ctaLabel}</span>
+          </a>
+        </SectionReveal>
       </section>
+
+      <InstagramShowcasePostModal
+        posts={galleryPosts}
+        activeIndex={activePostIndex}
+        onNavigate={handleNavigate}
+        onClose={closePostModal}
+      />
     </>
   );
 }

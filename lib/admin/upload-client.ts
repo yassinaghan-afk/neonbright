@@ -65,7 +65,11 @@ export async function uploadAdminFile(
   fd.append("file", file);
   if (options?.preset) fd.append("preset", options.preset);
 
-  const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+  const res = await fetch("/api/admin/upload", {
+    method: "POST",
+    body: fd,
+    credentials: "include",
+  });
   const payload = await parseUploadResponse(res);
 
   if (!res.ok || payload.success === false) {
@@ -84,7 +88,11 @@ export async function uploadAdminFiles(
   files.forEach((f) => fd.append("files", f));
   if (preset) fd.append("preset", preset);
 
-  const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+  const res = await fetch("/api/admin/upload", {
+    method: "POST",
+    body: fd,
+    credentials: "include",
+  });
   const payload = await parseUploadResponse(res);
 
   if (!res.ok || payload.success === false) {

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AdminShell } from "@/components/admin/AdminShell";
-import { InstagramItemsManager } from "@/components/admin/InstagramItemsManager";
+import { InstagramPostsManager } from "@/components/admin/InstagramPostsManager";
+import { InstagramReelsManager } from "@/components/admin/InstagramReelsManager";
 import {
   AdminAlert,
   AdminButton,
@@ -15,28 +16,36 @@ import { adminFetch } from "@/components/admin/useCMS";
 import type { CMSInstagramSettings } from "@/lib/cms/types";
 import { cn } from "@/lib/utils";
 
-type Tab = "settings" | "posts" | "reels";
+type Tab = "section" | "posts" | "reels";
+
+type InstagramAdminPayload = CMSInstagramSettings & {
+  stats?: { postsCount: number; reelsCount: number };
+};
 
 export default function AdminInstagramPage() {
-  const [tab, setTab] = useState<Tab>("settings");
-  const [settings, setSettings] = useState<CMSInstagramSettings | null>(null);
-  const [form, setForm] = useState<Partial<CMSInstagramSettings>>({});
+  const [tab, setTab] = useState<Tab>("posts");
+  const [form, setForm] = useState<Partial<InstagramAdminPayload>>({});
+  const [stats, setStats] = useState({ postsCount: 0, reelsCount: 0 });
+  const [loaded, setLoaded] = useState(false);
   const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const load = () =>
-    fetch("/api/admin/instagram")
+  const load = useCallback(() => {
+    return fetch("/api/admin/instagram")
       .then((r) => r.json())
-      .then((data) => {
-        setSettings(data);
+      .then((data: InstagramAdminPayload) => {
         setForm(data);
-      });
+        setStats(data.stats ?? { postsCount: 0, reelsCount: 0 });
+        setLoaded(true);
+      })
+      .catch(() => setLoaded(true));
+  }, []);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
 
-  const saveSettings = async () => {
+  const save = async () => {
     setSaving(true);
     setMsg(null);
     const result = await adminFetch("/api/admin/instagram", {
@@ -44,27 +53,51 @@ export default function AdminInstagramPage() {
       body: JSON.stringify(form),
     });
     setSaving(false);
-    if (result.error) setMsg({ type: "error", text: result.error });
-    else {
-      setMsg({ type: "success", text: "Paramètres enregistrés — visibles immédiatement sur le site." });
+    if (result.error) {
+      setMsg({ type: "error", text: result.error });
+    } else {
+      setMsg({ type: "success", text: "Enregistré — visible sur le site immédiatement." });
       load();
     }
   };
 
-  const tabs: { id: Tab; label: string }[] = [
-    { id: "settings", label: "Section" },
-    { id: "posts", label: "Instagram Posts" },
-    { id: "reels", label: "Instagram Reels" },
+  const tabs: { id: Tab; label: string; count?: number }[] = [
+    { id: "posts", label: "Posts", count: stats.postsCount },
+    { id: "reels", label: "Reels", count: stats.reelsCount },
+    { id: "section", label: "Section" },
   ];
+
+  if (!loaded) {
+    return (
+      <AdminShell>
+        <p className="text-sm text-white/45">Chargement...</p>
+      </AdminShell>
+    );
+  }
 
   return (
     <AdminShell>
-      <div className="mb-6">
-        <h1 className="font-display text-2xl font-bold">Instagram Showcase</h1>
-        <p className="mt-1 text-sm text-white/45">
-          Gérez les deux marquees animés (Posts et Reels) affichés sur la page d&apos;accueil.
-        </p>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl font-bold">Instagram Showcase</h1>
+          <p className="mt-1 max-w-2xl text-sm text-white/45">
+            Gérez les publications et reels affichés sur la page d&apos;accueil.
+            Contenu uploadé depuis le dashboard — aucune dépendance à l&apos;API
+            Instagram.
+          </p>
+        </div>
+        {tab === "section" && (
+          <AdminButton variant="primary" onClick={save} disabled={saving}>
+            {saving ? "Enregistrement..." : "Enregistrer"}
+          </AdminButton>
+        )}
       </div>
+
+      {msg && (
+        <div className="mb-4">
+          <AdminAlert type={msg.type} message={msg.text} />
+        </div>
+      )}
 
       <div className="mb-6 flex flex-wrap gap-2 border-b border-white/10 pb-3">
         {tabs.map((t) => (
@@ -80,123 +113,65 @@ export default function AdminInstagramPage() {
             )}
           >
             {t.label}
+            {t.count !== undefined && (
+              <span className="ml-1.5 text-xs text-white/35">({t.count})</span>
+            )}
           </button>
         ))}
       </div>
 
-      {tab === "settings" && (
-        <>
-          {msg && (
-            <div className="mb-4">
-              <AdminAlert type={msg.type} message={msg.text} />
+      {tab === "section" && (
+        <AdminCard title="Visibilité et textes de la section">
+          <div className="max-w-xl space-y-4">
+            <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 p-3">
+              <input
+                type="checkbox"
+                id="ig-enabled"
+                checked={form.enabled !== false}
+                onChange={(e) => setForm({ ...form, enabled: e.target.checked })}
+                className="h-4 w-4"
+              />
+              <label htmlFor="ig-enabled" className="text-sm text-white/70">
+                Afficher la section Instagram sur la page d&apos;accueil
+              </label>
             </div>
-          )}
 
-          {!settings ? (
-            <p className="text-sm text-white/45">Chargement...</p>
-          ) : (
-            <div className="grid gap-6 lg:grid-cols-2">
-              <AdminCard title="Visibilité & Textes">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 p-3">
-                    <input
-                      type="checkbox"
-                      id="ig-enabled"
-                      checked={form.enabled !== false}
-                      onChange={(e) => setForm({ ...form, enabled: e.target.checked })}
-                      className="h-4 w-4"
-                    />
-                    <label htmlFor="ig-enabled" className="text-sm text-white/70">
-                      Afficher la section Instagram sur le site
-                    </label>
-                  </div>
+            <AdminField label="Titre de la section">
+              <AdminInput
+                value={form.title ?? ""}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+              />
+            </AdminField>
 
-                  <AdminField label="Titre de la section">
-                    <AdminInput
-                      value={form.title ?? ""}
-                      onChange={(e) => setForm({ ...form, title: e.target.value })}
-                      placeholder="Suivez-nous sur Instagram"
-                    />
-                  </AdminField>
+            <AdminField label="Sous-titre">
+              <AdminTextarea
+                value={form.subtitle ?? ""}
+                onChange={(e) => setForm({ ...form, subtitle: e.target.value })}
+                className="min-h-[80px]"
+              />
+            </AdminField>
 
-                  <AdminField label="Sous-titre">
-                    <AdminTextarea
-                      value={form.subtitle ?? ""}
-                      onChange={(e) => setForm({ ...form, subtitle: e.target.value })}
-                      placeholder="Découvrez nos dernières réalisations..."
-                      className="min-h-[80px]"
-                    />
-                  </AdminField>
+            <AdminField label="Texte du bouton">
+              <AdminInput
+                value={form.buttonText ?? ""}
+                onChange={(e) => setForm({ ...form, buttonText: e.target.value })}
+              />
+            </AdminField>
 
-                  <AdminField label="Texte du bouton">
-                    <AdminInput
-                      value={form.buttonText ?? ""}
-                      onChange={(e) => setForm({ ...form, buttonText: e.target.value })}
-                      placeholder="Voir sur Instagram"
-                    />
-                  </AdminField>
-
-                  <AdminField label="URL profil Instagram">
-                    <AdminInput
-                      value={form.url ?? ""}
-                      onChange={(e) => setForm({ ...form, url: e.target.value })}
-                      placeholder="https://www.instagram.com/..."
-                      type="url"
-                    />
-                  </AdminField>
-                </div>
-
-                <div className="mt-5">
-                  <AdminButton variant="primary" onClick={saveSettings} disabled={saving}>
-                    {saving ? "Enregistrement..." : "Enregistrer"}
-                  </AdminButton>
-                </div>
-              </AdminCard>
-
-              <AdminCard title="Aperçu">
-                <div className="space-y-3 text-sm">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`h-2 w-2 rounded-full ${settings.enabled ? "bg-green-400" : "bg-red-400"}`}
-                    />
-                    <span className="text-white/60">
-                      Section {settings.enabled ? "activée" : "désactivée"}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-white/40">Titre : </span>
-                    <span>{settings.title || "—"}</span>
-                  </div>
-                  <div>
-                    <span className="text-white/40">Sous-titre : </span>
-                    <span>{settings.subtitle || "—"}</span>
-                  </div>
-                </div>
-              </AdminCard>
-            </div>
-          )}
-        </>
+            <AdminField label="URL du profil Instagram">
+              <AdminInput
+                value={form.url ?? ""}
+                onChange={(e) => setForm({ ...form, url: e.target.value })}
+                placeholder="https://www.instagram.com/_neonbright_"
+                type="url"
+              />
+            </AdminField>
+          </div>
+        </AdminCard>
       )}
 
-      {tab === "posts" && (
-        <InstagramItemsManager
-          title="Instagram Posts"
-          description="Marquee supérieur — défilement de droite à gauche. Chaque carte ouvre le post Instagram."
-          fetchUrl="/api/admin/instagram/posts"
-          saveUrl="/api/admin/instagram/posts"
-          kind="post"
-        />
-      )}
-
-      {tab === "reels" && (
-        <InstagramItemsManager
-          title="Instagram Reels"
-          description="Marquee inférieur — défilement de gauche à droite. Chaque carte ouvre le Reel Instagram."
-          fetchUrl="/api/admin/instagram/reels"
-          saveUrl="/api/admin/instagram/reels"
-          kind="reel"
-        />
-      )}
+      {tab === "posts" && <InstagramPostsManager />}
+      {tab === "reels" && <InstagramReelsManager />}
     </AdminShell>
   );
 }

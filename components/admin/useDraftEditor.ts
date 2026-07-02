@@ -2,6 +2,19 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+export function parseApiList<T>(json: unknown): T[] {
+  if (Array.isArray(json)) return json as T[];
+  if (
+    json &&
+    typeof json === "object" &&
+    "data" in json &&
+    Array.isArray((json as { data: unknown }).data)
+  ) {
+    return (json as { data: T[] }).data;
+  }
+  throw new Error("Réponse serveur invalide");
+}
+
 export function useDraftEditor<T>(fetchUrl: string) {
   const [saved, setSaved] = useState<T[]>([]);
   const [draft, setDraft] = useState<T[]>([]);
@@ -19,9 +32,9 @@ export function useDraftEditor<T>(fetchUrl: string) {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(fetchUrl);
+      const res = await fetch(fetchUrl, { cache: "no-store", credentials: "include" });
       if (!res.ok) throw new Error("Échec du chargement");
-      const data = (await res.json()) as T[];
+      const data = parseApiList<T>(await res.json());
       setSaved(data);
       setDraft(data);
     } catch (e) {
@@ -52,7 +65,7 @@ export function useDraftEditor<T>(fetchUrl: string) {
   }, [saved]);
 
   const commit = useCallback(
-    async (saveUrl: string, body: unknown) => {
+    async (saveUrl: string, body: unknown, options?: { revalidate?: boolean }) => {
       setSaving(true);
       setError("");
       setSuccess("");
@@ -61,13 +74,33 @@ export function useDraftEditor<T>(fetchUrl: string) {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
+          cache: "no-store",
+          credentials: "include",
         });
         const json = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(json.error ?? "Échec de l'enregistrement");
-        const data = json as T[];
+        if (!res.ok) {
+          throw new Error(
+            typeof json.error === "string" ? json.error : "Échec de l'enregistrement"
+          );
+        }
+        const data = parseApiList<T>(json);
         setSaved(data);
         setDraft(data);
-        setSuccess("Modifications enregistrées");
+        setSuccess("Modifications enregistrées — site mis à jour");
+
+        if (options?.revalidate !== false) {
+          try {
+            await fetch("/api/admin/revalidate", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ paths: ["/"] }),
+              cache: "no-store",
+            });
+          } catch {
+            // Revalidation is best-effort; CMS write already succeeded.
+          }
+        }
+
         return true;
       } catch (e) {
         setError(e instanceof Error ? e.message : "Erreur");

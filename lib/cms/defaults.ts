@@ -330,7 +330,7 @@ export function getDefaultCMSContent(): CMSContent {
       enabled: true,
       title: "Suivez-nous sur Instagram",
       subtitle: "Découvrez nos dernières réalisations et créations lumineuses.",
-      buttonText: "Voir sur Instagram",
+      buttonText: "Voir tout sur Instagram",
       url: "https://www.instagram.com/_neonbright_?igsh=NHQxN3MzcjJhdGZ0",
     },
     instagramPosts: [],
@@ -352,6 +352,7 @@ export function getDefaultCMSContent(): CMSContent {
       commercialSubtext: "in delivered installations across 15+ countries",
       footerTagline:
         "Néon LED et enseignes lumineuses sur mesure, fabriqués au Maroc et livrés dans le monde entier. Illuminez votre marque avec excellence.",
+      logoUrl: "",
     },
     contact: {
       address: "Casablanca, Maroc",

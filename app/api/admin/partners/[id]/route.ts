@@ -1,5 +1,6 @@
 import { requireOwner, jsonError, jsonOk } from "@/lib/cms/api";
 import { updateCMSContent } from "@/lib/cms/store";
+import { revalidatePublicSite } from "@/lib/cms/revalidate-public";
 import type { CMSPartner } from "@/lib/cms/types";
 
 type Params = { params: Promise<{ id: string }> };
@@ -23,6 +24,7 @@ export async function PUT(request: Request, { params }: Params) {
   }));
 
   if (!found) return jsonError("Not found", 404);
+  revalidatePublicSite();
   return jsonOk(found);
 }
 
@@ -38,5 +40,6 @@ export async function DELETE(_req: Request, { params }: Params) {
   });
 
   if (!existed) return jsonError("Not found", 404);
+  revalidatePublicSite();
   return jsonOk({ success: true });
 }

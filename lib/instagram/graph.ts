@@ -6,7 +6,6 @@ import {
 } from "./config";
 import type { InstagramMediaItem, InstagramPost } from "./types";
 import { INSTAGRAM_POST_LIMIT } from "./constants";
-import { isReelPermalink } from "./fallback";
 
 export const GRAPH_MEDIA_FIELDS =
   "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,width,height,children{id,media_type,media_url,thumbnail_url,width,height}";
@@ -96,8 +95,7 @@ function graphItemToPost(item: GraphMediaItem): InstagramPost | null {
     carouselItems?.[0] ?? resolveGraphMediaItem(item);
   if (!primary) return null;
 
-  const isReel =
-    mediaType === "VIDEO" || isReelPermalink(item.permalink);
+  const isReel = mediaType === "VIDEO";
 
   return {
     id: item.id,

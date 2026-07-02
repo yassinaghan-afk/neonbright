@@ -171,15 +171,30 @@ export type CMSInstagramSettings = {
   title: string;
   subtitle: string;
   buttonText: string;
+  /** Instagram profile URL for the section CTA. */
   url: string;
 };
 
-/** Curated Instagram post or reel shown in the homepage marquee. */
-export type CMSInstagramMediaItem = {
+/** Admin-managed Instagram post for the homepage marquee. */
+export type CMSInstagramPost = {
   id: string;
+  /** Primary cover image (required for display). */
+  image: string;
+  /** Optional additional carousel images. */
+  carouselImages?: string[];
+  caption: string;
+  instagramUrl: string;
+  enabled: boolean;
+  sortOrder: number;
+};
+
+/** Admin-managed Instagram reel for the homepage marquee. */
+export type CMSInstagramReel = {
+  id: string;
+  videoUrl: string;
   thumbnail: string;
-  url: string;
-  alt: string;
+  caption: string;
+  instagramUrl: string;
   enabled: boolean;
   sortOrder: number;
 };
@@ -209,6 +224,8 @@ export type CompanyInfo = {
   commercialHighlight: string;
   commercialSubtext: string;
   footerTagline?: string;
+  /** Official site logo — navbar, footer, admin (Vercel Blob URL) */
+  logoUrl?: string;
 };
 
 export type ContactInfo = {
@@ -253,8 +270,8 @@ export type CMSContent = {
   processSteps: CMSProcessStep[];
   sectionCopy: CMSSectionCopy;
   instagram: CMSInstagramSettings;
-  instagramPosts: CMSInstagramMediaItem[];
-  instagramReels: CMSInstagramMediaItem[];
+  instagramPosts: CMSInstagramPost[];
+  instagramReels: CMSInstagramReel[];
   nav: CMSNavLink[];
   company: CompanyInfo;
   contact: ContactInfo;

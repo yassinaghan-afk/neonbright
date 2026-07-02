@@ -1,7 +1,7 @@
 import { promises as fs } from "fs";
 import path from "path";
 import { cache } from "react";
-import { revalidatePath } from "next/cache";
+import { unstable_noStore as noStore } from "next/cache";
 import { getDefaultCMSContent } from "@/lib/cms/defaults";
 import {
   brandHeroSlidesStale,
@@ -17,6 +17,7 @@ import {
   shouldUseBlobStorage,
   getBlobCommandOptions,
 } from "@/lib/cms/blob-client";
+import { revalidatePublicSite } from "@/lib/cms/revalidate-public";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const CONTENT_FILE = path.join(DATA_DIR, "cms-content.json");
@@ -56,8 +57,8 @@ async function ensureDataDir() {
  * Resolve the public URL of the CMS blob.
  * Uses list() the first time on a cold Lambda, then caches the URL in memory.
  */
-async function getCMSBlobUrl(): Promise<string | null> {
-  if (memoryCmsBlobUrl) return memoryCmsBlobUrl;
+async function getCMSBlobUrl(refresh = false): Promise<string | null> {
+  if (!refresh && memoryCmsBlobUrl) return memoryCmsBlobUrl;
   try {
     const { list } = await import("@vercel/blob");
     const auth = await getBlobCommandOptions();
@@ -69,19 +70,38 @@ async function getCMSBlobUrl(): Promise<string | null> {
   return memoryCmsBlobUrl;
 }
 
+function isContentAtLeastAsFresh(
+  candidate: Partial<CMSContent> | CMSContent,
+  baseline: Partial<CMSContent> | null
+): boolean {
+  const candidateAt = candidate.updatedAt;
+  const baselineAt = baseline?.updatedAt;
+  if (!candidateAt) return false;
+  if (!baselineAt) return true;
+  return new Date(candidateAt).getTime() >= new Date(baselineAt).getTime();
+}
+
 /**
  * Read CMS JSON from Vercel Blob.
  * Uses cache: 'no-store' so every request gets the latest version from Blob.
  * React.cache() (wrapping readCMSContent) prevents redundant fetches within
  * a single server render when multiple components need the CMS content.
  */
-async function readCMSFromBlob(): Promise<Partial<CMSContent> | null> {
-  const url = await getCMSBlobUrl();
+async function readCMSFromBlob(refreshUrl = false): Promise<Partial<CMSContent> | null> {
+  const url = await getCMSBlobUrl(refreshUrl);
   if (!url) return null;
   try {
-    // Public blob — no auth needed for the fetch.
-    // cache: 'no-store' ensures we never serve stale CMS data.
-    const res = await fetch(url, { cache: "no-store" });
+    const bust = url.includes("?") ? "&" : "?";
+    const res = await fetch(
+      `${url}${bust}t=${Date.now()}&r=${Math.random().toString(36).slice(2)}`,
+      {
+        cache: "no-store",
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+        },
+      }
+    );
     if (!res.ok) {
       console.error("[cms-store] blob CMS fetch returned", res.status);
       return null;
@@ -110,15 +130,9 @@ async function writeCMSToBlob(content: CMSContent): Promise<void> {
 /**
  * Revalidate the root layout path so any non-dynamic cached pages/layouts
  * under "/" immediately pick up the change.
- * Wrapped in try-catch — silently no-ops during build or in contexts where
- * revalidation is not supported (e.g. middleware, tests, local dev build).
  */
 function tryRevalidateCMS(): void {
-  try {
-    revalidatePath("/", "layout");
-  } catch {
-    // OK — not in a revalidatable server context (e.g. during build)
-  }
+  revalidatePublicSite();
 }
 
 // ---------------------------------------------------------------------------
@@ -172,10 +186,10 @@ function mergeContent(parsed: Partial<CMSContent>): CMSContent {
       cta: { ...defaults.sectionCopy.cta, ...(parsed.sectionCopy?.cta ?? {}) },
     },
     instagram: { ...defaults.instagram, ...(parsed.instagram ?? {}) },
-    instagramPosts: parsed.instagramPosts?.length
+    instagramPosts: Array.isArray(parsed.instagramPosts)
       ? parsed.instagramPosts
       : defaults.instagramPosts,
-    instagramReels: parsed.instagramReels?.length
+    instagramReels: Array.isArray(parsed.instagramReels)
       ? parsed.instagramReels
       : defaults.instagramReels,
     nav: parsed.nav?.length ? parsed.nav : defaults.nav,
@@ -252,68 +266,82 @@ async function readCMSFileFromDisk(): Promise<Partial<CMSContent> | null> {
 // Public API
 // ---------------------------------------------------------------------------
 
+type LoadCMSOptions = {
+  /** When true, always read from Blob/disk — never return stale in-memory overlay. */
+  bypassMemory?: boolean;
+};
+
 /**
- * Read the current CMS content.
- *
- * Wrapped with React.cache() so multiple Server Components on the same page
- * share a single fetch per request, instead of each triggering their own read.
- *
- * Data source priority:
- *   1. Vercel Blob (shared across all Lambda instances) — production
- *   2. In-memory memoryCMS (local dev optimistic overlay after a write)
- *   3. Disk (data/cms-content.json or /tmp fallback) — local dev + cold Blob
+ * Load CMS content (uncached implementation).
+ * Call via readCMSContent (per-request dedupe) or readCMSContentFresh (always latest).
  */
-export const readCMSContent: () => Promise<CMSContent> = cache(async () => {
+async function loadCMSContent(options?: LoadCMSOptions): Promise<CMSContent> {
+  noStore();
+
   try {
     let parsed: Partial<CMSContent> | null = null;
 
     if (shouldUseBlobStorage()) {
-      // On Vercel: always read from Blob so every Lambda sees the same data.
-      // memoryCMS is NOT used as a primary cache here — it's an optimistic
-      // overlay set by writeCMSContent for the same-Lambda-instance scenario.
-      parsed = await readCMSFromBlob();
-    }
-
-    if (!parsed) {
-      // Local dev (or Blob unavailable): fall back to memoryCMS → disk.
-      if (memoryCMS) return memoryCMS;
+      parsed = await readCMSFromBlob(Boolean(options?.bypassMemory));
+    } else {
       await ensureDataDir();
       parsed = await readCMSFileFromDisk();
     }
 
-    if (!parsed) throw new Error("CMS content not found");
+    if (
+      memoryCMS &&
+      isContentAtLeastAsFresh(memoryCMS, parsed)
+    ) {
+      return memoryCMS;
+    }
+
+    if (!parsed) {
+      if (memoryCMS) return memoryCMS;
+      if (shouldUseBlobStorage()) {
+        throw new Error(
+          "CMS blob not found or unreadable. Save content in Admin or connect Vercel Blob."
+        );
+      }
+      throw new Error("CMS content not found");
+    }
 
     let content = mergeContent(parsed);
-    const { content: synced, changed } = await maybeSyncHeroFromMedia(parsed, content);
+    const { content: synced, changed } = await maybeSyncHeroFromMedia(
+      parsed,
+      content
+    );
     content = synced;
 
     if (changed) {
       try {
         content = await writeCMSContent(content);
       } catch {
-        // If the write fails, keep using the in-memory version for this request.
         if (!shouldUseBlobStorage()) memoryCMS = content;
       }
     } else if (!shouldUseBlobStorage()) {
-      memoryCMS = content; // Cache for local dev only
+      memoryCMS = content;
     }
 
     return content;
-  } catch {
-    const defaults = getDefaultCMSContent();
-    if (!isHeroMediaSyncEnabled()) {
-      return defaults;
-    }
-    const result = await refreshBrandHeroSlides(true);
-    const content = applyBrandHeroSlides(defaults, result.slides, result.mediaVersion);
-    try {
-      return await writeCMSContent(content);
-    } catch {
-      if (!shouldUseBlobStorage()) memoryCMS = content;
-      return content;
-    }
+  } catch (err) {
+    if (shouldUseBlobStorage()) throw err;
+    console.error("[cms-store] load failed, using defaults:", err);
+    return getDefaultCMSContent();
   }
-});
+}
+
+/**
+ * Read the current CMS content.
+ *
+ * Wrapped with React.cache() so multiple Server Components on the same page
+ * share a single fetch per request.
+ */
+export const readCMSContent: () => Promise<CMSContent> = cache(loadCMSContent);
+
+/** Bypass React.cache and in-memory overlay — authoritative read for public pages and writes. */
+export async function readCMSContentFresh(): Promise<CMSContent> {
+  return loadCMSContent({ bypassMemory: true });
+}
 
 /**
  * Persist updated CMS content and invalidate all public caches.
@@ -360,6 +388,8 @@ export async function writeCMSContent(content: CMSContent): Promise<CMSContent> 
 export async function updateCMSContent(
   updater: (current: CMSContent) => CMSContent
 ): Promise<CMSContent> {
-  const current = await readCMSContent();
-  return writeCMSContent(updater(current));
+  const current = await readCMSContentFresh();
+  const next = await writeCMSContent(updater(current));
+  memoryCMS = next;
+  return next;
 }

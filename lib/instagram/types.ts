@@ -1,3 +1,5 @@
+import type { CMSInstagramSettings } from "@/lib/cms/types";
+
 export type InstagramMediaType = "IMAGE" | "VIDEO" | "CAROUSEL_ALBUM" | string;
 
 export type InstagramMediaItem = {
@@ -23,13 +25,15 @@ export type InstagramPost = {
   videoUrl?: string;
   /** All slides for CAROUSEL_ALBUM posts */
   carouselItems?: InstagramMediaItem[];
-  source: "graph";
+  source: "graph" | "cms";
 };
 
 export type InstagramFeedResult = {
   posts: InstagramPost[];
-  source: "graph";
+  source: "graph" | "cms";
   configured: boolean;
   error?: string;
   profileUrl?: string;
+  isEmpty?: boolean;
+  settings?: CMSInstagramSettings;
 };

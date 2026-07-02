@@ -4,7 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import Image from "next/image";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminDraftToolbar } from "@/components/admin/AdminDraftToolbar";
-import { uploadMediaFiles, useDraftEditor } from "@/components/admin/useDraftEditor";
+import { uploadMediaFiles, useDraftEditor, parseApiList } from "@/components/admin/useDraftEditor";
 import {
   AdminButton,
   AdminCard,
@@ -13,6 +13,7 @@ import {
 } from "@/components/admin/ui/AdminForm";
 import { createId } from "@/lib/cms/id";
 import type { CMSPartner } from "@/lib/cms/types";
+import { isLocalPublicAsset, isRemoteCmsAsset } from "@/lib/media/local-image";
 import { cn } from "@/lib/utils";
 
 function reorderDraft(items: CMSPartner[], from: number, to: number): CMSPartner[] {
@@ -22,10 +23,15 @@ function reorderDraft(items: CMSPartner[], from: number, to: number): CMSPartner
   return next.map((p, i) => ({ ...p, sortOrder: i }));
 }
 
+function partnerImageProps(src: string) {
+  return isLocalPublicAsset(src) || isRemoteCmsAsset(src)
+    ? { unoptimized: true as const }
+    : {};
+}
+
 export default function AdminMediaLogosPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [editing, setEditing] = useState<CMSPartner | null>(null);
@@ -40,7 +46,60 @@ export default function AdminMediaLogosPage() {
     success,
     cancel,
     commit,
+    load,
+    setError,
   } = useDraftEditor<CMSPartner>("/api/admin/partners");
+
+  const persistDraft = useCallback(
+    async (nextDraft: CMSPartner[]) => {
+      setDraft(nextDraft);
+      return commit("/api/admin/partners", { partners: nextDraft });
+    },
+    [commit, setDraft]
+  );
+
+  const uploadAndAdd = async (files: FileList | File[] | null) => {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    setError("");
+    try {
+      const uploaded = await uploadMediaFiles(Array.from(files), "gallery");
+      if (uploaded.length === 0) {
+        throw new Error("Aucun fichier uploadé");
+      }
+
+      const currentRes = await fetch("/api/admin/partners", {
+        cache: "no-store",
+        credentials: "include",
+      });
+      if (!currentRes.ok) {
+        throw new Error("Impossible de lire les logos existants");
+      }
+      const current = parseApiList<CMSPartner>(await currentRes.json());
+
+      const newPartners: CMSPartner[] = uploaded.map((u, i) => ({
+        id: createId("partner"),
+        name: u.label || u.filename,
+        logoUrl: u.url,
+        enabled: true,
+        sortOrder: current.length + i,
+      }));
+      const nextDraft = [...current, ...newPartners];
+
+      setDraft(nextDraft);
+      const ok = await commit("/api/admin/partners", { partners: nextDraft });
+      if (!ok) {
+        await load();
+        throw new Error("Échec de l'enregistrement après upload");
+      }
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Upload échoué";
+      setError(message);
+      alert(message);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const toggleSelect = (id: string) => {
     setSelected((prev) => {
@@ -56,47 +115,27 @@ export default function AdminMediaLogosPage() {
     else setSelected(new Set(draft.map((p) => p.id)));
   };
 
-  const onFilesPicked = (files: FileList | null) => {
-    if (!files?.length) return;
-    setPendingFiles((prev) => [...prev, ...Array.from(files)]);
-  };
-
-  const uploadPending = async () => {
-    if (pendingFiles.length === 0) return;
-    setUploading(true);
-    try {
-      const uploaded = await uploadMediaFiles(pendingFiles, "logo");
-      const newPartners: CMSPartner[] = uploaded.map((u, i) => ({
-        id: createId("partner"),
-        name: u.label,
-        logoUrl: u.url,
-        enabled: true,
-        sortOrder: draft.length + i,
-      }));
-      setDraft([...draft, ...newPartners]);
-      setPendingFiles([]);
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "Upload échoué");
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const deleteSelected = () => {
+  const deleteSelected = async () => {
     if (selected.size === 0) return;
     if (!confirm(`Supprimer ${selected.size} logo(s) ?`)) return;
-    setDraft(draft.filter((p) => !selected.has(p.id)).map((p, i) => ({ ...p, sortOrder: i })));
+    const nextDraft = draft
+      .filter((p) => !selected.has(p.id))
+      .map((p, i) => ({ ...p, sortOrder: i }));
     setSelected(new Set());
+    await persistDraft(nextDraft);
   };
 
-  const deleteOne = (id: string) => {
+  const deleteOne = async (id: string) => {
     if (!confirm("Supprimer ce logo ?")) return;
-    setDraft(draft.filter((p) => p.id !== id).map((p, i) => ({ ...p, sortOrder: i })));
+    const nextDraft = draft
+      .filter((p) => p.id !== id)
+      .map((p, i) => ({ ...p, sortOrder: i }));
     setSelected((prev) => {
       const next = new Set(prev);
       next.delete(id);
       return next;
     });
+    await persistDraft(nextDraft);
   };
 
   const toggleEnabled = (id: string) => {
@@ -122,6 +161,12 @@ export default function AdminMediaLogosPage() {
     setEditing(null);
   }, [draft, editing, setDraft]);
 
+  const replaceLogo = async (file: File) => {
+    if (!editing) return;
+    const [uploaded] = await uploadMediaFiles([file], "gallery");
+    setEditing({ ...editing, logoUrl: uploaded.url });
+  };
+
   return (
     <AdminShell>
       <div className="mb-4">
@@ -131,13 +176,13 @@ export default function AdminMediaLogosPage() {
         <h1 className="mt-1 font-display text-2xl font-bold">Logos</h1>
         <p className="text-sm text-white/45">
           Bandeau « Ils nous font confiance » — fond blanc, défilement automatique.
-          Glissez-déposez pour réordonner. Enregistrez pour publier.
+          Glissez-déposez pour réordonner. Les uploads sont enregistrés automatiquement.
         </p>
       </div>
 
       <AdminDraftToolbar
         dirty={dirty}
-        saving={saving}
+        saving={saving || uploading}
         error={error}
         success={success}
         onSave={saveAll}
@@ -145,22 +190,17 @@ export default function AdminMediaLogosPage() {
       />
 
       <div className="mb-6 flex flex-wrap gap-2">
-        <AdminButton variant="primary" onClick={() => fileRef.current?.click()}>
-          Upload Logo
-        </AdminButton>
         <AdminButton
-          variant="secondary"
-          onClick={uploadPending}
-          disabled={pendingFiles.length === 0 || uploading}
+          variant="primary"
+          disabled={uploading}
+          onClick={() => fileRef.current?.click()}
         >
-          {uploading
-            ? "Upload en cours..."
-            : `Confirmer l'upload (${pendingFiles.length})`}
+          {uploading ? "Upload en cours..." : "Upload Logo"}
         </AdminButton>
         <AdminButton
           variant="danger"
           onClick={deleteSelected}
-          disabled={selected.size === 0}
+          disabled={selected.size === 0 || uploading}
         >
           Delete Logo ({selected.size})
         </AdminButton>
@@ -174,24 +214,14 @@ export default function AdminMediaLogosPage() {
       <input
         ref={fileRef}
         type="file"
-        accept="image/*"
+        accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml"
         multiple
         className="hidden"
         onChange={(e) => {
-          onFilesPicked(e.target.files);
+          void uploadAndAdd(e.target.files);
           e.target.value = "";
         }}
       />
-
-      {pendingFiles.length > 0 && (
-        <AdminCard title="Fichiers en attente">
-          <ul className="space-y-1 text-sm text-white/60">
-            {pendingFiles.map((f) => (
-              <li key={f.name + f.size}>{f.name}</li>
-            ))}
-          </ul>
-        </AdminCard>
-      )}
 
       {loading ? (
         <p className="text-sm text-white/45">Chargement...</p>
@@ -233,12 +263,13 @@ export default function AdminMediaLogosPage() {
                   <div className="partner-white-strip flex h-16 w-40 items-center justify-center rounded-lg px-3 sm:h-[4.5rem] sm:w-44">
                     <Image
                       src={partner.logoUrl}
-                      alt={partner.name}
+                      alt=""
                       width={160}
                       height={56}
                       className="partner-strip-logo max-h-10 w-auto max-w-[130px] object-contain"
                       sizes="130px"
                       loading="lazy"
+                      {...partnerImageProps(partner.logoUrl)}
                     />
                   </div>
                 ) : (
@@ -262,7 +293,7 @@ export default function AdminMediaLogosPage() {
                   <AdminButton
                     variant="ghost"
                     className="text-xs text-red-400/80"
-                    onClick={() => deleteOne(partner.id)}
+                    onClick={() => void deleteOne(partner.id)}
                   >
                     Supprimer
                   </AdminButton>
@@ -286,20 +317,18 @@ export default function AdminMediaLogosPage() {
               </AdminField>
               <AdminField label="Fichier logo">
                 <label className="inline-flex cursor-pointer items-center rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-sm hover:bg-white/10">
-                  Upload Logo
+                  Remplacer le logo
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml"
                     className="hidden"
-                    onChange={async (e) => {
+                    onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (!file) return;
-                      try {
-                        const [u] = await uploadMediaFiles([file], "logo");
-                        setEditing({ ...editing, logoUrl: u.url });
-                      } catch (err) {
+                      void replaceLogo(file).catch((err) => {
                         alert(err instanceof Error ? err.message : "Upload échoué");
-                      }
+                      });
+                      e.target.value = "";
                     }}
                   />
                 </label>
@@ -308,11 +337,12 @@ export default function AdminMediaLogosPage() {
                 <div className="partner-white-strip flex h-20 items-center justify-center rounded-lg px-6 py-3">
                   <Image
                     src={editing.logoUrl}
-                    alt="Preview"
+                    alt=""
                     width={180}
                     height={56}
                     className="partner-strip-logo max-h-12 w-auto object-contain"
                     sizes="180px"
+                    {...partnerImageProps(editing.logoUrl)}
                   />
                 </div>
               )}

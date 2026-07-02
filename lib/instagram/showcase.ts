@@ -1,23 +1,33 @@
-import { readCMSContent } from "@/lib/cms/store";
+import { unstable_noStore as noStore } from "next/cache";
 import { resolveInstagramUrl } from "@/lib/cms/contact-social";
+import {
+  filterPublicPosts,
+  normalizeInstagramPosts,
+} from "@/lib/cms/instagram-normalize";
 import { sortByOrder } from "@/lib/cms/normalize";
-import type { CMSInstagramMediaItem, CMSInstagramSettings } from "@/lib/cms/types";
+import { readCMSContentFresh } from "@/lib/cms/store";
+import type { CMSInstagramPost, CMSInstagramSettings } from "@/lib/cms/types";
 
 export type InstagramShowcaseData = {
   settings: CMSInstagramSettings;
-  posts: CMSInstagramMediaItem[];
-  reels: CMSInstagramMediaItem[];
+  posts: CMSInstagramPost[];
   profileUrl: string;
+  isEmpty: boolean;
 };
 
+/** Homepage entry point — posts only, always fresh from CMS storage. */
 export async function getInstagramShowcase(): Promise<InstagramShowcaseData> {
-  const content = await readCMSContent();
+  noStore();
+  const content = await readCMSContentFresh();
   const profileUrl = resolveInstagramUrl(content.social, content.instagram.url);
+  const posts = filterPublicPosts(
+    normalizeInstagramPosts(sortByOrder(content.instagramPosts ?? []))
+  );
 
   return {
     settings: content.instagram,
-    posts: sortByOrder(content.instagramPosts ?? []).filter((p) => p.enabled && p.thumbnail),
-    reels: sortByOrder(content.instagramReels ?? []).filter((r) => r.enabled && r.thumbnail),
+    posts,
     profileUrl,
+    isEmpty: posts.length === 0,
   };
 }

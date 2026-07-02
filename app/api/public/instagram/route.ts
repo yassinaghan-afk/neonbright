@@ -1,23 +1,36 @@
 import { jsonOk } from "@/lib/cms/api";
-import { readCMSContent } from "@/lib/cms/store";
-import { resolveInstagramUrl } from "@/lib/cms/contact-social";
-import { getInstagramFeed } from "@/lib/instagram/posts";
-import { isInstagramApiConfigured } from "@/lib/instagram/config";
+import { getInstagramShowcase } from "@/lib/instagram/showcase";
+import type { InstagramFeedResult } from "@/lib/instagram/types";
 
-/** Instagram feed from Graph API only — revalidates hourly */
-export const revalidate = 3600;
+/** CMS-backed Instagram feed — must not be statically generated (reads Vercel Blob with no-store). */
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET() {
-  const [feed, content] = await Promise.all([
-    getInstagramFeed(),
-    readCMSContent(),
-  ]);
-  const profileUrl = resolveInstagramUrl(content.social, content.instagram.url);
+  const showcase = await getInstagramShowcase();
 
-  return jsonOk({
-    ...feed,
-    profileUrl,
-    configured: isInstagramApiConfigured(),
-    cachedSeconds: 3600,
-  });
+  const payload: InstagramFeedResult = {
+    posts: showcase.posts.map((post) => ({
+      id: post.id,
+      permalink: post.instagramUrl,
+      imageUrl: post.image,
+      alt: "",
+      mediaType: "IMAGE",
+      source: "cms",
+      carouselItems: post.carouselImages?.length
+        ? post.carouselImages.map((url, i) => ({
+            id: `${post.id}-slide-${i}`,
+            mediaType: "IMAGE",
+            imageUrl: url,
+          }))
+        : undefined,
+    })),
+    source: "cms",
+    configured: !showcase.isEmpty,
+    profileUrl: showcase.profileUrl,
+    settings: showcase.settings,
+    isEmpty: showcase.isEmpty,
+  };
+
+  return jsonOk(payload);
 }
