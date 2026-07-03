@@ -17,6 +17,7 @@ import {
   AdminTextarea,
 } from "@/components/admin/ui/AdminForm";
 import { adminFetch } from "@/components/admin/useCMS";
+import { reorderItems, sortByOrder } from "@/lib/cms/normalize";
 import type { CMSPortfolioCategory, CMSPortfolioProject } from "@/lib/cms/types";
 
 type Tab = "categories" | "projects";
@@ -70,6 +71,47 @@ const emptyProject = (categoryId = "", sortOrder = 0): Omit<CMSPortfolioProject,
   relatedProjectSlugs: [],
 });
 
+function reorderProjectsGlobal(
+  projects: CMSPortfolioProject[],
+  orderedIds: string[]
+): CMSPortfolioProject[] {
+  return reorderItems(projects, orderedIds).map((p, i) => ({ ...p, sortOrder: i }));
+}
+
+function reorderProjectsInCategory(
+  projects: CMSPortfolioProject[],
+  categoryId: string,
+  orderedIds: string[]
+): CMSPortfolioProject[] {
+  const inCategory = sortByOrder(projects.filter((p) => p.categoryId === categoryId));
+  const reordered = reorderItems(inCategory, orderedIds);
+  const orderById = new Map(reordered.map((p) => [p.id, p.sortOrder]));
+  return projects.map((p) =>
+    p.categoryId === categoryId && orderById.has(p.id)
+      ? { ...p, sortOrder: orderById.get(p.id)! }
+      : p
+  );
+}
+
+function reorderProjectsInSubset(
+  projects: CMSPortfolioProject[],
+  orderedIds: string[]
+): CMSPortfolioProject[] {
+  const sorted = sortByOrder(projects);
+  const idSet = new Set(orderedIds);
+  const slotIndexes = sorted.reduce<number[]>((acc, p, i) => {
+    if (idSet.has(p.id)) acc.push(i);
+    return acc;
+  }, []);
+  const byId = new Map(projects.map((p) => [p.id, p]));
+  const result = [...sorted];
+  orderedIds.forEach((id, i) => {
+    const project = byId.get(id);
+    if (project) result[slotIndexes[i]] = project;
+  });
+  return result.map((p, i) => ({ ...p, sortOrder: i }));
+}
+
 export default function AdminPortfolioPage() {
   const [tab, setTab] = useState<Tab>("categories");
   const [categories, setCategories] = useState<CMSPortfolioCategory[]>([]);
@@ -81,6 +123,7 @@ export default function AdminPortfolioPage() {
   const [isNewCategory, setIsNewCategory] = useState(false);
   const [isNewProject, setIsNewProject] = useState(false);
   const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [projectMsg, setProjectMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
 
   const load = async () => {
@@ -143,13 +186,28 @@ export default function AdminPortfolioPage() {
 
   const saveProject = async () => {
     if (!editingProject?.title?.trim() || !editingProject.categoryId) {
-      setMsg({ type: "error", text: "Titre et catégorie requis." });
+      setProjectMsg({ type: "error", text: "Titre et catégorie requis." });
       return;
     }
-    const ok = isNewProject
-      ? await callSave("/api/admin/portfolio/projects", "POST", editingProject)
-      : await callSave(`/api/admin/portfolio/projects/${editingProject.id}`, "PUT", editingProject);
-    if (ok) { setMsg({ type: "success", text: "Projet enregistré." }); setEditingProject(null); load(); }
+    setSaving(true);
+    setProjectMsg(null);
+    const url = isNewProject
+      ? "/api/admin/portfolio/projects"
+      : `/api/admin/portfolio/projects/${editingProject.id}`;
+    const method = isNewProject ? "POST" : "PUT";
+    const result = await adminFetch(url, {
+      method,
+      body: JSON.stringify(editingProject),
+    });
+    setSaving(false);
+    if (result.error) {
+      setProjectMsg({ type: "error", text: result.error });
+      return;
+    }
+    setMsg({ type: "success", text: "Projet enregistré." });
+    setEditingProject(null);
+    setProjectMsg(null);
+    await load();
   };
 
   const duplicateProject = async (p: CMSPortfolioProject) => {
@@ -175,19 +233,30 @@ export default function AdminPortfolioPage() {
     if (j < 0 || j >= list.length) return;
     [list[index], list[j]] = [list[j], list[index]];
 
-    // Rebuild the global list by replacing filtered projects (at their current
-    // global positions) with the newly-ordered versions, then re-number every
-    // project with sequential sortOrders to keep them unique and conflict-free.
-    const filteredIds = new Set(list.map((p) => p.id));
-    const globalSorted = [...projects].sort((a, b) => a.sortOrder - b.sortOrder);
-    let nextFiltered = 0;
-    const merged = globalSorted.map((p) =>
-      filteredIds.has(p.id) ? list[nextFiltered++] : p
-    );
-    const all = merged.map((p, i) => ({ ...p, sortOrder: i }));
+    const orderedIds = list.map((p) => p.id);
+    let all: CMSPortfolioProject[];
 
+    if (filterCategoryId === "all" && visibilityFilter === "all") {
+      all = reorderProjectsGlobal(projects, orderedIds);
+    } else if (filterCategoryId !== "all") {
+      all = reorderProjectsInCategory(projects, filterCategoryId, orderedIds);
+    } else {
+      all = reorderProjectsInSubset(projects, orderedIds);
+    }
+
+    setMsg(null);
     setProjects(all);
-    await adminFetch("/api/admin/portfolio/projects", { method: "PUT", body: JSON.stringify(all) });
+    const result = await adminFetch("/api/admin/portfolio/projects", {
+      method: "PUT",
+      body: JSON.stringify(all),
+    });
+    if (result.error) {
+      setMsg({ type: "error", text: result.error });
+      await load();
+      return;
+    }
+    setMsg({ type: "success", text: "Ordre enregistré." });
+    await load();
   };
 
   const togglePublished = async (p: CMSPortfolioProject) => {
@@ -345,6 +414,7 @@ export default function AdminPortfolioPage() {
                   projects.length
                 ) as Partial<CMSPortfolioProject>);
                 setIsNewProject(true);
+                setProjectMsg(null);
               }}
             >
               + Nouveau projet
@@ -360,7 +430,7 @@ export default function AdminPortfolioPage() {
                   <div className="flex flex-wrap gap-1">
                     <AdminButton variant="ghost" className="text-xs px-2" onClick={() => moveProject(index, "up")} disabled={index === 0}>↑</AdminButton>
                     <AdminButton variant="ghost" className="text-xs px-2" onClick={() => moveProject(index, "down")} disabled={index === filteredProjects.length - 1}>↓</AdminButton>
-                    <AdminButton variant="ghost" className="text-xs" onClick={() => { setEditingProject(p); setIsNewProject(false); }}>Éditer</AdminButton>
+                    <AdminButton variant="ghost" className="text-xs" onClick={() => { setEditingProject(p); setIsNewProject(false); setProjectMsg(null); }}>Éditer</AdminButton>
                     <AdminButton variant="ghost" className="text-xs text-neon-purple" onClick={() => duplicateProject(p)}>Dupliquer</AdminButton>
                     <AdminButton variant="ghost" className="text-xs text-red-400" onClick={() => deleteProject(p)}>Suppr.</AdminButton>
                   </div>
@@ -469,6 +539,12 @@ export default function AdminPortfolioPage() {
                 <AdminBadge status={editingProject.published ? "public" : "hidden"} />
               )}
             </div>
+
+            {projectMsg && (
+              <div className="mb-4">
+                <AdminAlert type={projectMsg.type} message={projectMsg.text} />
+              </div>
+            )}
 
             <div className="space-y-6">
               {/* ── Identité ── */}
@@ -638,8 +714,8 @@ export default function AdminPortfolioPage() {
               </section>
             </div>
 
-            <div className="mt-6 flex justify-end gap-2 border-t border-white/10 pt-4">
-              <AdminButton variant="ghost" onClick={() => setEditingProject(null)}>Annuler</AdminButton>
+            <div className="sticky bottom-0 mt-6 flex justify-end gap-2 border-t border-white/10 bg-[#0d0d0d] pt-4">
+              <AdminButton variant="ghost" onClick={() => { setEditingProject(null); setProjectMsg(null); }}>Annuler</AdminButton>
               <AdminButton variant="primary" onClick={saveProject} disabled={saving}>
                 {saving ? "Enregistrement..." : "Enregistrer"}
               </AdminButton>

@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { jsonOk, jsonError, jsonErrorFromUnknown, requireOwner } from "@/lib/cms/api";
 import { getPortfolioApiPayload } from "@/lib/cms/portfolio";
 import { updateCMSContent } from "@/lib/cms/store";
+import { logCmsSync } from "@/lib/cms/sync-log";
 import { createId } from "@/lib/cms/id";
 import type { CMSPortfolioProject } from "@/lib/cms/types";
 
@@ -85,10 +86,22 @@ export async function PUT(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   if (!Array.isArray(body)) return jsonError("Expected array of projects.");
 
+  // Persist order exactly as sent: array index becomes sortOrder.
+  const projects = (body as CMSPortfolioProject[]).map((p, i) => ({
+    ...p,
+    sortOrder: i,
+  }));
+
   const updated = await updateCMSContent((c) => ({
     ...c,
-    portfolioProjects: body as CMSPortfolioProject[],
+    portfolioProjects: projects,
   }));
+
+  logCmsSync("save", {
+    type: "portfolio-reorder",
+    count: projects.length,
+    order: projects.map((p, i) => `${p.id.slice(-6)}:${i}`).join(","),
+  });
 
   return jsonOk(updated.portfolioProjects);
 }
