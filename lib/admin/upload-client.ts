@@ -61,19 +61,26 @@ async function requestVideoPresignUrl(file: File): Promise<{
   try {
     payload = text ? (JSON.parse(text) as PresignApiPayload) : {};
   } catch {
+    if (res.status === 413) {
+      throw new Error(
+        "Upload failed: file too large for server request"
+      );
+    }
     throw new Error(
-      res.status === 413
-        ? "Upload failed: file too large for server request"
+      text.startsWith("<!")
+        ? `Upload failed: server returned HTML (HTTP ${res.status})`
         : `Upload failed: invalid server response (HTTP ${res.status})`
     );
   }
 
   if (!res.ok || payload.success === false || !payload.data?.presignedUrl) {
-    throw new Error(
+    const err = new Error(
       typeof payload.error === "string" && payload.error
         ? payload.error
         : `Upload failed (HTTP ${res.status})`
     );
+    (err as Error & { status?: number }).status = res.status;
+    throw err;
   }
 
   return payload.data;
@@ -168,6 +175,7 @@ export async function uploadAdminFile(
 /**
  * Upload a testimonial/CMS video directly to Vercel Blob from the browser.
  * Bypasses the ~4.5 MB Vercel serverless request body limit.
+ * Never proxies video bytes through /api/admin/upload on production.
  */
 export async function uploadAdminVideoFile(file: File): Promise<UploadFileResult> {
   if (!isAllowedVideoFile(file)) {
@@ -179,39 +187,37 @@ export async function uploadAdminVideoFile(file: File): Promise<UploadFileResult
     throw new Error(`${file.name}: vidéos max 200 Mo`);
   }
 
+  let presign: { presignedUrl: string; url: string; pathname: string };
   try {
-    const { presignedUrl, url, pathname: blobPath } =
-      await requestVideoPresignUrl(file);
-
-    const putRes = await fetch(presignedUrl, {
-      method: "PUT",
-      body: file,
-      headers: {
-        "Content-Type": videoContentType(file) ?? "application/octet-stream",
-      },
-    });
-
-    if (!putRes.ok) {
-      throw new Error(`Blob upload failed (HTTP ${putRes.status})`);
-    }
-
-    const filename = blobPath.replace(/^cms\//, "");
-    return {
-      url,
-      filename,
-      label: filenameToLabel(file.name),
-      type: "video",
-    };
+    presign = await requestVideoPresignUrl(file);
   } catch (err) {
-    if (file.size <= VERCEL_SERVER_BODY_LIMIT) {
-      try {
-        return await uploadAdminFile(file, { preset: "video" });
-      } catch (fallbackErr) {
-        throw fallbackErr instanceof Error ? fallbackErr : new Error("Upload failed");
-      }
+    const status = (err as Error & { status?: number }).status;
+    // Local dev without Blob: allow small files via the legacy multipart route.
+    if (status === 503 && file.size <= VERCEL_SERVER_BODY_LIMIT) {
+      return uploadAdminFile(file, { preset: "video" });
     }
-    throw new Error(blobUploadErrorMessage(err));
+    throw err instanceof Error ? err : new Error(blobUploadErrorMessage(err));
   }
+
+  const putRes = await fetch(presign.presignedUrl, {
+    method: "PUT",
+    body: file,
+    headers: {
+      "Content-Type": videoContentType(file) ?? "application/octet-stream",
+    },
+  });
+
+  if (!putRes.ok) {
+    throw new Error(`Blob upload failed (HTTP ${putRes.status})`);
+  }
+
+  const filename = presign.pathname.replace(/^cms\//, "");
+  return {
+    url: presign.url,
+    filename,
+    label: filenameToLabel(file.name),
+    type: "video",
+  };
 }
 
 /** Upload multiple files in one request. */

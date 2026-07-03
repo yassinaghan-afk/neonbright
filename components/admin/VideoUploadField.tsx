@@ -40,7 +40,7 @@ export function VideoUploadField({ label, value, onChange, hint }: VideoUploadFi
     e.preventDefault();
     setDragging(false);
     const file = e.dataTransfer.files?.[0];
-    if (file && file.type.startsWith("video/")) uploadFile(file);
+    if (file && (file.type.startsWith("video/") || /\.(mp4|webm|mov)$/i.test(file.name))) uploadFile(file);
   };
 
   const remove = (idx: number) => {
