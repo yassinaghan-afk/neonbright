@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { PartnerLogoStrip } from "@/components/PartnerLogoStrip";
+import { BrandsListing } from "@/components/portfolio/BrandsListing";
 import { Container } from "@/components/ui/Container";
+import { getResolvedBrands } from "@/lib/brands/server";
 import { getPortfolioCategoryBySlug } from "@/lib/cms/portfolio";
-import { getBrandsPageLogos } from "@/lib/cms/brands-logos";
 
 export const metadata: Metadata = {
   title: "Marques & Clients | Réalisations Neon Bright",
@@ -17,9 +17,9 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function BrandsPage() {
-  const [category, { logos, stripLabel }] = await Promise.all([
+  const [brands, category] = await Promise.all([
+    getResolvedBrands(),
     getPortfolioCategoryBySlug("marques-clients"),
-    getBrandsPageLogos(),
   ]);
 
   return (
@@ -42,11 +42,11 @@ export default async function BrandsPage() {
                 "Découvrez les marques, hôtels, restaurants, enseignes et entreprises qui nous ont confié leurs projets lumineux."}
             </p>
           </div>
-        </Container>
 
-        {logos.length > 0 ? (
-          <PartnerLogoStrip logos={logos} label={stripLabel} className="mt-12 sm:mt-16" />
-        ) : null}
+          <div className="mt-12 sm:mt-16">
+            <BrandsListing brands={brands} />
+          </div>
+        </Container>
       </main>
       <Footer />
     </>
