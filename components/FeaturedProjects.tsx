@@ -34,18 +34,17 @@ export function FeaturedProjects({ copy, categories }: FeaturedProjectsProps) {
 
         <Container>
           <SectionReveal className="relative mx-auto max-w-4xl text-center">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-neon-pink sm:text-xs sm:tracking-[0.32em]">
-              {sectionsCopy.title}
-            </span>
-            <h2 className="display-headline mx-auto mt-6 max-w-4xl text-[2rem] sm:mt-8 sm:text-5xl md:text-6xl lg:text-[4.25rem] xl:text-[4.75rem]">
-              <span className="block text-white">{sectionsCopy.headline}</span>
-              <span className="mt-1 block text-white sm:mt-1.5">
-                {sectionsCopy.headlineAccent}
+            <div className="flex min-h-[12rem] flex-col items-center justify-center sm:min-h-[14rem] md:min-h-[16rem]">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-neon-pink sm:text-xs sm:tracking-[0.32em]">
+                {sectionsCopy.title}
               </span>
-            </h2>
-            <p className="mx-auto mt-6 max-w-3xl text-sm leading-relaxed text-muted sm:mt-8 sm:text-lg">
-              {sectionsCopy.subtitle}
-            </p>
+              <h2 className="display-headline mx-auto mt-6 max-w-4xl text-[2rem] sm:mt-8 sm:text-5xl md:text-6xl lg:text-[4.25rem] xl:text-[4.75rem]">
+                <span className="block text-white">{sectionsCopy.headline}</span>
+                <span className="mt-1 block text-white sm:mt-1.5">
+                  {sectionsCopy.headlineAccent}
+                </span>
+              </h2>
+            </div>
           </SectionReveal>
 
           <div className="mt-14 space-y-6 sm:mt-16 sm:space-y-7 md:mt-20 md:space-y-8">
