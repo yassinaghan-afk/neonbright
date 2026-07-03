@@ -1,9 +1,48 @@
+import { upload } from "@vercel/blob/client";
+import { createId } from "@/lib/cms/id";
+import { filenameToLabel } from "@/lib/cms/image-process";
+
 export type UploadFileResult = {
   url: string;
   filename: string;
   label: string;
   type: "image" | "video" | "audio";
 };
+
+const MAX_VIDEO_SIZE = 200 * 1024 * 1024;
+const VERCEL_SERVER_BODY_LIMIT = 4.5 * 1024 * 1024;
+const ALLOWED_VIDEO_MIMES = new Set([
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
+]);
+
+function isAllowedVideoFile(file: File): boolean {
+  if (ALLOWED_VIDEO_MIMES.has(file.type)) return true;
+  return /\.(mp4|webm|mov)$/i.test(file.name);
+}
+
+function videoContentType(file: File): string | undefined {
+  if (file.type && ALLOWED_VIDEO_MIMES.has(file.type)) return file.type;
+  const ext = file.name.split(".").pop()?.toLowerCase();
+  if (ext === "mp4") return "video/mp4";
+  if (ext === "webm") return "video/webm";
+  if (ext === "mov") return "video/quicktime";
+  return undefined;
+}
+
+function videoBlobPathname(file: File): string {
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "mp4";
+  const safeExt = ["mp4", "webm", "mov"].includes(ext) ? ext : "mp4";
+  return `cms/${createId("vid")}.${safeExt}`;
+}
+
+function blobUploadErrorMessage(err: unknown): string {
+  if (err instanceof Error && err.message) {
+    return err.message.replace(/^Vercel Blob:\s*/i, "");
+  }
+  return "Upload failed";
+}
 
 type UploadApiPayload = {
   success?: boolean;
@@ -43,6 +82,11 @@ async function parseUploadResponse(res: Response): Promise<UploadApiPayload> {
   try {
     return JSON.parse(text) as UploadApiPayload;
   } catch {
+    if (res.status === 413) {
+      throw new Error(
+        "Upload failed: file too large for server upload. Use direct Blob upload for videos over 4.5 MB."
+      );
+    }
     throw new Error(
       text.startsWith("<!")
         ? `Upload failed: server returned HTML (HTTP ${res.status})`
@@ -77,6 +121,49 @@ export async function uploadAdminFile(
   }
 
   return extractUploadResult(payload);
+}
+
+/**
+ * Upload a testimonial/CMS video directly to Vercel Blob from the browser.
+ * Bypasses the ~4.5 MB Vercel serverless request body limit.
+ */
+export async function uploadAdminVideoFile(file: File): Promise<UploadFileResult> {
+  if (!isAllowedVideoFile(file)) {
+    throw new Error(
+      `${file.name}: format non supporté (${file.type || "inconnu"}). Utilisez MP4, WebM ou MOV.`
+    );
+  }
+  if (file.size > MAX_VIDEO_SIZE) {
+    throw new Error(`${file.name}: vidéos max 200 Mo`);
+  }
+
+  const pathname = videoBlobPathname(file);
+
+  try {
+    const blob = await upload(pathname, file, {
+      access: "public",
+      handleUploadUrl: "/api/admin/upload/blob",
+      multipart: file.size > VERCEL_SERVER_BODY_LIMIT,
+      contentType: videoContentType(file),
+    });
+
+    const filename = pathname.replace(/^cms\//, "");
+    return {
+      url: blob.url,
+      filename,
+      label: filenameToLabel(file.name),
+      type: "video",
+    };
+  } catch (err) {
+    if (file.size <= VERCEL_SERVER_BODY_LIMIT) {
+      try {
+        return await uploadAdminFile(file, { preset: "video" });
+      } catch (fallbackErr) {
+        throw fallbackErr instanceof Error ? fallbackErr : new Error("Upload failed");
+      }
+    }
+    throw new Error(blobUploadErrorMessage(err));
+  }
 }
 
 /** Upload multiple files in one request. */

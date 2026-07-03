@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { uploadAdminFile } from "@/lib/admin/upload-client";
+import { uploadAdminVideoFile } from "@/lib/admin/upload-client";
 import { AdminButton, AdminField } from "@/components/admin/ui/AdminForm";
 
 type VideoUploadFieldProps = {
@@ -21,7 +21,7 @@ export function VideoUploadField({ label, value, onChange, hint }: VideoUploadFi
     setUploading(true);
     setError("");
     try {
-      const result = await uploadAdminFile(file, { preset: "video" });
+      const result = await uploadAdminVideoFile(file);
       onChange([...value, result.url]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur upload");
