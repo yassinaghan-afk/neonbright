@@ -3,6 +3,7 @@ import path from "path";
 import { cache } from "react";
 import { unstable_noStore as noStore } from "next/cache";
 import { getDefaultCMSContent } from "@/lib/cms/defaults";
+import { ensureBrandsPageProjects } from "@/lib/cms/brands-page-seed";
 import {
   brandHeroSlidesStale,
   getExpectedHeroSlidesFromMedia,
@@ -381,13 +382,20 @@ async function loadCMSContent(options?: LoadCMSOptions): Promise<CMSContent> {
     }
 
     let content = applyContentMigrations(mergeContent(parsed));
-    const { content: synced, changed } = await maybeSyncHeroFromMedia(
+    let persistNeeded = false;
+
+    const brandsRestore = ensureBrandsPageProjects(content);
+    content = brandsRestore.content;
+    if (brandsRestore.changed) persistNeeded = true;
+
+    const { content: synced, changed: heroChanged } = await maybeSyncHeroFromMedia(
       parsed,
       content
     );
     content = synced;
+    if (heroChanged) persistNeeded = true;
 
-    if (changed) {
+    if (persistNeeded) {
       try {
         content = await writeCMSContent(content);
       } catch {
