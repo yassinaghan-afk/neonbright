@@ -12,6 +12,7 @@ import {
   shouldSeedBrandHeroSlides,
 } from "@/lib/cms/hero-media";
 import { normalizeHeroSlides, normalizePartners } from "@/lib/cms/normalize";
+import { normalizeTestimonials } from "@/lib/cms/testimonials";
 import type { CMSContent } from "@/lib/cms/types";
 import {
   shouldUseBlobStorage,
@@ -168,7 +169,7 @@ function mergeContent(parsed: Partial<CMSContent>): CMSContent {
     portfolioProjects: parsed.portfolioProjects?.length
       ? parsed.portfolioProjects
       : defaults.portfolioProjects,
-    testimonials: parsed.testimonials?.length ? parsed.testimonials : defaults.testimonials,
+    testimonials: normalizeTestimonials(parsed.testimonials, defaults.testimonials),
     services: parsed.services?.length ? parsed.services : defaults.services,
     faq: parsed.faq?.length ? parsed.faq : defaults.faq,
     features: parsed.features?.length ? parsed.features : defaults.features,

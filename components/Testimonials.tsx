@@ -2,10 +2,15 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
 import { testimonials as staticTestimonials, sectionCopy as staticCopy } from "@/lib/data";
 import { Container } from "@/components/ui/Container";
 import { SectionReveal } from "@/components/ui/SectionReveal";
+import { getPublicTestimonials } from "@/lib/cms/testimonials";
 import type { CMSTestimonial } from "@/lib/cms/types";
+import { isLocalPublicAsset, isRemoteCmsAsset } from "@/lib/media/local-image";
+import { StarRating } from "@/components/testimonials/StarRating";
+import { TestimonialMedia } from "@/components/testimonials/TestimonialMedia";
 
 type TestimonialsCopy = {
   title: string;
@@ -17,18 +22,35 @@ type TestimonialsProps = {
   copy?: TestimonialsCopy;
 };
 
-export function Testimonials({ items, copy }: TestimonialsProps) {
-  const [active, setActive] = useState(0);
-
-  const testimonialItems: import("@/lib/cms/types").CMSTestimonial[] = items ?? staticTestimonials.map((t, i) => ({
+function mapStaticTestimonials(): CMSTestimonial[] {
+  return staticTestimonials.map((t, i) => ({
     id: String(i),
     quote: t.quote,
     author: t.author,
     role: t.role,
     location: t.location,
+    company: "",
+    photo: "",
+    rating: 5,
+    galleryImages: [],
+    videos: [],
+    audioFiles: [],
+    sortOrder: i,
+    enabled: true,
   }));
+}
+
+export function Testimonials({ items, copy }: TestimonialsProps) {
+  const [active, setActive] = useState(0);
+
+  const testimonialItems = items?.length
+    ? getPublicTestimonials(items)
+    : getPublicTestimonials(mapStaticTestimonials());
 
   const sectionsCopy = copy ?? staticCopy.testimonials;
+  const current = testimonialItems[active];
+
+  if (!testimonialItems.length) return null;
 
   return (
     <section className="relative py-24 sm:py-32">
@@ -56,57 +78,81 @@ export function Testimonials({ items, copy }: TestimonialsProps) {
               </svg>
 
               <AnimatePresence mode="wait">
-                <motion.div
-                  key={active}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.4 }}
-                >
-                  <p className="text-lg leading-relaxed sm:text-xl">
-                    &ldquo;{testimonialItems[active]?.quote}&rdquo;
-                  </p>
-                  <div className="mt-8 flex items-center gap-4">
-                    {testimonialItems[active]?.photo ? (
-                      <img
-                        src={testimonialItems[active].photo}
-                        alt={testimonialItems[active].author}
-                        className="h-12 w-12 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-neon-pink to-neon-purple font-display text-lg font-bold">
-                        {testimonialItems[active]?.author.charAt(0)}
+                {current && (
+                  <motion.div
+                    key={current.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.4 }}
+                  >
+                    <p className="text-lg leading-relaxed sm:text-xl">
+                      &ldquo;{current.quote}&rdquo;
+                    </p>
+
+                    {current.rating != null && current.rating > 0 && (
+                      <div className="mt-4">
+                        <StarRating rating={current.rating} />
                       </div>
                     )}
-                    <div>
-                      <p className="font-semibold">{testimonialItems[active]?.author}</p>
-                      <p className="text-sm text-muted">
-                        {testimonialItems[active]?.role}
-                      </p>
-                      <p className="text-xs text-muted/70">
-                        {testimonialItems[active]?.location}
-                      </p>
+
+                    <div className="mt-8 flex items-center gap-4">
+                      {current.photo ? (
+                        <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full">
+                          <Image
+                            src={current.photo}
+                            alt={current.author}
+                            fill
+                            className="object-cover"
+                            sizes="48px"
+                            unoptimized={
+                              isLocalPublicAsset(current.photo) ||
+                              isRemoteCmsAsset(current.photo)
+                            }
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-neon-pink to-neon-purple font-display text-lg font-bold">
+                          {current.author.charAt(0)}
+                        </div>
+                      )}
+                      <div>
+                        <p className="font-semibold">{current.author}</p>
+                        {current.company && (
+                          <p className="text-sm text-white/70">{current.company}</p>
+                        )}
+                        {current.role && (
+                          <p className="text-sm text-muted">{current.role}</p>
+                        )}
+                        {current.location && (
+                          <p className="text-xs text-muted/70">{current.location}</p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
+
+                    <TestimonialMedia testimonial={current} />
+                  </motion.div>
+                )}
               </AnimatePresence>
             </div>
 
-            <div className="mt-8 flex items-center justify-center gap-3">
-              {testimonialItems.map((_, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  aria-label={`Témoignage ${i + 1}`}
-                  onClick={() => setActive(i)}
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    i === active
-                      ? "w-8 bg-neon-pink"
-                      : "w-2 bg-white/20 hover:bg-white/40"
-                  }`}
-                />
-              ))}
-            </div>
+            {testimonialItems.length > 1 && (
+              <div className="mt-8 flex items-center justify-center gap-3">
+                {testimonialItems.map((t, i) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    aria-label={`Témoignage ${i + 1}`}
+                    onClick={() => setActive(i)}
+                    className={`h-2 rounded-full transition-all duration-300 ${
+                      i === active
+                        ? "w-8 bg-neon-pink"
+                        : "w-2 bg-white/20 hover:bg-white/40"
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </SectionReveal>
       </Container>

@@ -1,5 +1,7 @@
 import { requireOwner, jsonError, jsonOk } from "@/lib/cms/api";
+import { revalidatePublicSite } from "@/lib/cms/revalidate-public";
 import { updateCMSContent } from "@/lib/cms/store";
+import { parseTestimonialInput } from "@/lib/cms/testimonials";
 import type { CMSTestimonial } from "@/lib/cms/types";
 
 type Params = { params: Promise<{ id: string }> };
@@ -9,21 +11,22 @@ export async function PUT(request: Request, { params }: Params) {
   if (error) return error;
   const { id } = await params;
   const body = await request.json().catch(() => null);
-  if (!body) return jsonError("Invalid body");
+  if (!body || typeof body !== "object") return jsonError("Invalid body");
 
   let found: CMSTestimonial | undefined;
-  await updateCMSContent((c) => ({
+  const updated = await updateCMSContent((c) => ({
     ...c,
     testimonials: c.testimonials.map((t) => {
       if (t.id !== id) return t;
-      const updated: CMSTestimonial = { ...t, ...body, id: t.id };
-      found = updated;
-      return updated;
+      const next = parseTestimonialInput(body as Record<string, unknown>, t);
+      found = { ...next, id: t.id };
+      return found;
     }),
   }));
 
   if (!found) return jsonError("Not found", 404);
-  return jsonOk(found);
+  revalidatePublicSite();
+  return jsonOk(updated.testimonials.find((t) => t.id === id) ?? found);
 }
 
 export async function DELETE(_req: Request, { params }: Params) {
@@ -38,5 +41,6 @@ export async function DELETE(_req: Request, { params }: Params) {
   });
 
   if (!existed) return jsonError("Not found", 404);
+  revalidatePublicSite();
   return jsonOk({ success: true });
 }

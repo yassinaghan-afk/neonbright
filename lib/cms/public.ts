@@ -3,6 +3,7 @@ import { heroSlideSrc } from "@/lib/cms/hero-media";
 import { getPartnerLogosFromMedia, type PartnerLogo } from "@/lib/cms/logo-media";
 import { toPortfolioCategory } from "@/lib/cms/portfolio";
 import { normalizeHeroSlides, normalizePartners, sortByOrder } from "@/lib/cms/normalize";
+import { getPublicTestimonials } from "@/lib/cms/testimonials";
 import type { PortfolioCategory } from "@/lib/portfolio/types";
 import type {
   CMSFAQItem,
@@ -88,7 +89,7 @@ export async function getPublicHomepageContent(): Promise<PublicHomepageContent>
     trustStripLabel: content.hero.trustStripLabel || "Ils nous font confiance",
     heroMediaVersion: content.heroMediaVersion,
     portfolioCategories,
-    testimonials: content.testimonials,
+    testimonials: getPublicTestimonials(content.testimonials),
     features,
     industries,
     processSteps,

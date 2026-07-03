@@ -2,7 +2,7 @@ export type UploadFileResult = {
   url: string;
   filename: string;
   label: string;
-  type: "image" | "video";
+  type: "image" | "video" | "audio";
 };
 
 type UploadApiPayload = {
@@ -12,7 +12,7 @@ type UploadApiPayload = {
   url?: string;
   filename?: string;
   label?: string;
-  type?: "image" | "video";
+  type?: "image" | "video" | "audio";
   files?: UploadFileResult[];
 };
 

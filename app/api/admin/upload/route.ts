@@ -32,11 +32,23 @@ const ALLOWED_VIDEOS = [
   "video/mpeg",
 ];
 
+const MAX_AUDIO_SIZE = 50 * 1024 * 1024;
+const ALLOWED_AUDIO = [
+  "audio/mpeg",
+  "audio/mp3",
+  "audio/wav",
+  "audio/x-wav",
+  "audio/wave",
+  "audio/mp4",
+  "audio/x-m4a",
+  "audio/m4a",
+];
+
 export type UploadResult = {
   url: string;
   filename: string;
   label: string;
-  type: "image" | "video";
+  type: "image" | "video" | "audio";
 };
 
 async function saveFile(
@@ -46,8 +58,11 @@ async function saveFile(
 ): Promise<UploadResult> {
   const isVideo = ALLOWED_VIDEOS.includes(file.type);
   const isImage = ALLOWED_IMAGES.includes(file.type);
+  const isAudio =
+    ALLOWED_AUDIO.includes(file.type) ||
+    /\.(mp3|wav|m4a)$/i.test(file.name);
 
-  if (!isImage && !isVideo) {
+  if (!isImage && !isVideo && !isAudio) {
     throw new Error(`${file.name}: format non supporté (${file.type || "inconnu"})`);
   }
 
@@ -57,8 +72,23 @@ async function saveFile(
   if (isVideo && file.size > MAX_VIDEO_SIZE) {
     throw new Error(`${file.name}: vidéos max 200 Mo`);
   }
+  if (isAudio && file.size > MAX_AUDIO_SIZE) {
+    throw new Error(`${file.name}: audio max 50 Mo`);
+  }
 
   const raw = Buffer.from(await file.arrayBuffer());
+
+  if (isAudio) {
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "mp3";
+    const filename = `${createId("aud")}.${ext}`;
+    const url = await writeUploadFile(filename, raw, request);
+    return {
+      url,
+      filename,
+      label: filenameToLabel(file.name),
+      type: "audio",
+    };
+  }
 
   if (isVideo) {
     const ext = file.name.split(".").pop()?.toLowerCase() ?? "mp4";

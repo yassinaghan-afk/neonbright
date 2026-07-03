@@ -99,12 +99,23 @@ export type CMSPortfolioProject = {
 export type CMSTestimonial = {
   id: string;
   quote: string;
+  /** Client name */
   author: string;
+  /** Position / job title */
   role: string;
+  /** City / country */
   location: string;
+  company?: string;
   photo?: string;
   rating?: number;
-  company?: string;
+  galleryImages?: string[];
+  videos?: string[];
+  audioFiles?: string[];
+  instagramUrl?: string;
+  linkedinUrl?: string;
+  websiteUrl?: string;
+  sortOrder: number;
+  enabled: boolean;
 };
 
 /** Trusted brand logo — managed via /admin/media/logos */
