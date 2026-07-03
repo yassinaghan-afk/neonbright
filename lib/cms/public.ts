@@ -1,4 +1,4 @@
-import { readCMSContentFresh } from "@/lib/cms/store";
+import { readCMSContent } from "@/lib/cms/store";
 import { heroSlideSrc } from "@/lib/cms/hero-media";
 import { getPartnerLogosFromMedia, type PartnerLogo } from "@/lib/cms/logo-media";
 import { toPortfolioCategory } from "@/lib/cms/portfolio";
@@ -56,7 +56,7 @@ function partnerLogosFromCMS(partners: CMSPartner[]): PartnerLogo[] {
 
 export async function getPublicHomepageContent(): Promise<PublicHomepageContent> {
   const [content, filesystemLogos] = await Promise.all([
-    readCMSContentFresh(),
+    readCMSContent(),
     getPartnerLogosFromMedia(),
   ]);
 

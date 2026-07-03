@@ -5,7 +5,7 @@ import {
   normalizeInstagramPosts,
 } from "@/lib/cms/instagram-normalize";
 import { sortByOrder } from "@/lib/cms/normalize";
-import { readCMSContentFresh } from "@/lib/cms/store";
+import { readCMSContent } from "@/lib/cms/store";
 import type { CMSInstagramPost, CMSInstagramSettings } from "@/lib/cms/types";
 
 export type InstagramShowcaseData = {
@@ -18,7 +18,7 @@ export type InstagramShowcaseData = {
 /** Homepage entry point — posts only, always fresh from CMS storage. */
 export async function getInstagramShowcase(): Promise<InstagramShowcaseData> {
   noStore();
-  const content = await readCMSContentFresh();
+  const content = await readCMSContent();
   const profileUrl = resolveInstagramUrl(content.social, content.instagram.url);
   const posts = filterPublicPosts(
     normalizeInstagramPosts(sortByOrder(content.instagramPosts ?? []))

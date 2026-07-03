@@ -107,9 +107,7 @@ function isContentAtLeastAsFresh(
  * Read CMS JSON from Vercel Blob via the authenticated SDK (not the public CDN URL).
  * Public blob URLs can be edge-cached; the SDK always returns the latest object.
  */
-async function readCMSFromBlob(forceFresh = false): Promise<Partial<CMSContent> | null> {
-  if (forceFresh) memoryCmsBlobUrl = null;
-
+async function readCMSFromBlob(): Promise<Partial<CMSContent> | null> {
   try {
     const auth = await getBlobCommandOptions();
     const { get } = await import("@vercel/blob");
@@ -123,27 +121,28 @@ async function readCMSFromBlob(forceFresh = false): Promise<Partial<CMSContent> 
       return null;
     }
 
-    // 304 Not Modified — blob hasn't changed since conditional request; no stream.
-    // Re-fetch without conditional headers to guarantee a fresh body.
+    // 304 Not Modified — no stream body. Use same-instance overlay or CDN fallback.
     if (result.statusCode === 304 || !result.stream) {
-      console.warn("[cms-store] blob CMS get returned 304/no-stream, re-fetching unconditionally");
-      const blobUrl = memoryCmsBlobUrl ?? result.blob?.url;
-      if (blobUrl) {
-        const res = await fetch(blobUrl, {
-          cache: "no-store",
-          headers: { "Cache-Control": "no-cache, no-store" },
+      if (memoryCMS) {
+        logCmsSync("storage-read", {
+          source: "304-memory-overlay",
+          updatedAt: memoryCMS.updatedAt,
         });
+        return memoryCMS;
+      }
+
+      const blobUrl = result.blob?.url ?? memoryCmsBlobUrl;
+      if (blobUrl) {
+        const res = await fetch(`${blobUrl}?t=${Date.now()}`, { cache: "no-store" });
         if (res.ok) {
-          const text = await res.text();
-          const parsed = JSON.parse(text) as Partial<CMSContent>;
+          const parsed = JSON.parse(await res.text()) as Partial<CMSContent>;
           logCmsSync("storage-read", {
-            source: "blob-refetch",
+            source: "blob-cdn-fallback",
             updatedAt: parsed.updatedAt,
-            testimonials: parsed.testimonials?.length ?? 0,
           });
           return parsed;
         }
-        console.error("[cms-store] blob re-fetch failed:", res.status);
+        console.error("[cms-store] blob CDN fallback failed:", res.status);
       }
       return null;
     }
@@ -338,7 +337,7 @@ async function loadCMSContent(options?: LoadCMSOptions): Promise<CMSContent> {
     let parsed: Partial<CMSContent> | null = null;
 
     if (shouldUseBlobStorage()) {
-      parsed = await readCMSFromBlob(Boolean(options?.bypassMemory));
+      parsed = await readCMSFromBlob();
     } else {
       await ensureDataDir();
       parsed = await readCMSFileFromDisk();
