@@ -1,8 +1,11 @@
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+
+export const CMS_CACHE_TAG = "cms-content";
 
 /** Bust Next.js route/layout caches after CMS writes. */
 export function revalidatePublicSite(): void {
   try {
+    revalidateTag(CMS_CACHE_TAG, { expire: 0 });
     // Invalidate all public page segments.
     revalidatePath("/", "page");
     revalidatePath("/realisations/events", "page");

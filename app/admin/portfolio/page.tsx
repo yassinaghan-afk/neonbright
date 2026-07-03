@@ -84,7 +84,7 @@ export default function AdminPortfolioPage() {
   const [saving, setSaving] = useState(false);
 
   const load = async () => {
-    const res = await fetch("/api/portfolio");
+    const res = await fetch(`/api/portfolio?t=${Date.now()}`, { cache: "no-store" });
     const data = await res.json().catch(() => null);
 
     if (res.ok && data?.categories && data?.projects) {
@@ -206,6 +206,31 @@ export default function AdminPortfolioPage() {
     load();
   };
 
+  const deleteCategory = async (cat: CMSPortfolioCategory) => {
+    if (!confirm(`Supprimer "${cat.titleAccent || cat.slug}" et tous ses projets ?`)) return;
+    const result = await adminFetch(`/api/admin/portfolio/categories/${cat.id}`, { method: "DELETE" });
+    if (result.error) {
+      setMsg({ type: "error", text: result.error });
+      return;
+    }
+    setCategories((prev) => prev.filter((c) => c.id !== cat.id));
+    setProjects((prev) => prev.filter((p) => p.categoryId !== cat.id));
+    setMsg({ type: "success", text: "Catégorie supprimée." });
+    await load();
+  };
+
+  const deleteProject = async (p: CMSPortfolioProject) => {
+    if (!confirm(`Supprimer "${p.title}" ?`)) return;
+    const result = await adminFetch(`/api/admin/portfolio/projects/${p.id}`, { method: "DELETE" });
+    if (result.error) {
+      setMsg({ type: "error", text: result.error });
+      return;
+    }
+    setProjects((prev) => prev.filter((item) => item.id !== p.id));
+    setMsg({ type: "success", text: "Projet supprimé." });
+    await load();
+  };
+
   const catName = (id: string) =>
     categories.find((c) => c.id === id)?.titleAccent ||
     categories.find((c) => c.id === id)?.slug || id;
@@ -263,11 +288,7 @@ export default function AdminPortfolioPage() {
                       {cat.enabled ? "Visible" : "Masqué"}
                     </AdminButton>
                     <AdminButton variant="ghost" className="text-xs" onClick={() => { setEditingCategory(cat); setIsNewCategory(false); }}>Éditer</AdminButton>
-                    <AdminButton variant="ghost" className="text-xs text-red-400" onClick={async () => {
-                      if (!confirm(`Supprimer "${cat.titleAccent || cat.slug}" et tous ses projets ?`)) return;
-                      await adminFetch(`/api/admin/portfolio/categories/${cat.id}`, { method: "DELETE" });
-                      load();
-                    }}>Suppr.</AdminButton>
+                    <AdminButton variant="ghost" className="text-xs text-red-400" onClick={() => deleteCategory(cat)}>Suppr.</AdminButton>
                   </div>
                 }
               >
@@ -341,11 +362,7 @@ export default function AdminPortfolioPage() {
                     <AdminButton variant="ghost" className="text-xs px-2" onClick={() => moveProject(index, "down")} disabled={index === filteredProjects.length - 1}>↓</AdminButton>
                     <AdminButton variant="ghost" className="text-xs" onClick={() => { setEditingProject(p); setIsNewProject(false); }}>Éditer</AdminButton>
                     <AdminButton variant="ghost" className="text-xs text-neon-purple" onClick={() => duplicateProject(p)}>Dupliquer</AdminButton>
-                    <AdminButton variant="ghost" className="text-xs text-red-400" onClick={async () => {
-                      if (!confirm(`Supprimer "${p.title}" ?`)) return;
-                      await adminFetch(`/api/admin/portfolio/projects/${p.id}`, { method: "DELETE" });
-                      load();
-                    }}>Suppr.</AdminButton>
+                    <AdminButton variant="ghost" className="text-xs text-red-400" onClick={() => deleteProject(p)}>Suppr.</AdminButton>
                   </div>
                 }
               >

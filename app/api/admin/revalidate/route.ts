@@ -1,10 +1,12 @@
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { requireAdmin, jsonOk } from "@/lib/cms/api";
+import { CMS_CACHE_TAG } from "@/lib/cms/revalidate-public";
 
 export async function POST() {
   const { error } = await requireAdmin();
   if (error) return error;
 
+  revalidateTag(CMS_CACHE_TAG, { expire: 0 });
   // Revalidate every public page and the root layout after any CMS change.
   revalidatePath("/", "page");
   revalidatePath("/realisations/events", "page");

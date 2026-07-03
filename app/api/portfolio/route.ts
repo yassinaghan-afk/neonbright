@@ -1,5 +1,6 @@
+import { NextResponse } from "next/server";
 import { getSession } from "@/lib/cms/auth";
-import { jsonErrorFromUnknown, jsonOk } from "@/lib/cms/api";
+import { jsonErrorFromUnknown } from "@/lib/cms/api";
 import { getPortfolioApiPayload } from "@/lib/cms/portfolio";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +17,10 @@ export async function GET() {
       payload.projects.map((p) => `${p.id.slice(-6)}:${p.published ? "pub" : "hid"}`).join(",")
     );
 
-    return jsonOk(payload);
+    return NextResponse.json(payload, {
+      status: 200,
+      headers: { "Cache-Control": "no-store, max-age=0" },
+    });
   } catch (err) {
     return jsonErrorFromUnknown(err);
   }

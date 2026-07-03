@@ -89,22 +89,54 @@ function isContentAtLeastAsFresh(
 /**
  * Read CMS JSON from Vercel Blob.
  *
- * PRIMARY path: direct public-URL fetch — requires no OIDC auth and works in
- * ALL Lambda contexts (cold starts, background revalidations, Server Actions).
- * The blob is stored as access:"public" so any HTTP client can read it.
- *
- * FALLBACK path: SDK get() for legacy BLOB_READ_WRITE_TOKEN setups.
+ * 1. SDK get() when credentials are available — always returns the latest
+ *    object (no CDN lag). Works in API routes and Server Actions.
+ * 2. Public-URL fetch — auth-free fallback for cold Lambdas / background
+ *    revalidations where OIDC is unavailable.
+ * 3. In-memory overlay — last resort for 304 Not Modified SDK responses.
  */
 async function readCMSFromBlob(): Promise<Partial<CMSContent> | null> {
-  // ── PRIMARY: auth-free public-URL fetch ──────────────────────────────────
+  // ── PRIMARY: SDK get (fresh, no CDN lag) ─────────────────────────────────
+  try {
+    const auth = await getBlobCommandOptions();
+    const { get } = await import("@vercel/blob");
+    const result = await get(CMS_BLOB_PATHNAME, { ...auth, access: "public" });
+
+    if (result) {
+      if (result.statusCode === 304 || !result.stream) {
+        if (memoryCMS) {
+          logCmsSync("storage-read", {
+            source: "304-memory-overlay",
+            updatedAt: memoryCMS.updatedAt,
+          });
+          return memoryCMS;
+        }
+      } else {
+        const text = await new Response(result.stream as ReadableStream).text();
+        const parsed = JSON.parse(text) as Partial<CMSContent>;
+        if (result.blob?.url) memoryCmsBlobUrl = result.blob.url;
+        logCmsSync("storage-read", {
+          source: "sdk-get",
+          updatedAt: parsed.updatedAt,
+          testimonials: parsed.testimonials?.length ?? 0,
+          portfolioProjects: parsed.portfolioProjects?.length ?? 0,
+        });
+        return parsed;
+      }
+    }
+  } catch (err) {
+    console.warn(
+      "[cms-store] blob SDK read skipped:",
+      err instanceof Error ? err.message : err
+    );
+  }
+
+  // ── FALLBACK: auth-free public-URL fetch ─────────────────────────────────
   const storeId = process.env.BLOB_STORE_ID;
   if (storeId) {
     const publicUrl = `https://${storeId}.public.blob.vercel-storage.com/${CMS_BLOB_PATHNAME}`;
     try {
-      // Append timestamp to bypass Vercel Edge CDN after writes.
-      const res = await fetch(`${publicUrl}?t=${Date.now()}`, {
-        cache: "no-store",
-      });
+      const res = await fetch(`${publicUrl}?t=${Date.now()}`, { cache: "no-store" });
       if (res.ok) {
         const parsed = JSON.parse(await res.text()) as Partial<CMSContent>;
         memoryCmsBlobUrl = publicUrl;
@@ -112,6 +144,7 @@ async function readCMSFromBlob(): Promise<Partial<CMSContent> | null> {
           source: "public-url",
           updatedAt: parsed.updatedAt,
           testimonials: parsed.testimonials?.length ?? 0,
+          portfolioProjects: parsed.portfolioProjects?.length ?? 0,
         });
         return parsed;
       }
@@ -123,42 +156,7 @@ async function readCMSFromBlob(): Promise<Partial<CMSContent> | null> {
     }
   }
 
-  // ── FALLBACK: SDK get() (BLOB_READ_WRITE_TOKEN or OIDC in-request) ───────
-  try {
-    const auth = await getBlobCommandOptions();
-    const { get } = await import("@vercel/blob");
-    const result = await get(CMS_BLOB_PATHNAME, { ...auth, access: "public" });
-
-    if (!result) {
-      console.error("[cms-store] blob SDK get returned null");
-      return null;
-    }
-
-    // 304 Not Modified: nothing changed since last SDK fetch; use memory overlay.
-    if (result.statusCode === 304 || !result.stream) {
-      if (memoryCMS) {
-        logCmsSync("storage-read", {
-          source: "304-memory-overlay",
-          updatedAt: memoryCMS.updatedAt,
-        });
-        return memoryCMS;
-      }
-      return null;
-    }
-
-    const text = await new Response(result.stream as ReadableStream).text();
-    const parsed = JSON.parse(text) as Partial<CMSContent>;
-    if (result.blob?.url) memoryCmsBlobUrl = result.blob.url;
-    logCmsSync("storage-read", {
-      source: "sdk-get",
-      updatedAt: parsed.updatedAt,
-      testimonials: parsed.testimonials?.length ?? 0,
-    });
-    return parsed;
-  } catch (err) {
-    console.error("[cms-store] blob CMS read failed:", err);
-    return null;
-  }
+  return null;
 }
 
 /** Write the CMS JSON to Vercel Blob and update the cached URL. */
@@ -209,11 +207,11 @@ function mergeContent(parsed: Partial<CMSContent>): CMSContent {
     hero: mergeHero(defaults.hero, parsed.hero),
     heroSlides: normalizeHeroSlides(parsed.heroSlides, defaults.heroSlides),
     partners: normalizePartners(parsed.partners, defaults.partners),
-    projects: parsed.projects?.length ? parsed.projects : defaults.projects,
-    portfolioCategories: parsed.portfolioCategories?.length
+    projects: Array.isArray(parsed.projects) ? parsed.projects : defaults.projects,
+    portfolioCategories: Array.isArray(parsed.portfolioCategories)
       ? parsed.portfolioCategories
       : defaults.portfolioCategories,
-    portfolioProjects: parsed.portfolioProjects?.length
+    portfolioProjects: Array.isArray(parsed.portfolioProjects)
       ? parsed.portfolioProjects
       : defaults.portfolioProjects,
     testimonials: normalizeTestimonials(parsed.testimonials, defaults.testimonials),
