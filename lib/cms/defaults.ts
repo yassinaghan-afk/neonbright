@@ -124,6 +124,7 @@ export function getDefaultCMSContent(): CMSContent {
       { id: createId("partner"), name: "Royal Palm Group", logoUrl: "", enabled: true, sortOrder: 6 },
       { id: createId("partner"), name: "Éclat Boutique", logoUrl: "", enabled: true, sortOrder: 7 },
     ],
+    brandsPageLogos: [],
     services: [
       {
         id: createId("svc"),

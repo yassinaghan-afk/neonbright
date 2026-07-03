@@ -127,6 +127,9 @@ export type CMSPartner = {
   sortOrder: number;
 };
 
+/** Marques page logo strip — managed via /admin/brands-logos */
+export type CMSBrandsPageLogo = CMSPartner;
+
 export type CMSService = {
   id: string;
   title: string;
@@ -274,6 +277,7 @@ export type CMSContent = {
   portfolioProjects: CMSPortfolioProject[];
   testimonials: CMSTestimonial[];
   partners: CMSPartner[];
+  brandsPageLogos: CMSBrandsPageLogo[];
   services: CMSService[];
   faq: CMSFAQItem[];
   features: CMSFeature[];
@@ -298,6 +302,7 @@ export type CMSSection =
   | "portfolioProjects"
   | "testimonials"
   | "partners"
+  | "brandsPageLogos"
   | "services"
   | "faq"
   | "features"

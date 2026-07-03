@@ -207,6 +207,10 @@ function mergeContent(parsed: Partial<CMSContent>): CMSContent {
     hero: mergeHero(defaults.hero, parsed.hero),
     heroSlides: normalizeHeroSlides(parsed.heroSlides, defaults.heroSlides),
     partners: normalizePartners(parsed.partners, defaults.partners),
+    brandsPageLogos:
+      parsed.brandsPageLogos !== undefined
+        ? normalizePartners(parsed.brandsPageLogos, [])
+        : normalizePartners(parsed.partners, []),
     projects: Array.isArray(parsed.projects) ? parsed.projects : defaults.projects,
     portfolioCategories: Array.isArray(parsed.portfolioCategories)
       ? parsed.portfolioCategories
