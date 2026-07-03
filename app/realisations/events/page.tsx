@@ -22,6 +22,8 @@ export default async function EventsPage() {
     getEventProjectsForPage(),
   ]);
 
+  console.log(`[cms-sync] website-render /realisations/events: ${projects.length} events visible`, projects.map((p) => p.slug).join(","));
+
   return (
     <>
       <Navbar />

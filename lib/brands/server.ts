@@ -3,7 +3,7 @@ import {
   isLogoMediaSyncEnabled,
   logoFilenameFromSrc,
 } from "@/lib/cms/logo-media";
-import { readCMSContent } from "@/lib/cms/store";
+import { readCMSContentFresh } from "@/lib/cms/store";
 import { resolvePublicAsset } from "@/lib/media/public-asset";
 import {
   getBrandProfileFromCMS,
@@ -33,7 +33,7 @@ async function buildLogoMap(): Promise<Map<string, string>> {
     return map;
   }
 
-  const content = await readCMSContent();
+  const content = await readCMSContentFresh();
   const map = new Map<string, string>();
   for (const p of content.portfolioProjects) {
     if (!p.logoFile) continue;
@@ -53,15 +53,22 @@ export async function getResolvedBrands(): Promise<ResolvedBrand[]> {
 export async function getResolvedBrand(
   slug: string
 ): Promise<ResolvedBrand | undefined> {
-  const logoMap = await buildLogoMap();
-  const profile = await getBrandProfileFromCMS(slug);
-  if (!profile || !profile.logoFile || !logoMap.has(profile.logoFile)) {
-    return undefined;
+  const [logoMap, profile] = await Promise.all([buildLogoMap(), getBrandProfileFromCMS(slug)]);
+  if (!profile) return undefined;
+
+  if (profile.logoFile && logoMap.has(profile.logoFile)) {
+    return { ...profile, logoSrc: logoMap.get(profile.logoFile)! };
   }
-  return {
-    ...profile,
-    logoSrc: logoMap.get(profile.logoFile)!,
-  };
+
+  // Fallback: use project images so published brands are always accessible.
+  const { resolvePublicAsset } = await import("@/lib/media/public-asset");
+  const fallbackSrc =
+    resolvePublicAsset(profile.beforeImage) ??
+    resolvePublicAsset(profile.afterImage) ??
+    resolvePublicAsset(profile.gallery?.[0]) ??
+    "";
+  if (!fallbackSrc) return undefined;
+  return { ...profile, logoSrc: fallbackSrc };
 }
 
 export async function getBrandSlugs(): Promise<string[]> {

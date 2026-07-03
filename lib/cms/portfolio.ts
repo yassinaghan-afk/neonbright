@@ -2,7 +2,7 @@ import type { PortfolioCategory } from "@/lib/portfolio/types";
 import type { EventProject } from "@/lib/events";
 import type { BrandProfile, ResolvedBrand } from "@/lib/brands/types";
 import { sortByOrder } from "@/lib/cms/normalize";
-import { readCMSContent } from "@/lib/cms/store";
+import { readCMSContent, readCMSContentFresh } from "@/lib/cms/store";
 import { resolvePublicAsset, resolvePublicAssets } from "@/lib/media/public-asset";
 import type {
   CMSPortfolioCategory,
@@ -85,19 +85,19 @@ export function toBrandProfile(p: CMSPortfolioProject): BrandProfile {
 }
 
 export async function getHeroContent(): Promise<HeroContent> {
-  const content = await readCMSContent();
+  const content = await readCMSContentFresh();
   return content.hero;
 }
 
 export async function getEnabledPortfolioCategories(): Promise<CMSPortfolioCategory[]> {
-  const content = await readCMSContent();
+  const content = await readCMSContentFresh();
   return sortByOrder(content.portfolioCategories).filter((c) => c.enabled);
 }
 
 export async function getPortfolioCategoryBySlug(
   slug: string
 ): Promise<CMSPortfolioCategory | undefined> {
-  const content = await readCMSContent();
+  const content = await readCMSContentFresh();
   return content.portfolioCategories.find((c) => c.slug === slug);
 }
 
@@ -105,7 +105,7 @@ export async function getPortfolioProjectsByCategorySlug(
   categorySlug: string,
   publishedOnly = true
 ): Promise<CMSPortfolioProject[]> {
-  const content = await readCMSContent();
+  const content = await readCMSContentFresh();
   const category = content.portfolioCategories.find((c) => c.slug === categorySlug);
   if (!category) return [];
   const projects = sortByOrder(
@@ -163,21 +163,28 @@ export async function resolveBrandsFromCMS(
   logoMap: Map<string, string>
 ): Promise<ResolvedBrand[]> {
   const profiles = await getBrandProfilesFromCMS();
-  return profiles
-    .filter((profile) => profile.logoFile && logoMap.has(profile.logoFile))
-    .map((profile) => ({
-      ...profile,
-      logoSrc: logoMap.get(profile.logoFile)!,
-    }));
+  return profiles.map((profile) => {
+    // Primary: dedicated logo file in /media/logo/
+    if (profile.logoFile && logoMap.has(profile.logoFile)) {
+      return { ...profile, logoSrc: logoMap.get(profile.logoFile)! };
+    }
+    // Fallback: use the project's cover/featured image so published projects
+    // always appear on the website even when no logo has been uploaded yet.
+    const fallbackSrc = resolvePublicAsset(profile.beforeImage) ??
+      resolvePublicAsset(profile.afterImage) ??
+      resolvePublicAsset(profile.gallery?.[0]) ??
+      "";
+    return { ...profile, logoSrc: fallbackSrc };
+  }).filter((b) => b.logoSrc);
 }
 
 export async function getAllPortfolioCategoriesAdmin(): Promise<CMSPortfolioCategory[]> {
-  const content = await readCMSContent();
+  const content = await readCMSContentFresh();
   return sortByOrder(content.portfolioCategories);
 }
 
 export async function getAllPortfolioProjectsAdmin(): Promise<CMSPortfolioProject[]> {
-  const content = await readCMSContent();
+  const content = await readCMSContentFresh();
   return sortByOrder(content.portfolioProjects);
 }
 
@@ -186,11 +193,11 @@ export type PortfolioApiPayload = {
   projects: CMSPortfolioProject[];
 };
 
-/** Shared read model for GET /api/portfolio (public + admin). */
+/** Shared read model for GET /api/portfolio (public + admin). Always reads fresh from storage. */
 export async function getPortfolioApiPayload(options?: {
   includeHidden?: boolean;
 }): Promise<PortfolioApiPayload> {
-  const content = await readCMSContent();
+  const content = await readCMSContentFresh();
   const includeHidden = options?.includeHidden ?? false;
 
   let categories = sortByOrder(content.portfolioCategories ?? []);

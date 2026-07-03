@@ -25,6 +25,8 @@ export default async function BrandsPage() {
     getPortfolioCategoryBySlug("marques-clients"),
   ]);
 
+  console.log(`[cms-sync] website-render /realisations/brands: ${brands.length} brands visible`, brands.map((b) => `${b.slug}(logo:${b.logoSrc ? "y" : "n"})`).join(","));
+
   return (
     <>
       <Navbar />

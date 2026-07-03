@@ -12,7 +12,8 @@ export function revalidatePublicSite(): void {
     revalidatePath("/realisations/brands/[slug]", "page");
     // Invalidate the root layout (covers contact, company, nav across all routes).
     revalidatePath("/", "layout");
-  } catch {
-    // OK during build or non-revalidatable contexts.
+    console.log("[cms-sync] revalidate-public: paths invalidated");
+  } catch (err) {
+    console.warn("[cms-sync] revalidate-public: failed (ok during build):", err);
   }
 }

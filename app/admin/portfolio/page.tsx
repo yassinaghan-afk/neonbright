@@ -174,9 +174,18 @@ export default function AdminPortfolioPage() {
     const j = dir === "up" ? index - 1 : index + 1;
     if (j < 0 || j >= list.length) return;
     [list[index], list[j]] = [list[j], list[index]];
-    const reordered = list.map((p, i) => ({ ...p, sortOrder: i }));
-    const others = projects.filter((p) => !list.find((x) => x.id === p.id));
-    const all = [...others, ...reordered];
+
+    // Rebuild the global list by replacing filtered projects (at their current
+    // global positions) with the newly-ordered versions, then re-number every
+    // project with sequential sortOrders to keep them unique and conflict-free.
+    const filteredIds = new Set(list.map((p) => p.id));
+    const globalSorted = [...projects].sort((a, b) => a.sortOrder - b.sortOrder);
+    let nextFiltered = 0;
+    const merged = globalSorted.map((p) =>
+      filteredIds.has(p.id) ? list[nextFiltered++] : p
+    );
+    const all = merged.map((p, i) => ({ ...p, sortOrder: i }));
+
     setProjects(all);
     await adminFetch("/api/admin/portfolio/projects", { method: "PUT", body: JSON.stringify(all) });
   };

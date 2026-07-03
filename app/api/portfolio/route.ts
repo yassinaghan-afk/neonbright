@@ -10,6 +10,12 @@ export async function GET() {
     const session = await getSession();
     const includeHidden = session?.role === "owner";
     const payload = await getPortfolioApiPayload({ includeHidden });
+
+    console.log(
+      `[cms-sync] api/portfolio: ${payload.projects.length} projects (includeHidden=${includeHidden})`,
+      payload.projects.map((p) => `${p.id.slice(-6)}:${p.published ? "pub" : "hid"}`).join(",")
+    );
+
     return jsonOk(payload);
   } catch (err) {
     return jsonErrorFromUnknown(err);

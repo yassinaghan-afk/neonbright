@@ -118,8 +118,33 @@ async function readCMSFromBlob(forceFresh = false): Promise<Partial<CMSContent> 
       access: "public",
     });
 
-    if (!result?.stream) {
-      console.error("[cms-store] blob CMS get returned no stream");
+    if (!result) {
+      console.error("[cms-store] blob CMS get returned null (not found)");
+      return null;
+    }
+
+    // 304 Not Modified — blob hasn't changed since conditional request; no stream.
+    // Re-fetch without conditional headers to guarantee a fresh body.
+    if (result.statusCode === 304 || !result.stream) {
+      console.warn("[cms-store] blob CMS get returned 304/no-stream, re-fetching unconditionally");
+      const blobUrl = memoryCmsBlobUrl ?? result.blob?.url;
+      if (blobUrl) {
+        const res = await fetch(blobUrl, {
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache, no-store" },
+        });
+        if (res.ok) {
+          const text = await res.text();
+          const parsed = JSON.parse(text) as Partial<CMSContent>;
+          logCmsSync("storage-read", {
+            source: "blob-refetch",
+            updatedAt: parsed.updatedAt,
+            testimonials: parsed.testimonials?.length ?? 0,
+          });
+          return parsed;
+        }
+        console.error("[cms-store] blob re-fetch failed:", res.status);
+      }
       return null;
     }
 
@@ -411,6 +436,8 @@ export async function writeCMSContent(content: CMSContent): Promise<CMSContent> 
   logCmsSync("save", {
     updatedAt: next.updatedAt,
     testimonials: next.testimonials.length,
+    portfolioProjects: next.portfolioProjects?.length ?? 0,
+    publishedProjects: next.portfolioProjects?.filter((p) => p.published).length ?? 0,
   });
 
   if (shouldUseBlobStorage()) {
@@ -421,6 +448,9 @@ export async function writeCMSContent(content: CMSContent): Promise<CMSContent> 
       storage: "blob",
       updatedAt: next.updatedAt,
       testimonials: next.testimonials.length,
+      portfolioProjects: next.portfolioProjects?.length ?? 0,
+      publishedProjects: next.portfolioProjects?.filter((p) => p.published).length ?? 0,
+      projectIds: next.portfolioProjects?.map((p) => `${p.id}:${p.published ? "pub" : "hid"}`).join(","),
     });
     return next;
   }
