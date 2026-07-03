@@ -6,11 +6,11 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
+import { EventProjectGallery } from "@/components/portfolio/EventProjectGallery";
 import {
   getEventProjectForPage,
   getEventSlugsForPage,
 } from "@/lib/events/server";
-import type { EventProject } from "@/lib/events";
 import { localImageUnoptimized } from "@/lib/media/local-image";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -32,28 +32,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: `${project.title} | Événements Neon Bright`,
     description: project.shortDescription,
   };
-}
-
-function ProjectGallery({ project }: { project: EventProject }) {
-  return (
-    <div className="mt-10 grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
-      {project.gallery.map((src, i) => (
-        <div
-          key={`${src}-${i}`}
-          className="relative aspect-[4/3] overflow-hidden rounded-xl border border-white/10 sm:rounded-2xl"
-        >
-          <Image
-            src={src}
-            alt={`${project.title} — photo ${i + 1}`}
-            fill
-            sizes="(max-width: 768px) 100vw, 400px"
-            className="object-cover"
-            {...localImageUnoptimized(src)}
-          />
-        </div>
-      ))}
-    </div>
-  );
 }
 
 export default async function EventProjectPage({ params }: Props) {
@@ -131,7 +109,7 @@ export default async function EventProjectPage({ params }: Props) {
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40">
                 Galerie
               </p>
-              <ProjectGallery project={project} />
+              <EventProjectGallery project={project} />
             </div>
 
             <div className="mt-12 rounded-2xl border border-white/10 glass-premium p-6 text-center sm:p-10">
