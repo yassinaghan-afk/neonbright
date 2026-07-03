@@ -9,7 +9,7 @@ export default function AdminTestimonialsPage() {
       <div className="mb-6">
         <h1 className="font-display text-2xl font-bold">Témoignages</h1>
         <p className="mt-1 text-sm text-white/45">
-          Gérez les avis clients affichés dans la section « La confiance des grandes marques ».
+          Gérez les avis clients affichés dans la section « Ils nous font confiance ».
         </p>
       </div>
       <TestimonialsManager />

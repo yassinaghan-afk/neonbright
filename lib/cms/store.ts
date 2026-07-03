@@ -19,6 +19,7 @@ import {
   getBlobCommandOptions,
 } from "@/lib/cms/blob-client";
 import { revalidatePublicSite } from "@/lib/cms/revalidate-public";
+import { logCmsSync } from "@/lib/cms/sync-log";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const CONTENT_FILE = path.join(DATA_DIR, "cms-content.json");
@@ -26,6 +27,26 @@ const VERCEL_CMS_FILE = path.join("/tmp", "neonbright-cms-content.json");
 
 /** Pathname inside the Blob store for the CMS content JSON. */
 const CMS_BLOB_PATHNAME = "cms-data/content.json";
+
+const LEGACY_TESTIMONIALS_HEADLINE = "La confiance des grandes marques";
+const TESTIMONIALS_HEADLINE = "Ils nous font confiance";
+
+/** One-time content migrations applied on read/write. */
+function applyContentMigrations(content: CMSContent): CMSContent {
+  if (content.sectionCopy.testimonials.headline !== LEGACY_TESTIMONIALS_HEADLINE) {
+    return content;
+  }
+  return {
+    ...content,
+    sectionCopy: {
+      ...content.sectionCopy,
+      testimonials: {
+        ...content.sectionCopy.testimonials,
+        headline: TESTIMONIALS_HEADLINE,
+      },
+    },
+  };
+}
 
 /**
  * Module-level in-memory cache.
@@ -83,31 +104,35 @@ function isContentAtLeastAsFresh(
 }
 
 /**
- * Read CMS JSON from Vercel Blob.
- * Uses cache: 'no-store' so every request gets the latest version from Blob.
- * React.cache() (wrapping readCMSContent) prevents redundant fetches within
- * a single server render when multiple components need the CMS content.
+ * Read CMS JSON from Vercel Blob via the authenticated SDK (not the public CDN URL).
+ * Public blob URLs can be edge-cached; the SDK always returns the latest object.
  */
-async function readCMSFromBlob(refreshUrl = false): Promise<Partial<CMSContent> | null> {
-  const url = await getCMSBlobUrl(refreshUrl);
-  if (!url) return null;
+async function readCMSFromBlob(forceFresh = false): Promise<Partial<CMSContent> | null> {
+  if (forceFresh) memoryCmsBlobUrl = null;
+
   try {
-    const bust = url.includes("?") ? "&" : "?";
-    const res = await fetch(
-      `${url}${bust}t=${Date.now()}&r=${Math.random().toString(36).slice(2)}`,
-      {
-        cache: "no-store",
-        headers: {
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          Pragma: "no-cache",
-        },
-      }
-    );
-    if (!res.ok) {
-      console.error("[cms-store] blob CMS fetch returned", res.status);
+    const auth = await getBlobCommandOptions();
+    const { get } = await import("@vercel/blob");
+    const result = await get(CMS_BLOB_PATHNAME, {
+      ...auth,
+      access: "public",
+    });
+
+    if (!result?.stream) {
+      console.error("[cms-store] blob CMS get returned no stream");
       return null;
     }
-    return (await res.json()) as Partial<CMSContent>;
+
+    const text = await new Response(result.stream as ReadableStream).text();
+    const parsed = JSON.parse(text) as Partial<CMSContent>;
+    if (result.blob?.url) memoryCmsBlobUrl = result.blob.url;
+
+    logCmsSync("storage-read", {
+      updatedAt: parsed.updatedAt,
+      testimonials: parsed.testimonials?.length ?? 0,
+    });
+
+    return parsed;
   } catch (err) {
     console.error("[cms-store] blob CMS read failed:", err);
     return null;
@@ -249,7 +274,12 @@ async function maybeSyncHeroFromMedia(
 }
 
 async function readCMSFileFromDisk(): Promise<Partial<CMSContent> | null> {
-  const paths = canPersistCMS() ? [CONTENT_FILE] : [VERCEL_CMS_FILE, CONTENT_FILE];
+  // On Vercel never read build-time data/cms-content.json — it is stale after deploy.
+  const paths = canPersistCMS()
+    ? [CONTENT_FILE]
+    : process.env.VERCEL
+      ? [VERCEL_CMS_FILE]
+      : [VERCEL_CMS_FILE, CONTENT_FILE];
 
   for (const filePath of paths) {
     try {
@@ -289,6 +319,18 @@ async function loadCMSContent(options?: LoadCMSOptions): Promise<CMSContent> {
       parsed = await readCMSFileFromDisk();
     }
 
+    // Fresh reads: prefer whichever source has the latest updatedAt (memory or blob).
+    if (options?.bypassMemory && memoryCMS) {
+      if (!parsed || isContentAtLeastAsFresh(memoryCMS, parsed)) {
+        logCmsSync("storage-read", {
+          source: "memory-overlay",
+          updatedAt: memoryCMS.updatedAt,
+          testimonials: memoryCMS.testimonials.length,
+        });
+        return applyContentMigrations(memoryCMS);
+      }
+    }
+
     // Skip the in-memory overlay when the caller explicitly requests fresh data.
     if (
       !options?.bypassMemory &&
@@ -308,7 +350,7 @@ async function loadCMSContent(options?: LoadCMSOptions): Promise<CMSContent> {
       throw new Error("CMS content not found");
     }
 
-    let content = mergeContent(parsed);
+    let content = applyContentMigrations(mergeContent(parsed));
     const { content: synced, changed } = await maybeSyncHeroFromMedia(
       parsed,
       content
@@ -361,12 +403,25 @@ export async function readCMSContentFresh(): Promise<CMSContent> {
  *   - Sets memoryCMS.
  */
 export async function writeCMSContent(content: CMSContent): Promise<CMSContent> {
-  const next = { ...content, updatedAt: new Date().toISOString() };
+  const next = applyContentMigrations({
+    ...content,
+    updatedAt: new Date().toISOString(),
+  });
+
+  logCmsSync("save", {
+    updatedAt: next.updatedAt,
+    testimonials: next.testimonials.length,
+  });
 
   if (shouldUseBlobStorage()) {
     await writeCMSToBlob(next);
-    memoryCMS = next; // Optimistic same-Lambda overlay
+    memoryCMS = next;
     tryRevalidateCMS();
+    logCmsSync("storage-updated", {
+      storage: "blob",
+      updatedAt: next.updatedAt,
+      testimonials: next.testimonials.length,
+    });
     return next;
   }
 
@@ -376,6 +431,11 @@ export async function writeCMSContent(content: CMSContent): Promise<CMSContent> 
   if (canPersistCMS()) {
     await ensureDataDir();
     await fs.writeFile(CONTENT_FILE, JSON.stringify(next, null, 2), "utf-8");
+    logCmsSync("storage-updated", {
+      storage: "disk",
+      updatedAt: next.updatedAt,
+      testimonials: next.testimonials.length,
+    });
     return next;
   }
 

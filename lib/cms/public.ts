@@ -4,6 +4,7 @@ import { getPartnerLogosFromMedia, type PartnerLogo } from "@/lib/cms/logo-media
 import { toPortfolioCategory } from "@/lib/cms/portfolio";
 import { normalizeHeroSlides, normalizePartners, sortByOrder } from "@/lib/cms/normalize";
 import { getPublicTestimonials } from "@/lib/cms/testimonials";
+import { logCmsSync } from "@/lib/cms/sync-log";
 import type { PortfolioCategory } from "@/lib/portfolio/types";
 import type {
   CMSFAQItem,
@@ -81,6 +82,15 @@ export async function getPublicHomepageContent(): Promise<PublicHomepageContent>
     .filter((c) => c.enabled)
     .map(toPortfolioCategory);
 
+  const testimonials = getPublicTestimonials(content.testimonials);
+
+  logCmsSync("public-api", {
+    updatedAt: content.updatedAt,
+    testimonials: testimonials.length,
+    headline: content.sectionCopy.testimonials.headline,
+    firstAuthor: testimonials[0]?.author,
+  });
+
   return {
     hero: content.hero,
     heroSlides,
@@ -89,7 +99,7 @@ export async function getPublicHomepageContent(): Promise<PublicHomepageContent>
     trustStripLabel: content.hero.trustStripLabel || "Ils nous font confiance",
     heroMediaVersion: content.heroMediaVersion,
     portfolioCategories,
-    testimonials: getPublicTestimonials(content.testimonials),
+    testimonials,
     features,
     industries,
     processSteps,

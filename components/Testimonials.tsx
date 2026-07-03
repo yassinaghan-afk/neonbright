@@ -43,9 +43,10 @@ function mapStaticTestimonials(): CMSTestimonial[] {
 export function Testimonials({ items, copy }: TestimonialsProps) {
   const [active, setActive] = useState(0);
 
-  const testimonialItems = items?.length
-    ? getPublicTestimonials(items)
-    : getPublicTestimonials(mapStaticTestimonials());
+  const testimonialItems =
+    items !== undefined
+      ? getPublicTestimonials(items)
+      : getPublicTestimonials(mapStaticTestimonials());
 
   const sectionsCopy = copy ?? staticCopy.testimonials;
   const current = testimonialItems[active];

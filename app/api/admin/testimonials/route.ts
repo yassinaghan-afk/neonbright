@@ -6,7 +6,11 @@ import {
   normalizeTestimonials,
   parseTestimonialInput,
 } from "@/lib/cms/testimonials";
+import { logCmsSync } from "@/lib/cms/sync-log";
 import type { CMSTestimonial } from "@/lib/cms/types";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET() {
   const { error } = await requireOwner();
@@ -64,6 +68,13 @@ export async function PUT(request: Request) {
     ...c,
     testimonials: normalized,
   }));
+
+  logCmsSync("save", {
+    route: "PUT /api/admin/testimonials",
+    count: updated.testimonials.length,
+    updatedAt: updated.updatedAt,
+    firstAuthor: updated.testimonials[0]?.author,
+  });
 
   revalidatePublicSite();
   return jsonOk(updated.testimonials);

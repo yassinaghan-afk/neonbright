@@ -12,6 +12,7 @@ import { QuoteCTA } from "@/components/quote/QuoteCTA";
 import { Footer } from "@/components/Footer";
 import { getPublicHomepageContent } from "@/lib/cms/public";
 import { getInstagramShowcase } from "@/lib/instagram/showcase";
+import { logCmsSync } from "@/lib/cms/sync-log";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -36,6 +37,13 @@ export default async function Home() {
     sectionCopy,
     nav,
   } = homepage;
+
+  logCmsSync("website-render", {
+    testimonials: testimonials.length,
+    headline: sectionCopy.testimonials.headline,
+    firstAuthor: testimonials[0]?.author,
+    firstQuote: testimonials[0]?.quote?.slice(0, 40),
+  });
 
   return (
     <>

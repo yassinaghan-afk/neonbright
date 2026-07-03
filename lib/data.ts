@@ -184,7 +184,7 @@ export const sectionCopy = {
   },
   testimonials: {
     title: "Témoignages",
-    headline: "La confiance des grandes marques",
+    headline: "Ils nous font confiance",
   },
   process: {
     title: "Processus",

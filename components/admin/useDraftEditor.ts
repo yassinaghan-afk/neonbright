@@ -95,6 +95,7 @@ export function useDraftEditor<T>(fetchUrl: string) {
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ paths: ["/"] }),
               cache: "no-store",
+              credentials: "include",
             });
           } catch {
             // Revalidation is best-effort; CMS write already succeeded.
