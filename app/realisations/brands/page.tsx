@@ -3,12 +3,14 @@ import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { BrandsListing } from "@/components/portfolio/BrandsListing";
+import { PartnerLogoStrip } from "@/components/PartnerLogoStrip";
 import { Container } from "@/components/ui/Container";
 import {
   getResolvedBrands,
   getBrandSlugs,
 } from "@/lib/brands/server";
 import { getPortfolioCategoryBySlug } from "@/lib/cms/portfolio";
+import { getPublicHomepageContent } from "@/lib/cms/public";
 
 export const metadata: Metadata = {
   title: "Marques & Clients | Réalisations Neon Bright",
@@ -20,12 +22,16 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function BrandsPage() {
-  const [brands, category] = await Promise.all([
+  const [brands, category, { partnerLogos, trustStripLabel }] = await Promise.all([
     getResolvedBrands(),
     getPortfolioCategoryBySlug("marques-clients"),
+    getPublicHomepageContent(),
   ]);
 
   console.log(`[cms-sync] website-render /realisations/brands: ${brands.length} brands visible`, brands.map((b) => `${b.slug}(logo:${b.logoSrc ? "y" : "n"})`).join(","));
+  console.log(`[cms-sync] website-render /realisations/brands: ${partnerLogos.length} partner logos`);
+
+  const stripLabel = trustStripLabel || "Ils nous font confiance";
 
   return (
     <>
@@ -47,7 +53,24 @@ export default async function BrandsPage() {
                 "Découvrez les marques, hôtels, restaurants, enseignes et entreprises qui nous ont confié leurs projets lumineux."}
             </p>
           </div>
+        </Container>
 
+        {partnerLogos.length > 0 ? (
+          <PartnerLogoStrip logos={partnerLogos} label={stripLabel} className="mt-12 sm:mt-16" />
+        ) : (
+          <section className="relative mt-12 bg-[#050505] sm:mt-16" aria-label={stripLabel}>
+            <div className="px-4 py-10 sm:py-12">
+              <p className="text-center text-xs font-semibold uppercase tracking-[0.3em] text-white/45">
+                {stripLabel.toUpperCase()}
+              </p>
+              <p className="mt-6 text-center text-sm text-white/30">
+                Aucun logo public pour le moment.
+              </p>
+            </div>
+          </section>
+        )}
+
+        <Container>
           <div className="mt-12 sm:mt-16">
             <BrandsListing brands={brands} />
           </div>
