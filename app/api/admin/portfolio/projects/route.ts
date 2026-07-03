@@ -59,7 +59,10 @@ export async function POST(req: NextRequest) {
     tags: Array.isArray(body.tags) ? body.tags : [],
     accent: body.accent ?? "neon-pink",
     published: body.published !== false,
-    sortOrder: typeof body.sortOrder === "number" ? body.sortOrder : Date.now(),
+    sortOrder:
+      typeof body.sortOrder === "number"
+        ? body.sortOrder
+        : undefined,
     type: body.type,
     typeLabel: body.typeLabel,
     logoFile: body.logoFile,
@@ -71,10 +74,19 @@ export async function POST(req: NextRequest) {
     filters: body.filters,
   };
 
-  const updated = await updateCMSContent((c) => ({
-    ...c,
-    portfolioProjects: [...(c.portfolioProjects ?? []), item],
-  }));
+  const updated = await updateCMSContent((c) => {
+    const inCategory = (c.portfolioProjects ?? []).filter(
+      (project) => project.categoryId === item.categoryId
+    ).length;
+    const withOrder = {
+      ...item,
+      sortOrder: item.sortOrder ?? inCategory,
+    };
+    return {
+      ...c,
+      portfolioProjects: [...(c.portfolioProjects ?? []), withOrder],
+    };
+  });
 
   return jsonOk(item, 201);
 }
@@ -84,9 +96,38 @@ export async function PUT(req: NextRequest) {
   if (error) return error;
 
   const body = await req.json().catch(() => ({}));
+  const categoryId = req.nextUrl.searchParams.get("categoryId");
+
+  if (categoryId && Array.isArray(body)) {
+    const reordered = (body as CMSPortfolioProject[]).map((project, index) => ({
+      ...project,
+      sortOrder: index,
+    }));
+    const orderById = new Map(reordered.map((project) => [project.id, project.sortOrder]));
+
+    const updated = await updateCMSContent((c) => ({
+      ...c,
+      portfolioProjects: (c.portfolioProjects ?? []).map((project) =>
+        project.categoryId === categoryId && orderById.has(project.id)
+          ? { ...project, sortOrder: orderById.get(project.id)! }
+          : project
+      ),
+    }));
+
+    logCmsSync("save", {
+      type: "portfolio-reorder-scoped",
+      categoryId,
+      count: reordered.length,
+      order: reordered.map((project, i) => `${project.id.slice(-6)}:${i}`).join(","),
+    });
+
+    return jsonOk(
+      updated.portfolioProjects.filter((project) => project.categoryId === categoryId)
+    );
+  }
+
   if (!Array.isArray(body)) return jsonError("Expected array of projects.");
 
-  // Persist order exactly as sent: array index becomes sortOrder.
   const projects = (body as CMSPortfolioProject[]).map((p, i) => ({
     ...p,
     sortOrder: i,
