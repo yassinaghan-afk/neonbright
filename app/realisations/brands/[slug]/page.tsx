@@ -7,6 +7,7 @@ import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { EventProjectCard } from "@/components/portfolio/EventProjectCard";
+import { BrandProjectGallery } from "@/components/portfolio/BrandProjectGallery";
 import {
   getBrandSlugs,
   getResolvedBrand,
@@ -104,69 +105,35 @@ export default async function BrandDetailPage({ params }: Props) {
               <p className="mt-8 text-base leading-relaxed text-white/70 sm:text-lg">
                 {brand.description}
               </p>
+
+              {brand.technologies.length > 0 && (
+                <div className="mt-8">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40">
+                    Technologies utilisées
+                  </p>
+                  <ul className="mt-3 flex flex-wrap gap-2">
+                    {brand.technologies.map((tech) => (
+                      <li
+                        key={tech}
+                        className="rounded-full border border-neon-pink/20 bg-neon-pink/10 px-4 py-1.5 text-xs font-medium text-neon-pink"
+                      >
+                        {tech}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           </div>
 
-          <div className="mt-12">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40">
-              Galerie projet
-            </p>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
-              {brand.gallery.map((src, i) => (
-                <div
-                  key={`${src}-${i}`}
-                  className="relative aspect-[4/3] overflow-hidden rounded-xl border border-white/10 sm:rounded-2xl"
-                >
-                  <Image
-                    src={src}
-                    alt={`${brand.name} — installation ${i + 1}`}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 400px"
-                    className="object-cover"
-                    {...localImageUnoptimized(src)}
-                  />
-                </div>
-              ))}
+          {brand.gallery.length > 0 && (
+            <div className="mt-12">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40">
+                Galerie
+              </p>
+              <BrandProjectGallery name={brand.name} gallery={brand.gallery} />
             </div>
-          </div>
-
-          <div className="mt-12">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40">
-              Avant / Après
-            </p>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <div>
-                <p className="mb-2 text-xs font-medium uppercase tracking-wider text-white/35">
-                  Avant
-                </p>
-                <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-white/10 sm:rounded-2xl">
-                  <Image
-                    src={brand.beforeImage}
-                    alt={`${brand.name} — avant installation`}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 600px"
-                    className="object-cover"
-                    {...localImageUnoptimized(brand.beforeImage)}
-                  />
-                </div>
-              </div>
-              <div>
-                <p className="mb-2 text-xs font-medium uppercase tracking-wider text-white/35">
-                  Après
-                </p>
-                <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-white/10 sm:rounded-2xl">
-                  <Image
-                    src={brand.afterImage}
-                    alt={`${brand.name} — après installation`}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 600px"
-                    className="object-cover"
-                    {...localImageUnoptimized(brand.afterImage)}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+          )}
 
           {relatedEvents.length > 0 && (
             <div className="mt-14 sm:mt-16">

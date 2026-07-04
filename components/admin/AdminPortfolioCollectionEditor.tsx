@@ -795,6 +795,19 @@ export function AdminPortfolioCollectionEditor({
                           />
                         </AdminField>
                       </div>
+                      <AdminField label="Technologies (virgule)">
+                        <AdminInput
+                          value={(editingProject.technologies ?? []).join(", ")}
+                          onChange={(e) =>
+                            setEP({
+                              technologies: e.target.value
+                                .split(",")
+                                .map((item) => item.trim())
+                                .filter(Boolean),
+                            })
+                          }
+                        />
+                      </AdminField>
                     </>
                   )}
                   {!showBrandFields && (
@@ -881,54 +894,41 @@ export function AdminPortfolioCollectionEditor({
                 <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-white/35">
                   Images
                 </h3>
-                <div className="space-y-4">
-                  <ImageUploadField
-                    label="Image principale (featured)"
-                    value={editingProject.featuredImage ?? ""}
-                    onChange={(url) => setEP({ featuredImage: url, coverImage: url })}
-                    preset="gallery"
-                  />
-                  <ImageUploadField
-                    label="Miniature"
-                    value={editingProject.thumbnail ?? ""}
-                    onChange={(url) => setEP({ thumbnail: url })}
-                    preset="thumbnail"
-                  />
-                  {showBrandFields && (
-                    <>
-                      <ImageUploadField
-                        label="Image logo / avant"
-                        value={editingProject.beforeImage ?? ""}
-                        onChange={(url) => setEP({ beforeImage: url })}
-                        preset="gallery"
-                      />
-                      <ImageUploadField
-                        label="Image après"
-                        value={editingProject.afterImage ?? ""}
-                        onChange={(url) => setEP({ afterImage: url })}
-                        preset="gallery"
-                      />
-                    </>
-                  )}
-                  <AdminField label="Alt image principale">
-                    <AdminInput
-                      value={editingProject.imageAlt ?? ""}
-                      onChange={(e) => setEP({ imageAlt: e.target.value })}
-                    />
-                  </AdminField>
+                {showBrandFields ? (
                   <GalleryUploadField
                     label="Galerie"
                     value={editingProject.gallery ?? []}
-                    onChange={(urls) =>
-                      setEP(
-                        showBrandFields
-                          ? { gallery: urls, images: urls }
-                          : { gallery: urls }
-                      )
-                    }
+                    onChange={(urls) => setEP({ gallery: urls, images: urls })}
                     hint="Cliquez les flèches pour réordonner"
                   />
-                </div>
+                ) : (
+                  <div className="space-y-4">
+                    <ImageUploadField
+                      label="Image principale (featured)"
+                      value={editingProject.featuredImage ?? ""}
+                      onChange={(url) => setEP({ featuredImage: url, coverImage: url })}
+                      preset="gallery"
+                    />
+                    <ImageUploadField
+                      label="Miniature"
+                      value={editingProject.thumbnail ?? ""}
+                      onChange={(url) => setEP({ thumbnail: url })}
+                      preset="thumbnail"
+                    />
+                    <AdminField label="Alt image principale">
+                      <AdminInput
+                        value={editingProject.imageAlt ?? ""}
+                        onChange={(e) => setEP({ imageAlt: e.target.value })}
+                      />
+                    </AdminField>
+                    <GalleryUploadField
+                      label="Galerie"
+                      value={editingProject.gallery ?? []}
+                      onChange={(urls) => setEP({ gallery: urls })}
+                      hint="Cliquez les flèches pour réordonner"
+                    />
+                  </div>
+                )}
               </section>
 
               {!showBrandFields && (

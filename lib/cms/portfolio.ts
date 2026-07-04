@@ -84,6 +84,7 @@ export function toBrandProfile(p: CMSPortfolioProject): BrandProfile {
     installationType: p.installationType ?? "",
     projectCount: 1,
     gallery: projectGallerySource(p),
+    technologies: p.technologies ?? [],
     beforeImage: p.beforeImage ?? p.thumbnail ?? p.featuredImage,
     afterImage: p.afterImage ?? p.featuredImage,
     relatedEventSlugs: p.relatedProjectSlugs ?? [],

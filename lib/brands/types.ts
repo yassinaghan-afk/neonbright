@@ -41,6 +41,7 @@ export type BrandProfile = {
   installationType: string;
   projectCount: number;
   gallery: string[];
+  technologies: string[];
   beforeImage: string;
   afterImage: string;
   relatedEventSlugs: string[];
