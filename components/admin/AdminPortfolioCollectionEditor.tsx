@@ -251,7 +251,11 @@ export function AdminPortfolioCollectionEditor({
 
     setMsg(null);
     setProjects(all);
-    const subset = all.filter((project) => project.categoryId === primaryCategory.id);
+    // Sort by the newly assigned sortOrder so the API (which uses array position as the
+    // authoritative order) receives items in the correct desired sequence.
+    const subset = all
+      .filter((project) => project.categoryId === primaryCategory.id)
+      .sort((a, b) => a.sortOrder - b.sortOrder);
     const result = await adminFetch(
       `/api/admin/portfolio/projects?categoryId=${encodeURIComponent(primaryCategory.id)}`,
       {

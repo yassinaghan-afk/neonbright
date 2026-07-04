@@ -99,7 +99,11 @@ export async function PUT(req: NextRequest) {
   const categoryId = req.nextUrl.searchParams.get("categoryId");
 
   if (categoryId && Array.isArray(body)) {
-    const reordered = (body as CMSPortfolioProject[]).map((project, index) => ({
+    // Normalise: treat array position as the authoritative order so that a
+    // pre-sorted payload (client sends items in desired order, index 0 = first)
+    // is always respected correctly.
+    const incoming = body as CMSPortfolioProject[];
+    const reordered = incoming.map((project, index) => ({
       ...project,
       sortOrder: index,
     }));
@@ -118,11 +122,13 @@ export async function PUT(req: NextRequest) {
       type: "portfolio-reorder-scoped",
       categoryId,
       count: reordered.length,
-      order: reordered.map((project, i) => `${project.id.slice(-6)}:${i}`).join(","),
+      order: reordered.map((project) => `${project.id.slice(-6)}:${project.sortOrder}`).join(","),
     });
 
     return jsonOk(
-      updated.portfolioProjects.filter((project) => project.categoryId === categoryId)
+      updated.portfolioProjects
+        .filter((project) => project.categoryId === categoryId)
+        .sort((a, b) => a.sortOrder - b.sortOrder)
     );
   }
 
