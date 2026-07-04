@@ -26,7 +26,7 @@ const NAV: NavItem[] = [
   { href: "/admin/nav", label: "Navigation", icon: "≡", roles: ["owner"] },
   { href: "/admin/portfolio", label: "Portfolio", icon: "◈", roles: ["owner"], exact: true },
   { href: "/admin/portfolio/events", label: "Events", icon: "◷", roles: ["owner"] },
-  { href: "/admin/portfolio/brands", label: "Brands", icon: "◉", roles: ["owner"] },
+  { href: "/admin/portfolio/brands", label: "Brands Projects", icon: "◉", roles: ["owner"] },
   { href: "/admin/brands-logos", label: "Logos Marques", icon: "◎", roles: ["owner"] },
   { href: "/admin/features", label: "Avantages", icon: "◆", roles: ["owner"] },
   { href: "/admin/industries", label: "Secteurs", icon: "🏭", roles: ["owner"] },
