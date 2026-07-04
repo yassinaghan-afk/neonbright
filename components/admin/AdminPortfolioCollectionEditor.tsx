@@ -184,12 +184,18 @@ export function AdminPortfolioCollectionEditor({
       ? "/api/admin/portfolio/projects"
       : `/api/admin/portfolio/projects/${editingProject.id}`;
     const method = isNewProject ? "POST" : "PUT";
+    const payload: Partial<CMSPortfolioProject> = {
+      ...editingProject,
+      categoryId: editingProject.categoryId || primaryCategory?.id,
+    };
+
+    if (showBrandFields && Array.isArray(payload.gallery)) {
+      payload.images = payload.gallery;
+    }
+
     const result = await adminFetch(url, {
       method,
-      body: JSON.stringify({
-        ...editingProject,
-        categoryId: editingProject.categoryId || primaryCategory?.id,
-      }),
+      body: JSON.stringify(payload),
     });
     setSaving(false);
     if (result.error) {
@@ -913,7 +919,13 @@ export function AdminPortfolioCollectionEditor({
                   <GalleryUploadField
                     label="Galerie"
                     value={editingProject.gallery ?? []}
-                    onChange={(urls) => setEP({ gallery: urls })}
+                    onChange={(urls) =>
+                      setEP(
+                        showBrandFields
+                          ? { gallery: urls, images: urls }
+                          : { gallery: urls }
+                      )
+                    }
                     hint="Cliquez les flèches pour réordonner"
                   />
                 </div>

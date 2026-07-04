@@ -10,9 +10,15 @@ import type {
   HeroContent,
 } from "@/lib/cms/types";
 
+function projectGallerySource(project: CMSPortfolioProject): string[] {
+  if (Array.isArray(project.gallery)) {
+    return project.gallery;
+  }
+  return project.images ?? [];
+}
+
 function resolveProjectImages(p: CMSPortfolioProject): CMSPortfolioProject {
-  const rawGallery = p.gallery.length ? p.gallery : p.images;
-  const gallery = resolvePublicAssets(rawGallery);
+  const gallery = resolvePublicAssets(projectGallerySource(p));
   const coverImage = resolvePublicAsset(p.coverImage) ?? "";
   const featuredImage = resolvePublicAsset(p.featuredImage) ?? coverImage;
   const thumbnail = resolvePublicAsset(p.thumbnail) ?? featuredImage;
@@ -58,7 +64,7 @@ export function toEventProject(p: CMSPortfolioProject): EventProject {
     filters: (p.filters ?? p.tags) as EventProject["filters"],
     image: p.featuredImage || p.coverImage,
     imageAlt: p.imageAlt || p.title,
-    gallery: p.gallery.length ? p.gallery : p.images,
+    gallery: projectGallerySource(p),
     accent: p.accent,
     featured: p.sortOrder === 0,
   };
@@ -77,7 +83,7 @@ export function toBrandProfile(p: CMSPortfolioProject): BrandProfile {
     description: p.description,
     installationType: p.installationType ?? "",
     projectCount: 1,
-    gallery: p.gallery.length ? p.gallery : p.images,
+    gallery: projectGallerySource(p),
     beforeImage: p.beforeImage ?? p.thumbnail ?? p.featuredImage,
     afterImage: p.afterImage ?? p.featuredImage,
     relatedEventSlugs: p.relatedProjectSlugs ?? [],
