@@ -189,8 +189,12 @@ export function AdminPortfolioCollectionEditor({
       categoryId: editingProject.categoryId || primaryCategory?.id,
     };
 
-    if (showBrandFields && Array.isArray(payload.gallery)) {
-      payload.images = payload.gallery;
+    if (showBrandFields) {
+      const gallery = Array.isArray(editingProject.gallery)
+        ? editingProject.gallery
+        : [];
+      payload.gallery = gallery;
+      payload.images = gallery;
     }
 
     const result = await adminFetch(url, {

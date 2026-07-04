@@ -344,24 +344,22 @@ async function loadCMSContent(options?: LoadCMSOptions): Promise<CMSContent> {
       parsed = await readCMSFileFromDisk();
     }
 
-    // Fresh reads: prefer whichever source has the latest updatedAt (memory or blob).
-    if (options?.bypassMemory && memoryCMS) {
-      if (!parsed || isContentAtLeastAsFresh(memoryCMS, parsed)) {
-        logCmsSync("storage-read", {
-          source: "memory-overlay",
-          updatedAt: memoryCMS.updatedAt,
-          testimonials: memoryCMS.testimonials.length,
-        });
-        return applyContentMigrations(memoryCMS);
+    // Fresh reads must come from blob/disk — never a stale in-memory overlay.
+    if (options?.bypassMemory) {
+      if (!parsed) {
+        if (memoryCMS) {
+          console.warn("[cms-store] bypassMemory: blob unreadable — serving memory overlay");
+          return applyContentMigrations(memoryCMS);
+        }
+        if (shouldUseBlobStorage()) {
+          console.error(
+            "[cms-store] bypassMemory: blob unreadable with no overlay — serving defaults to avoid 500"
+          );
+          return applyContentMigrations(getDefaultCMSContent());
+        }
+        throw new Error("CMS content not found");
       }
-    }
-
-    // Skip the in-memory overlay when the caller explicitly requests fresh data.
-    if (
-      !options?.bypassMemory &&
-      memoryCMS &&
-      isContentAtLeastAsFresh(memoryCMS, parsed)
-    ) {
+    } else if (memoryCMS && isContentAtLeastAsFresh(memoryCMS, parsed)) {
       return memoryCMS;
     }
 
@@ -397,6 +395,25 @@ async function loadCMSContent(options?: LoadCMSOptions): Promise<CMSContent> {
 
     if (persistNeeded) {
       try {
+        // Re-read blob before auto-persist so concurrent admin saves are not overwritten.
+        if (shouldUseBlobStorage() && parsed?.updatedAt) {
+          const latest = await readCMSFromBlob();
+          if (
+            latest?.updatedAt &&
+            new Date(latest.updatedAt).getTime() > new Date(parsed.updatedAt).getTime()
+          ) {
+            parsed = latest;
+            content = applyContentMigrations(mergeContent(latest));
+            const latestBrandsRestore = ensureBrandsPageProjects(content);
+            content = latestBrandsRestore.content;
+            const latestHeroSync = await maybeSyncHeroFromMedia(latest, content);
+            content = latestHeroSync.content;
+            persistNeeded = latestBrandsRestore.changed || latestHeroSync.changed;
+            if (!persistNeeded) {
+              return content;
+            }
+          }
+        }
         content = await writeCMSContent(content);
       } catch {
         if (!shouldUseBlobStorage()) memoryCMS = content;

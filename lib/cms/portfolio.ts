@@ -17,8 +17,27 @@ function projectGallerySource(project: CMSPortfolioProject): string[] {
   return project.images ?? [];
 }
 
-function resolveProjectImages(p: CMSPortfolioProject): CMSPortfolioProject {
-  const gallery = resolvePublicAssets(projectGallerySource(p));
+/** Brands use gallery as the single source of truth — never resurrect stale images[]. */
+function brandProjectGallerySource(project: CMSPortfolioProject): string[] {
+  return Array.isArray(project.gallery) ? project.gallery : [];
+}
+
+function isBrandPortfolioProject(
+  project: CMSPortfolioProject,
+  categories: CMSPortfolioCategory[]
+): boolean {
+  const category = categories.find((item) => item.id === project.categoryId);
+  return category?.slug === "marques-clients";
+}
+
+function resolveProjectImages(
+  p: CMSPortfolioProject,
+  options?: { brandGalleryOnly?: boolean }
+): CMSPortfolioProject {
+  const source = options?.brandGalleryOnly
+    ? brandProjectGallerySource(p)
+    : projectGallerySource(p);
+  const gallery = resolvePublicAssets(source);
   const coverImage = resolvePublicAsset(p.coverImage) ?? "";
   const featuredImage = resolvePublicAsset(p.featuredImage) ?? coverImage;
   const thumbnail = resolvePublicAsset(p.thumbnail) ?? featuredImage;
@@ -83,7 +102,7 @@ export function toBrandProfile(p: CMSPortfolioProject): BrandProfile {
     description: p.description,
     installationType: p.installationType ?? "",
     projectCount: 1,
-    gallery: projectGallerySource(p),
+    gallery: brandProjectGallerySource(p),
     technologies: p.technologies ?? [],
     beforeImage: p.beforeImage ?? p.thumbnail ?? p.featuredImage,
     afterImage: p.afterImage ?? p.featuredImage,
@@ -112,16 +131,19 @@ export async function getPortfolioProjectsByCategorySlug(
   categorySlug: string,
   publishedOnly = true
 ): Promise<CMSPortfolioProject[]> {
-  const content = await readCMSContent();
+  const content = await readCMSContentFresh();
   const category = content.portfolioCategories.find((c) => c.slug === categorySlug);
   if (!category) return [];
+  const brandGalleryOnly = categorySlug === "marques-clients";
   const projects = sortByOrder(
     content.portfolioProjects.filter(
       (p) =>
         p.categoryId === category.id && (!publishedOnly || p.published)
     )
   );
-  return projects.map(resolveProjectImages);
+  return projects.map((project) =>
+    resolveProjectImages(project, { brandGalleryOnly })
+  );
 }
 
 export async function getPortfolioProjectBySlug(
@@ -217,6 +239,10 @@ export async function getPortfolioApiPayload(options?: {
 
   return {
     categories,
-    projects: projects.map(resolveProjectImages),
+    projects: projects.map((project) =>
+      resolveProjectImages(project, {
+        brandGalleryOnly: isBrandPortfolioProject(project, categories),
+      })
+    ),
   };
 }
