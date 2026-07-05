@@ -16,9 +16,17 @@ export function isRemoteCmsAsset(src: string): boolean {
   );
 }
 
-/** Props to pass to next/image for local public files (avoids build-time lstat). */
+/**
+ * Props to pass to next/image.
+ *
+ * - Local public files (/media, /uploads, …): unoptimized — the optimizer
+ *   cannot fs-stat them on Vercel (excluded from the Lambda bundle).
+ * - SVGs: unoptimized — the Next optimizer rejects SVG by default.
+ * - Remote Vercel Blob uploads: OPTIMIZED — next.config.ts remotePatterns
+ *   allows blob domains, so Next serves resized WebP/AVIF variants instead
+ *   of shipping full-size originals to mobile.
+ */
 export function localImageUnoptimized(src: string): { unoptimized?: true } {
-  return isLocalPublicAsset(src) || isRemoteCmsAsset(src)
-    ? { unoptimized: true }
-    : {};
+  const isSvg = /\.svg(\?|$)/i.test(src);
+  return isLocalPublicAsset(src) || isSvg ? { unoptimized: true } : {};
 }

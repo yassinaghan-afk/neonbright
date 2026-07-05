@@ -3,7 +3,7 @@ import { QuoteLink } from "@/components/quote/QuoteLink";
 import { WhatsAppLink, WhatsAppIcon } from "@/components/whatsapp/WhatsAppLink";
 import { SocialIconLinks } from "@/components/contact/SocialIconLinks";
 import { Logo } from "@/components/Logo";
-import { readCMSContentFresh } from "@/lib/cms/store";
+import { readCMSContent } from "@/lib/cms/store";
 import { buildWhatsAppBaseUrl, resolveWhatsAppNumber } from "@/lib/cms/contact-social";
 import type { CompanyInfo, ContactInfo, SocialLinks } from "@/lib/cms/types";
 
@@ -181,7 +181,7 @@ function FooterContent({ company, contact, social }: FooterContentProps) {
 
 /** Footer reads contact & social from CMS on every request. */
 export async function Footer() {
-  const { company, contact, social } = await readCMSContentFresh();
+  const { company, contact, social } = await readCMSContent();
   return (
     <FooterContent company={company} contact={contact} social={social} />
   );

@@ -17,8 +17,11 @@ export function getBrandsPageSeedProjects(categoryId: string): CMSPortfolioProje
 }
 
 /**
- * Restore missing marques-clients portfolio entries from the canonical seed.
- * Adds any seed brand whose slug is not already present in the Brands collection.
+ * Bootstrap the marques-clients collection from the canonical seed.
+ *
+ * Runs ONLY when the category has zero projects (fresh install / empty blob).
+ * It must never merge individual "missing" brands back in: the admin is the
+ * source of truth, so a deliberately deleted brand must stay deleted.
  */
 export function ensureBrandsPageProjects(
   content: CMSContent
@@ -30,30 +33,26 @@ export function ensureBrandsPageProjects(
     return { content, changed: false };
   }
 
+  const existingCount = content.portfolioProjects.filter(
+    (project) => project.categoryId === marquesCategory.id
+  ).length;
+  if (existingCount > 0) {
+    return { content, changed: false };
+  }
+
   const seed = getBrandsPageSeedProjects(marquesCategory.id);
   if (seed.length === 0) {
     return { content, changed: false };
   }
 
-  const existingMarquesSlugs = new Set(
-    content.portfolioProjects
-      .filter((project) => project.categoryId === marquesCategory.id)
-      .map((project) => project.slug)
-  );
-
-  const missing = seed.filter((project) => !existingMarquesSlugs.has(project.slug));
-  if (missing.length === 0) {
-    return { content, changed: false };
-  }
-
   console.log(
-    `[cms-sync] brands-page-seed: adding ${missing.length} missing marques-clients projects (${missing.map((p) => p.slug).join(", ")})`
+    `[cms-sync] brands-page-seed: bootstrapping ${seed.length} marques-clients projects (category was empty)`
   );
 
   return {
     content: {
       ...content,
-      portfolioProjects: [...content.portfolioProjects, ...missing],
+      portfolioProjects: [...content.portfolioProjects, ...seed],
     },
     changed: true,
   };

@@ -5,7 +5,7 @@ import { ContactSocialProvider } from "@/components/contact/ContactSocialProvide
 import { BrandLogoProvider } from "@/components/brand/BrandLogoProvider";
 import { BRAND_OG_DIMENSIONS, BRAND_OG_IMAGE, BRAND_NAME } from "@/lib/brand";
 import { getSiteBaseUrl } from "@/lib/seo/metadata";
-import { readCMSContentFresh } from "@/lib/cms/store";
+import { readCMSContent } from "@/lib/cms/store";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -75,7 +75,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { contact, social, instagram, company } = await readCMSContentFresh();
+  const { contact, social, instagram, company } = await readCMSContent();
 
   return (
     <html

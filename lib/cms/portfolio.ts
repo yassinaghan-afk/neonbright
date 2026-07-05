@@ -111,19 +111,19 @@ export function toBrandProfile(p: CMSPortfolioProject): BrandProfile {
 }
 
 export async function getHeroContent(): Promise<HeroContent> {
-  const content = await readCMSContentFresh();
+  const content = await readCMSContent();
   return content.hero;
 }
 
 export async function getEnabledPortfolioCategories(): Promise<CMSPortfolioCategory[]> {
-  const content = await readCMSContentFresh();
+  const content = await readCMSContent();
   return sortByOrder(content.portfolioCategories).filter((c) => c.enabled);
 }
 
 export async function getPortfolioCategoryBySlug(
   slug: string
 ): Promise<CMSPortfolioCategory | undefined> {
-  const content = await readCMSContentFresh();
+  const content = await readCMSContent();
   return content.portfolioCategories.find((c) => c.slug === slug);
 }
 
@@ -131,7 +131,7 @@ export async function getPortfolioProjectsByCategorySlug(
   categorySlug: string,
   publishedOnly = true
 ): Promise<CMSPortfolioProject[]> {
-  const content = await readCMSContentFresh();
+  const content = await readCMSContent();
   const category = content.portfolioCategories.find((c) => c.slug === categorySlug);
   if (!category) return [];
   const brandGalleryOnly = categorySlug === "marques-clients";

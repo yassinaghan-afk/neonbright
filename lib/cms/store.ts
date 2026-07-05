@@ -1,7 +1,7 @@
 import { promises as fs } from "fs";
 import path from "path";
 import { cache } from "react";
-import { unstable_noStore as noStore } from "next/cache";
+import { unstable_cache, unstable_noStore as noStore } from "next/cache";
 import { getDefaultCMSContent } from "@/lib/cms/defaults";
 import { ensureBrandsPageProjects } from "@/lib/cms/brands-page-seed";
 import {
@@ -19,7 +19,7 @@ import {
   shouldUseBlobStorage,
   getBlobCommandOptions,
 } from "@/lib/cms/blob-client";
-import { revalidatePublicSite } from "@/lib/cms/revalidate-public";
+import { CMS_CACHE_TAG, revalidatePublicSite } from "@/lib/cms/revalidate-public";
 import { logCmsSync } from "@/lib/cms/sync-log";
 
 const DATA_DIR = path.join(process.cwd(), "data");
@@ -393,30 +393,16 @@ async function loadCMSContent(options?: LoadCMSOptions): Promise<CMSContent> {
     content = synced;
     if (heroChanged) persistNeeded = true;
 
-    if (persistNeeded) {
+    // CRITICAL: never write to Blob from a read path on Vercel.
+    // A read may be served stale content (CDN lag); persisting it would
+    // overwrite newer admin saves with old data. Writes happen only through
+    // explicit admin mutations (updateCMSContent/writeCMSContent).
+    // Local dev keeps auto-persist so hero/seed syncs land in the JSON file.
+    if (persistNeeded && canPersistCMS()) {
       try {
-        // Re-read blob before auto-persist so concurrent admin saves are not overwritten.
-        if (shouldUseBlobStorage() && parsed?.updatedAt) {
-          const latest = await readCMSFromBlob();
-          if (
-            latest?.updatedAt &&
-            new Date(latest.updatedAt).getTime() > new Date(parsed.updatedAt).getTime()
-          ) {
-            parsed = latest;
-            content = applyContentMigrations(mergeContent(latest));
-            const latestBrandsRestore = ensureBrandsPageProjects(content);
-            content = latestBrandsRestore.content;
-            const latestHeroSync = await maybeSyncHeroFromMedia(latest, content);
-            content = latestHeroSync.content;
-            persistNeeded = latestBrandsRestore.changed || latestHeroSync.changed;
-            if (!persistNeeded) {
-              return content;
-            }
-          }
-        }
         content = await writeCMSContent(content);
       } catch {
-        if (!shouldUseBlobStorage()) memoryCMS = content;
+        memoryCMS = content;
       }
     } else if (!shouldUseBlobStorage()) {
       memoryCMS = content;
@@ -430,22 +416,64 @@ async function loadCMSContent(options?: LoadCMSOptions): Promise<CMSContent> {
 }
 
 /**
- * Read the current CMS content.
+ * Distributed cached read for PUBLIC pages (Vercel only).
+ *
+ * Cached in the Next.js data cache under CMS_CACHE_TAG, which every admin
+ * write invalidates via revalidateTag (writeCMSContent → revalidatePublicSite
+ * and POST /api/admin/revalidate). Result: public requests hit the cache
+ * (no Blob round-trip → fast TTFB) yet always refetch immediately after a save.
+ *
+ * Throws when the blob is unreadable so unstable_cache never caches defaults.
+ */
+const readCMSContentCachedBlob = unstable_cache(
+  async (): Promise<CMSContent> => {
+    const parsed = await readCMSFromBlob();
+    if (!parsed) throw new Error("CMS blob unreadable");
+    let content = applyContentMigrations(mergeContent(parsed));
+    content = ensureBrandsPageProjects(content).content;
+    return content;
+  },
+  ["cms-content-public"],
+  { tags: [CMS_CACHE_TAG] }
+);
+
+/**
+ * Read the current CMS content (public pages).
+ *
+ * - Vercel: Next.js data cache tagged with CMS_CACHE_TAG (fast, invalidated
+ *   on every admin write). Falls back to a direct blob read on cache errors.
+ * - Local dev: direct read from data/cms-content.json.
  *
  * Wrapped with React.cache() so multiple Server Components on the same page
  * share a single fetch per request.
  */
-export const readCMSContent: () => Promise<CMSContent> = cache(loadCMSContent);
+export const readCMSContent: () => Promise<CMSContent> = cache(
+  async (): Promise<CMSContent> => {
+    if (shouldUseBlobStorage()) {
+      try {
+        return await readCMSContentCachedBlob();
+      } catch (err) {
+        console.warn(
+          "[cms-store] cached read failed — falling back to direct read:",
+          err instanceof Error ? err.message : err
+        );
+      }
+    }
+    return loadCMSContent();
+  }
+);
 
 /**
- * Authoritative read — always fetches from Blob/disk, never from the
- * in-memory overlay.  Also wrapped in React.cache() so concurrent Server
- * Components on the same page share one blob read per request instead of
- * each issuing their own, while still guaranteeing freshness.
+ * Authoritative direct read — always fetches from Blob/disk, bypassing both
+ * the Next.js data cache and the in-memory overlay. Used by admin API routes
+ * and read-before-write (updateCMSContent).
+ *
+ * Deliberately NOT wrapped in React.cache(): a write flow must never receive
+ * a value memoized earlier in the same request.
  */
-export const readCMSContentFresh: () => Promise<CMSContent> = cache(
-  () => loadCMSContent({ bypassMemory: true })
-);
+export async function readCMSContentFresh(): Promise<CMSContent> {
+  return loadCMSContent({ bypassMemory: true });
+}
 
 /**
  * Persist updated CMS content and invalidate all public caches.
