@@ -227,17 +227,34 @@ export function AdminPortfolioCollectionEditor({
   };
 
   const moveCategory = async (index: number, dir: "up" | "down") => {
+    if (reordering || saving) return;
+
     const list = [...collectionCategories];
     const j = dir === "up" ? index - 1 : index + 1;
     if (j < 0 || j >= list.length) return;
-    [list[index], list[j]] = [list[j], list[index]];
-    const reordered = list.map((category, i) => ({ ...category, sortOrder: i }));
+
+    const snapshot = categories;
+
+    const swapped = [...list];
+    [swapped[index], swapped[j]] = [swapped[j], swapped[index]];
+    const reordered = swapped.map((category, i) => ({ ...category, sortOrder: i }));
     const merged = mergeCategoryOrder(categories, reordered);
+
+    setMsg(null);
     setCategories(merged);
-    await adminFetch("/api/admin/portfolio/categories", {
+    setReordering(true);
+
+    const result = await adminFetch("/api/admin/portfolio/categories", {
       method: "PUT",
       body: JSON.stringify(merged),
     });
+
+    setReordering(false);
+
+    if (result.error) {
+      setCategories(snapshot);
+      setMsg({ type: "error", text: result.error });
+    }
   };
 
   const moveProject = async (index: number, dir: "up" | "down") => {
@@ -311,19 +328,57 @@ export function AdminPortfolioCollectionEditor({
   };
 
   const togglePublished = async (project: CMSPortfolioProject) => {
-    await adminFetch(`/api/admin/portfolio/projects/${project.id}`, {
-      method: "PUT",
-      body: JSON.stringify({ ...project, published: !project.published }),
-    });
-    await load();
+    const newPublished = !project.published;
+    // Optimistic update
+    setProjects((prev) =>
+      prev.map((p) => (p.id === project.id ? { ...p, published: newPublished } : p))
+    );
+
+    const result = await adminFetch<CMSPortfolioProject>(
+      `/api/admin/portfolio/projects/${project.id}`,
+      { method: "PUT", body: JSON.stringify({ published: newPublished }) }
+    );
+
+    if (result.error) {
+      // Rollback
+      setProjects((prev) =>
+        prev.map((p) => (p.id === project.id ? { ...p, published: project.published } : p))
+      );
+      setMsg({ type: "error", text: result.error });
+      return;
+    }
+
+    if (result.data) {
+      const saved = result.data;
+      setProjects((prev) => prev.map((p) => (p.id === saved.id ? saved : p)));
+    }
   };
 
   const toggleCategory = async (category: CMSPortfolioCategory) => {
-    await adminFetch(`/api/admin/portfolio/categories/${category.id}`, {
-      method: "PUT",
-      body: JSON.stringify({ ...category, enabled: !category.enabled }),
-    });
-    await load();
+    const newEnabled = !category.enabled;
+    // Optimistic update
+    setCategories((prev) =>
+      prev.map((c) => (c.id === category.id ? { ...c, enabled: newEnabled } : c))
+    );
+
+    const result = await adminFetch<CMSPortfolioCategory>(
+      `/api/admin/portfolio/categories/${category.id}`,
+      { method: "PUT", body: JSON.stringify({ enabled: newEnabled }) }
+    );
+
+    if (result.error) {
+      // Rollback
+      setCategories((prev) =>
+        prev.map((c) => (c.id === category.id ? { ...c, enabled: category.enabled } : c))
+      );
+      setMsg({ type: "error", text: result.error });
+      return;
+    }
+
+    if (result.data) {
+      const saved = result.data;
+      setCategories((prev) => prev.map((c) => (c.id === saved.id ? saved : c)));
+    }
   };
 
   const deleteCategory = async (category: CMSPortfolioCategory) => {
