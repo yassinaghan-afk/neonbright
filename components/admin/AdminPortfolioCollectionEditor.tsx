@@ -85,6 +85,8 @@ export function AdminPortfolioCollectionEditor({
   const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [projectMsg, setProjectMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
+  // Prevents concurrent reorder requests (race conditions from rapid arrow clicks).
+  const [reordering, setReordering] = useState(false);
 
   const collectionCategories = useMemo(
     () => sortByOrder(filterCategoriesForCollection(categories, collectionKey)),
@@ -239,30 +241,38 @@ export function AdminPortfolioCollectionEditor({
   };
 
   const moveProject = async (index: number, dir: "up" | "down") => {
-    if (!primaryCategory) return;
+    // Guard: no category, or a reorder/save is already in flight.
+    if (!primaryCategory || reordering || saving) return;
 
     const target = filteredProjects[index];
     if (!target) return;
 
-    // Always reorder the full collection list (not the visibility-filtered subset)
-    // so hidden projects keep their relative position and stale sortOrder values
-    // cannot corrupt the payload sent to the API.
+    // Work on the FULL collection list so hidden projects keep their slot and
+    // stale sortOrder values cannot corrupt the payload.
     const list = [...collectionProjects];
     const fullIndex = list.findIndex((project) => project.id === target.id);
     if (fullIndex < 0) return;
 
     const swapIndex = dir === "up" ? fullIndex - 1 : fullIndex + 1;
     if (swapIndex < 0 || swapIndex >= list.length) return;
-    [list[fullIndex], list[swapIndex]] = [list[swapIndex], list[fullIndex]];
 
-    const orderedIds = list.map((project) => project.id);
+    // Swap in a fresh copy — never mutate directly.
+    const swapped = [...list];
+    [swapped[fullIndex], swapped[swapIndex]] = [swapped[swapIndex], swapped[fullIndex]];
+    const orderedIds = swapped.map((project) => project.id);
+
     const all = reorderProjectsInCategory(projects, primaryCategory.id, orderedIds);
 
+    // Snapshot for rollback on failure.
+    const snapshot = projects;
+
+    // ① Optimistic update — UI moves immediately.
     setMsg(null);
     setProjects(all);
+    setReordering(true);
 
-    // Send projects in the exact visual order — never re-sort by sortOrder, which
-    // can undo the swap when values are duplicated or stale.
+    // Send payload in explicit visual order (never re-sort by sortOrder which
+    // can undo the swap when values are duplicated or stale).
     const byId = new Map(
       all
         .filter((project) => project.categoryId === primaryCategory.id)
@@ -272,20 +282,32 @@ export function AdminPortfolioCollectionEditor({
       .map((id) => byId.get(id))
       .filter((project): project is CMSPortfolioProject => Boolean(project));
 
-    const result = await adminFetch(
+    const result = await adminFetch<CMSPortfolioProject[]>(
       `/api/admin/portfolio/projects?categoryId=${encodeURIComponent(primaryCategory.id)}`,
-      {
-        method: "PUT",
-        body: JSON.stringify(subset),
-      }
+      { method: "PUT", body: JSON.stringify(subset) }
     );
+
+    setReordering(false);
+
     if (result.error) {
+      // ② Rollback: restore snapshot so the UI is consistent with the database.
+      setProjects(snapshot);
       setMsg({ type: "error", text: result.error });
-      await load();
       return;
     }
+
+    // ③ Apply the server's authoritative sorted list directly into state.
+    //    This avoids a second HTTP round-trip (load()) which can race with the
+    //    CDN/blob layer and return a stale 304 — undoing the move the user just made.
+    if (Array.isArray(result.data)) {
+      const serverProjects = result.data as CMSPortfolioProject[];
+      const serverById = new Map(serverProjects.map((p) => [p.id, p]));
+      setProjects((prev) =>
+        prev.map((p) => serverById.get(p.id) ?? p)
+      );
+    }
+
     setMsg({ type: "success", text: "Ordre enregistré." });
-    await load();
   };
 
   const togglePublished = async (project: CMSPortfolioProject) => {
@@ -525,7 +547,7 @@ export function AdminPortfolioCollectionEditor({
                           variant="ghost"
                           className="px-2 text-xs"
                           onClick={() => moveProject(index, "up")}
-                          disabled={index === 0}
+                          disabled={index === 0 || reordering || saving}
                         >
                           ↑
                         </AdminButton>
@@ -533,7 +555,7 @@ export function AdminPortfolioCollectionEditor({
                           variant="ghost"
                           className="px-2 text-xs"
                           onClick={() => moveProject(index, "down")}
-                          disabled={index === filteredProjects.length - 1}
+                          disabled={index === filteredProjects.length - 1 || reordering || saving}
                         >
                           ↓
                         </AdminButton>
