@@ -144,16 +144,16 @@ export function AdminPortfolioCollectionEditor({
     void load();
   }, []);
 
-  const callSave = async (url: string, method: string, body: unknown) => {
+  const callSave = async <T,>(url: string, method: string, body: unknown): Promise<T | null> => {
     setSaving(true);
     setMsg(null);
-    const result = await adminFetch(url, { method, body: JSON.stringify(body) });
+    const result = await adminFetch<T>(url, { method, body: JSON.stringify(body) });
     setSaving(false);
     if (result.error) {
       setMsg({ type: "error", text: result.error });
-      return false;
+      return null;
     }
-    return true;
+    return result.data ?? null;
   };
 
   const saveCategory = async () => {
@@ -161,17 +161,21 @@ export function AdminPortfolioCollectionEditor({
       setMsg({ type: "error", text: "Titre et slug requis." });
       return;
     }
-    const ok = isNewCategory
-      ? await callSave("/api/admin/portfolio/categories", "POST", editingCategory)
-      : await callSave(
+    const wasNew = isNewCategory;
+    const saved = wasNew
+      ? await callSave<CMSPortfolioCategory>("/api/admin/portfolio/categories", "POST", editingCategory)
+      : await callSave<CMSPortfolioCategory>(
           `/api/admin/portfolio/categories/${editingCategory.id}`,
           "PUT",
           editingCategory
         );
-    if (ok) {
-      setMsg({ type: "success", text: "Catégorie enregistrée." });
-      setEditingCategory(null);
-      await load();
+    if (!saved) return;
+    setMsg({ type: "success", text: "Catégorie enregistrée." });
+    setEditingCategory(null);
+    if (wasNew) {
+      setCategories((prev) => sortByOrder([...prev, saved]));
+    } else {
+      setCategories((prev) => prev.map((c) => c.id === saved.id ? saved : c));
     }
   };
 
@@ -182,10 +186,11 @@ export function AdminPortfolioCollectionEditor({
     }
     setSaving(true);
     setProjectMsg(null);
-    const url = isNewProject
+    const wasNew = isNewProject;
+    const url = wasNew
       ? "/api/admin/portfolio/projects"
       : `/api/admin/portfolio/projects/${editingProject.id}`;
-    const method = isNewProject ? "POST" : "PUT";
+    const method = wasNew ? "POST" : "PUT";
     const payload: Partial<CMSPortfolioProject> = {
       ...editingProject,
       categoryId: editingProject.categoryId || primaryCategory?.id,
@@ -199,7 +204,7 @@ export function AdminPortfolioCollectionEditor({
       payload.images = gallery;
     }
 
-    const result = await adminFetch(url, {
+    const result = await adminFetch<CMSPortfolioProject>(url, {
       method,
       body: JSON.stringify(payload),
     });
@@ -208,10 +213,15 @@ export function AdminPortfolioCollectionEditor({
       setProjectMsg({ type: "error", text: result.error });
       return;
     }
+    const saved = result.data as CMSPortfolioProject;
     setMsg({ type: "success", text: "Projet enregistré." });
     setEditingProject(null);
     setProjectMsg(null);
-    await load();
+    if (wasNew) {
+      setProjects((prev) => [...prev, saved]);
+    } else {
+      setProjects((prev) => prev.map((p) => p.id === saved.id ? saved : p));
+    }
   };
 
   const duplicateProject = async (project: CMSPortfolioProject) => {
@@ -222,38 +232,41 @@ export function AdminPortfolioCollectionEditor({
       published: false,
     };
     const { id: _id, ...rest } = dup as CMSPortfolioProject;
-    await callSave("/api/admin/portfolio/projects", "POST", rest);
-    await load();
+    const result = await adminFetch<CMSPortfolioProject>("/api/admin/portfolio/projects", {
+      method: "POST",
+      body: JSON.stringify(rest),
+    });
+    if (!result.error && result.data) {
+      setProjects((prev) => [...prev, result.data as CMSPortfolioProject]);
+    } else if (result.error) {
+      setMsg({ type: "error", text: result.error });
+    }
   };
 
   const moveCategory = async (index: number, dir: "up" | "down") => {
     if (reordering || saving) return;
-
     const list = [...collectionCategories];
     const j = dir === "up" ? index - 1 : index + 1;
     if (j < 0 || j >= list.length) return;
-
-    const snapshot = categories;
-
-    const swapped = [...list];
-    [swapped[index], swapped[j]] = [swapped[j], swapped[index]];
-    const reordered = swapped.map((category, i) => ({ ...category, sortOrder: i }));
+    [list[index], list[j]] = [list[j], list[index]];
+    const reordered = list.map((category, i) => ({ ...category, sortOrder: i }));
     const merged = mergeCategoryOrder(categories, reordered);
-
-    setMsg(null);
+    const snapshot = categories;
     setCategories(merged);
     setReordering(true);
-
-    const result = await adminFetch("/api/admin/portfolio/categories", {
+    const result = await adminFetch<CMSPortfolioCategory[]>("/api/admin/portfolio/categories", {
       method: "PUT",
       body: JSON.stringify(merged),
     });
-
     setReordering(false);
-
     if (result.error) {
       setCategories(snapshot);
       setMsg({ type: "error", text: result.error });
+      return;
+    }
+    if (Array.isArray(result.data)) {
+      const serverById = new Map((result.data as CMSPortfolioCategory[]).map((c) => [c.id, c]));
+      setCategories((prev) => prev.map((c) => serverById.get(c.id) ?? c));
     }
   };
 
@@ -329,55 +342,50 @@ export function AdminPortfolioCollectionEditor({
 
   const togglePublished = async (project: CMSPortfolioProject) => {
     const newPublished = !project.published;
-    // Optimistic update
+    // Optimistic update — flip immediately in UI.
     setProjects((prev) =>
-      prev.map((p) => (p.id === project.id ? { ...p, published: newPublished } : p))
+      prev.map((p) => p.id === project.id ? { ...p, published: newPublished } : p)
     );
-
     const result = await adminFetch<CMSPortfolioProject>(
       `/api/admin/portfolio/projects/${project.id}`,
       { method: "PUT", body: JSON.stringify({ published: newPublished }) }
     );
-
     if (result.error) {
-      // Rollback
+      // Rollback on failure.
       setProjects((prev) =>
-        prev.map((p) => (p.id === project.id ? { ...p, published: project.published } : p))
+        prev.map((p) => p.id === project.id ? { ...p, published: project.published } : p)
       );
       setMsg({ type: "error", text: result.error });
       return;
     }
-
     if (result.data) {
-      const saved = result.data;
-      setProjects((prev) => prev.map((p) => (p.id === saved.id ? saved : p)));
+      // Reconcile with exact server state.
+      setProjects((prev) =>
+        prev.map((p) => p.id === project.id ? (result.data as CMSPortfolioProject) : p)
+      );
     }
   };
 
   const toggleCategory = async (category: CMSPortfolioCategory) => {
     const newEnabled = !category.enabled;
-    // Optimistic update
     setCategories((prev) =>
-      prev.map((c) => (c.id === category.id ? { ...c, enabled: newEnabled } : c))
+      prev.map((c) => c.id === category.id ? { ...c, enabled: newEnabled } : c)
     );
-
     const result = await adminFetch<CMSPortfolioCategory>(
       `/api/admin/portfolio/categories/${category.id}`,
       { method: "PUT", body: JSON.stringify({ enabled: newEnabled }) }
     );
-
     if (result.error) {
-      // Rollback
       setCategories((prev) =>
-        prev.map((c) => (c.id === category.id ? { ...c, enabled: category.enabled } : c))
+        prev.map((c) => c.id === category.id ? { ...c, enabled: category.enabled } : c)
       );
       setMsg({ type: "error", text: result.error });
       return;
     }
-
     if (result.data) {
-      const saved = result.data;
-      setCategories((prev) => prev.map((c) => (c.id === saved.id ? saved : c)));
+      setCategories((prev) =>
+        prev.map((c) => c.id === category.id ? (result.data as CMSPortfolioCategory) : c)
+      );
     }
   };
 
@@ -395,7 +403,6 @@ export function AdminPortfolioCollectionEditor({
     setCategories((prev) => prev.filter((item) => item.id !== category.id));
     setProjects((prev) => prev.filter((item) => item.categoryId !== category.id));
     setMsg({ type: "success", text: "Catégorie supprimée." });
-    await load();
   };
 
   const deleteProject = async (project: CMSPortfolioProject) => {
@@ -409,7 +416,6 @@ export function AdminPortfolioCollectionEditor({
     }
     setProjects((prev) => prev.filter((item) => item.id !== project.id));
     setMsg({ type: "success", text: "Projet supprimé." });
-    await load();
   };
 
   const setEP = (patch: Partial<CMSPortfolioProject>) =>
@@ -486,7 +492,7 @@ export function AdminPortfolioCollectionEditor({
                       variant="ghost"
                       className="px-2 text-xs"
                       onClick={() => moveCategory(index, "up")}
-                      disabled={index === 0}
+                      disabled={index === 0 || reordering || saving}
                     >
                       ↑
                     </AdminButton>
@@ -494,7 +500,7 @@ export function AdminPortfolioCollectionEditor({
                       variant="ghost"
                       className="px-2 text-xs"
                       onClick={() => moveCategory(index, "down")}
-                      disabled={index === collectionCategories.length - 1}
+                      disabled={index === collectionCategories.length - 1 || reordering || saving}
                     >
                       ↓
                     </AdminButton>

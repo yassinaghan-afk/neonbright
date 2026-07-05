@@ -74,13 +74,11 @@ export async function POST(req: NextRequest) {
     filters: body.filters,
   };
 
-  let withOrder: CMSPortfolioProject | undefined;
-
-  await updateCMSContent((c) => {
+  const updated = await updateCMSContent((c) => {
     const inCategory = (c.portfolioProjects ?? []).filter(
       (project) => project.categoryId === item.categoryId
     ).length;
-    withOrder = {
+    const withOrder = {
       ...item,
       sortOrder: item.sortOrder ?? inCategory,
     };
@@ -90,7 +88,8 @@ export async function POST(req: NextRequest) {
     };
   });
 
-  return jsonOk(withOrder ?? item, 201);
+  const created = updated.portfolioProjects.find((p) => p.id === item.id) ?? item;
+  return jsonOk(created, 201);
 }
 
 export async function PUT(req: NextRequest) {
