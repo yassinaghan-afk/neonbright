@@ -437,10 +437,15 @@ async function loadCMSContent(options?: LoadCMSOptions): Promise<CMSContent> {
  */
 export const readCMSContent: () => Promise<CMSContent> = cache(loadCMSContent);
 
-/** Bypass React.cache and in-memory overlay — authoritative read for public pages and writes. */
-export async function readCMSContentFresh(): Promise<CMSContent> {
-  return loadCMSContent({ bypassMemory: true });
-}
+/**
+ * Authoritative read — always fetches from Blob/disk, never from the
+ * in-memory overlay.  Also wrapped in React.cache() so concurrent Server
+ * Components on the same page share one blob read per request instead of
+ * each issuing their own, while still guaranteeing freshness.
+ */
+export const readCMSContentFresh: () => Promise<CMSContent> = cache(
+  () => loadCMSContent({ bypassMemory: true })
+);
 
 /**
  * Persist updated CMS content and invalidate all public caches.

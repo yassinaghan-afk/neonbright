@@ -1,11 +1,10 @@
-import { unstable_noStore as noStore } from "next/cache";
 import { resolveInstagramUrl } from "@/lib/cms/contact-social";
 import {
   filterPublicPosts,
   normalizeInstagramPosts,
 } from "@/lib/cms/instagram-normalize";
 import { sortByOrder } from "@/lib/cms/normalize";
-import { readCMSContent } from "@/lib/cms/store";
+import { readCMSContentFresh } from "@/lib/cms/store";
 import type { CMSInstagramPost, CMSInstagramSettings } from "@/lib/cms/types";
 
 export type InstagramShowcaseData = {
@@ -17,8 +16,7 @@ export type InstagramShowcaseData = {
 
 /** Homepage entry point — posts only, always fresh from CMS storage. */
 export async function getInstagramShowcase(): Promise<InstagramShowcaseData> {
-  noStore();
-  const content = await readCMSContent();
+  const content = await readCMSContentFresh();
   const profileUrl = resolveInstagramUrl(content.social, content.instagram.url);
   const posts = filterPublicPosts(
     normalizeInstagramPosts(sortByOrder(content.instagramPosts ?? []))

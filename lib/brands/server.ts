@@ -3,7 +3,7 @@ import {
   isLogoMediaSyncEnabled,
   logoFilenameFromSrc,
 } from "@/lib/cms/logo-media";
-import { readCMSContent } from "@/lib/cms/store";
+import { readCMSContentFresh } from "@/lib/cms/store";
 import { resolvePublicAsset } from "@/lib/media/public-asset";
 import {
   getBrandProfileFromCMS,
@@ -33,7 +33,7 @@ async function buildLogoMap(): Promise<Map<string, string>> {
     return map;
   }
 
-  const content = await readCMSContent();
+  const content = await readCMSContentFresh();
   const map = new Map<string, string>();
   for (const p of content.portfolioProjects) {
     if (!p.logoFile) continue;

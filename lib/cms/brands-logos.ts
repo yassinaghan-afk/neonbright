@@ -1,4 +1,4 @@
-import { readCMSContent } from "@/lib/cms/store";
+import { readCMSContentFresh } from "@/lib/cms/store";
 import { sortByOrder } from "@/lib/cms/normalize";
 import type { PartnerLogo } from "@/lib/cms/logo-media";
 import type { CMSBrandsPageLogo } from "@/lib/cms/types";
@@ -19,7 +19,7 @@ export async function getBrandsPageLogos(): Promise<{
   logos: PartnerLogo[];
   stripLabel: string;
 }> {
-  const content = await readCMSContent();
+  const content = await readCMSContentFresh();
   return {
     logos: logosFromCMS(content.brandsPageLogos),
     stripLabel: DEFAULT_STRIP_LABEL,

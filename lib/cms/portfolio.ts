@@ -111,19 +111,19 @@ export function toBrandProfile(p: CMSPortfolioProject): BrandProfile {
 }
 
 export async function getHeroContent(): Promise<HeroContent> {
-  const content = await readCMSContent();
+  const content = await readCMSContentFresh();
   return content.hero;
 }
 
 export async function getEnabledPortfolioCategories(): Promise<CMSPortfolioCategory[]> {
-  const content = await readCMSContent();
+  const content = await readCMSContentFresh();
   return sortByOrder(content.portfolioCategories).filter((c) => c.enabled);
 }
 
 export async function getPortfolioCategoryBySlug(
   slug: string
 ): Promise<CMSPortfolioCategory | undefined> {
-  const content = await readCMSContent();
+  const content = await readCMSContentFresh();
   return content.portfolioCategories.find((c) => c.slug === slug);
 }
 
@@ -208,12 +208,12 @@ export async function resolveBrandsFromCMS(
 }
 
 export async function getAllPortfolioCategoriesAdmin(): Promise<CMSPortfolioCategory[]> {
-  const content = await readCMSContent();
+  const content = await readCMSContentFresh();
   return sortByOrder(content.portfolioCategories);
 }
 
 export async function getAllPortfolioProjectsAdmin(): Promise<CMSPortfolioProject[]> {
-  const content = await readCMSContent();
+  const content = await readCMSContentFresh();
   return sortByOrder(content.portfolioProjects);
 }
 
@@ -229,11 +229,16 @@ export async function getPortfolioApiPayload(options?: {
   const content = await readCMSContentFresh();
   const includeHidden = options?.includeHidden ?? false;
 
-  let categories = sortByOrder(content.portfolioCategories ?? []);
+  // allCategories is used for brand-vs-event determination regardless of
+  // enabled state — otherwise disabling the marques-clients category would
+  // silently fall back to the events-style images[] gallery and resurrect
+  // previously deleted brand images.
+  const allCategories = sortByOrder(content.portfolioCategories ?? []);
+  let categories = allCategories;
   let projects = sortByOrder(content.portfolioProjects ?? []);
 
   if (!includeHidden) {
-    categories = categories.filter((c) => c.enabled);
+    categories = allCategories.filter((c) => c.enabled);
     projects = projects.filter((p) => p.published);
   }
 
@@ -241,7 +246,7 @@ export async function getPortfolioApiPayload(options?: {
     categories,
     projects: projects.map((project) =>
       resolveProjectImages(project, {
-        brandGalleryOnly: isBrandPortfolioProject(project, categories),
+        brandGalleryOnly: isBrandPortfolioProject(project, allCategories),
       })
     ),
   };
