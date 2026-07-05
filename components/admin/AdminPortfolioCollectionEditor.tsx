@@ -241,21 +241,37 @@ export function AdminPortfolioCollectionEditor({
   const moveProject = async (index: number, dir: "up" | "down") => {
     if (!primaryCategory) return;
 
-    const list = [...filteredProjects];
-    const j = dir === "up" ? index - 1 : index + 1;
-    if (j < 0 || j >= list.length) return;
-    [list[index], list[j]] = [list[j], list[index]];
+    const target = filteredProjects[index];
+    if (!target) return;
+
+    // Always reorder the full collection list (not the visibility-filtered subset)
+    // so hidden projects keep their relative position and stale sortOrder values
+    // cannot corrupt the payload sent to the API.
+    const list = [...collectionProjects];
+    const fullIndex = list.findIndex((project) => project.id === target.id);
+    if (fullIndex < 0) return;
+
+    const swapIndex = dir === "up" ? fullIndex - 1 : fullIndex + 1;
+    if (swapIndex < 0 || swapIndex >= list.length) return;
+    [list[fullIndex], list[swapIndex]] = [list[swapIndex], list[fullIndex]];
 
     const orderedIds = list.map((project) => project.id);
     const all = reorderProjectsInCategory(projects, primaryCategory.id, orderedIds);
 
     setMsg(null);
     setProjects(all);
-    // Sort by the newly assigned sortOrder so the API (which uses array position as the
-    // authoritative order) receives items in the correct desired sequence.
-    const subset = all
-      .filter((project) => project.categoryId === primaryCategory.id)
-      .sort((a, b) => a.sortOrder - b.sortOrder);
+
+    // Send projects in the exact visual order — never re-sort by sortOrder, which
+    // can undo the swap when values are duplicated or stale.
+    const byId = new Map(
+      all
+        .filter((project) => project.categoryId === primaryCategory.id)
+        .map((project) => [project.id, project])
+    );
+    const subset = orderedIds
+      .map((id) => byId.get(id))
+      .filter((project): project is CMSPortfolioProject => Boolean(project));
+
     const result = await adminFetch(
       `/api/admin/portfolio/projects?categoryId=${encodeURIComponent(primaryCategory.id)}`,
       {

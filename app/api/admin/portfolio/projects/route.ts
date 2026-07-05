@@ -99,30 +99,40 @@ export async function PUT(req: NextRequest) {
   const categoryId = req.nextUrl.searchParams.get("categoryId");
 
   if (categoryId && Array.isArray(body)) {
-    // Normalise: treat array position as the authoritative order so that a
-    // pre-sorted payload (client sends items in desired order, index 0 = first)
-    // is always respected correctly.
     const incoming = body as CMSPortfolioProject[];
-    const reordered = incoming.map((project, index) => ({
-      ...project,
-      sortOrder: index,
-    }));
-    const orderById = new Map(reordered.map((project) => [project.id, project.sortOrder]));
+    const incomingIds = new Set(incoming.map((project) => project.id));
 
-    const updated = await updateCMSContent((c) => ({
-      ...c,
-      portfolioProjects: (c.portfolioProjects ?? []).map((project) =>
-        project.categoryId === categoryId && orderById.has(project.id)
-          ? { ...project, sortOrder: orderById.get(project.id)! }
-          : project
-      ),
-    }));
+    const updated = await updateCMSContent((c) => {
+      // Payload order is authoritative. Any category projects missing from the
+      // payload are appended at the end so sortOrder stays contiguous.
+      const missing = (c.portfolioProjects ?? []).filter(
+        (project) => project.categoryId === categoryId && !incomingIds.has(project.id)
+      );
+      const finalOrder = [
+        ...incoming.map((project) => project.id),
+        ...missing.map((project) => project.id),
+      ];
+      const orderById = new Map(finalOrder.map((id, index) => [id, index]));
+
+      return {
+        ...c,
+        portfolioProjects: (c.portfolioProjects ?? []).map((project) =>
+          project.categoryId === categoryId && orderById.has(project.id)
+            ? { ...project, sortOrder: orderById.get(project.id)! }
+            : project
+        ),
+      };
+    });
 
     logCmsSync("save", {
       type: "portfolio-reorder-scoped",
       categoryId,
-      count: reordered.length,
-      order: reordered.map((project) => `${project.id.slice(-6)}:${project.sortOrder}`).join(","),
+      count: incoming.length,
+      order: updated.portfolioProjects
+        .filter((project) => project.categoryId === categoryId)
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+        .map((project) => `${project.id.slice(-6)}:${project.sortOrder}`)
+        .join(","),
     });
 
     return jsonOk(
