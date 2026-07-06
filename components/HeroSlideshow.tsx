@@ -55,13 +55,6 @@ export function HeroSlideshow({ slides }: HeroSlideshowProps) {
     }));
   }, [active, images]);
 
-  useEffect(() => {
-    images.forEach((slide) => {
-      const img = new window.Image();
-      img.src = slide.src;
-    });
-  }, [images]);
-
   const motionDuration = useMemo(
     () => (reduceMotion ? 0.01 : MOTION_S),
     [reduceMotion]
@@ -76,12 +69,21 @@ export function HeroSlideshow({ slides }: HeroSlideshowProps) {
     );
   }
 
+  const visibleIndices = new Set<number>();
+  visibleIndices.add(active);
+  if (images.length > 1) {
+    visibleIndices.add((active - 1 + images.length) % images.length);
+    visibleIndices.add((active + 1) % images.length);
+  }
+
   return (
     <div
       className="pointer-events-none absolute inset-0 overflow-hidden bg-[#050505]"
       aria-hidden
     >
       {images.map((slide, i) => {
+        if (!visibleIndices.has(i)) return null;
+
         const isActive = i === active;
         const preset = presetForSlide(slide.id);
         const epoch = animEpoch[slide.id] ?? 0;
@@ -131,9 +133,10 @@ export function HeroSlideshow({ slides }: HeroSlideshowProps) {
                 src={slide.src}
                 alt={slide.alt}
                 fill
-                priority={i <= 1}
+                priority={i === 0}
+                loading={i === 0 ? undefined : "lazy"}
                 sizes="100vw"
-                quality={85}
+                quality={i === 0 ? 80 : 70}
                 className="object-cover object-center"
               />
             </motion.div>

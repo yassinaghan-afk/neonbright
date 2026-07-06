@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useMemo, useState } from "react";
 import type { CMSInstagramPost } from "@/lib/cms/types";
-import { isLocalPublicAsset, isRemoteCmsAsset } from "@/lib/media/local-image";
+import { localImageUnoptimized } from "@/lib/media/local-image";
 import { cn } from "@/lib/utils";
 
 const CARD_CLASS =
@@ -46,9 +46,6 @@ function PostCard({
   onImageError,
   className,
 }: PostCardProps) {
-  const unoptimized =
-    isLocalPublicAsset(post.image) || isRemoteCmsAsset(post.image);
-
   const openPost = () => onSelect(post);
 
   return (
@@ -72,9 +69,9 @@ function PostCard({
             loading="lazy"
             sizes="(max-width: 640px) 200px, (max-width: 1024px) 240px, 260px"
             className="pointer-events-none object-cover"
-            unoptimized={unoptimized}
             draggable={false}
             onError={() => onImageError(post.id)}
+            {...localImageUnoptimized(post.image)}
           />
         )}
       </div>

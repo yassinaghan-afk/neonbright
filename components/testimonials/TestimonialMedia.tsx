@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import type { CMSTestimonial } from "@/lib/cms/types";
-import { isLocalPublicAsset, isRemoteCmsAsset } from "@/lib/media/local-image";
+import { localImageUnoptimized } from "@/lib/media/local-image";
 import { TestimonialAudioPlayer } from "@/components/testimonials/TestimonialAudioPlayer";
 import { TestimonialGalleryModal } from "@/components/testimonials/TestimonialGalleryModal";
 import { TestimonialVideoModal } from "@/components/testimonials/TestimonialVideoModal";
@@ -41,7 +41,8 @@ export function TestimonialMedia({ testimonial }: Props) {
                   fill
                   className="object-cover"
                   sizes="120px"
-                  unoptimized={isLocalPublicAsset(src) || isRemoteCmsAsset(src)}
+                  loading="lazy"
+                  {...localImageUnoptimized(src)}
                 />
               </button>
             ))}
@@ -62,7 +63,7 @@ export function TestimonialMedia({ testimonial }: Props) {
                   src={src}
                   muted
                   playsInline
-                  preload="metadata"
+                  preload="none"
                   className="h-full w-full object-cover"
                 />
                 <span className="absolute inset-0 flex items-center justify-center bg-black/40 transition-colors group-hover:bg-black/50">

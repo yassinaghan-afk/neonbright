@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  experimental: {
+    optimizePackageImports: ["framer-motion"],
+  },
+
   // Ensure CMS JSON shipped with serverless functions (read via fs at runtime).
   outputFileTracingIncludes: {
     "**": [

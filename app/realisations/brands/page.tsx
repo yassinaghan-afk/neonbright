@@ -13,8 +13,7 @@ export const metadata: Metadata = {
     "Hôtels, restaurants, retail, fitness, corporate et marques automobiles — découvrez les entreprises qui nous font confiance pour leurs projets néon LED.",
 };
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 3600;
 
 export default async function BrandsPage() {
   const [brands, category] = await Promise.all([

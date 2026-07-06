@@ -50,7 +50,7 @@ export function FeaturedProjects({ copy, categories }: FeaturedProjectsProps) {
           <div className="mt-14 space-y-6 sm:mt-16 sm:space-y-7 md:mt-20 md:space-y-8">
             {categoryItems.map((category, index) => (
               <SectionReveal key={category.id} delay={0.1 + index * 0.05}>
-                <CategoryCard category={category} />
+                <CategoryCard category={category} priority={index === 0} />
               </SectionReveal>
             ))}
           </div>

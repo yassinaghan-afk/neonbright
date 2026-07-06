@@ -2,6 +2,9 @@ import { revalidatePath, revalidateTag } from "next/cache";
 
 export const CMS_CACHE_TAG = "cms-content";
 
+/** Fallback ISR interval (seconds). Admin writes bust CMS_CACHE_TAG immediately. */
+export const PUBLIC_PAGE_REVALIDATE = 3600;
+
 /** Bust Next.js route/layout caches after CMS writes. */
 export function revalidatePublicSite(): void {
   try {

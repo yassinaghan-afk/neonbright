@@ -1,21 +1,47 @@
+import dynamic from "next/dynamic";
 import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
 import { PartnerLogoStrip } from "@/components/PartnerLogoStrip";
 import { FeaturedProjects } from "@/components/FeaturedProjects";
-import { InstagramMarqueeShowcase } from "@/components/instagram/InstagramMarqueeShowcase";
-import { WhyChooseUs } from "@/components/WhyChooseUs";
-import { Industries } from "@/components/Industries";
-import { Testimonials } from "@/components/Testimonials";
-import { Process } from "@/components/Process";
-import { FAQ } from "@/components/FAQ";
 import { QuoteCTA } from "@/components/quote/QuoteCTA";
 import { Footer } from "@/components/Footer";
 import { getPublicHomepageContent } from "@/lib/cms/public";
 import { getInstagramShowcase } from "@/lib/instagram/showcase";
-import { logCmsSync } from "@/lib/cms/sync-log";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+const InstagramMarqueeShowcase = dynamic(
+  () =>
+    import("@/components/instagram/InstagramMarqueeShowcase").then(
+      (m) => m.InstagramMarqueeShowcase
+    ),
+  { loading: () => null }
+);
+
+const WhyChooseUs = dynamic(
+  () => import("@/components/WhyChooseUs").then((m) => m.WhyChooseUs),
+  { loading: () => null }
+);
+
+const Industries = dynamic(
+  () => import("@/components/Industries").then((m) => m.Industries),
+  { loading: () => null }
+);
+
+const Testimonials = dynamic(
+  () => import("@/components/Testimonials").then((m) => m.Testimonials),
+  { loading: () => null }
+);
+
+const Process = dynamic(
+  () => import("@/components/Process").then((m) => m.Process),
+  { loading: () => null }
+);
+
+const FAQ = dynamic(
+  () => import("@/components/FAQ").then((m) => m.FAQ),
+  { loading: () => null }
+);
+
+export const revalidate = 3600;
 
 export default async function Home() {
   const [homepage, instagramShowcase] = await Promise.all([
@@ -37,13 +63,6 @@ export default async function Home() {
     sectionCopy,
     nav,
   } = homepage;
-
-  logCmsSync("website-render", {
-    testimonials: testimonials.length,
-    headline: sectionCopy.testimonials.headline,
-    firstAuthor: testimonials[0]?.author,
-    firstQuote: testimonials[0]?.quote?.slice(0, 40),
-  });
 
   return (
     <>

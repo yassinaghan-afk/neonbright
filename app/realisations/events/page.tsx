@@ -13,16 +13,13 @@ export const metadata: Metadata = {
     "Installations néon LED pour festivals, concerts, soirées VIP, activations de marque, mariages et événements corporate au Maroc et à l'international.",
 };
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 3600;
 
 export default async function EventsPage() {
   const [category, projects] = await Promise.all([
     getPortfolioCategoryBySlug("evenements"),
     getEventProjectsForPage(),
   ]);
-
-  console.log(`[cms-sync] website-render /realisations/events: ${projects.length} events visible`, projects.map((p) => p.slug).join(","));
 
   return (
     <>

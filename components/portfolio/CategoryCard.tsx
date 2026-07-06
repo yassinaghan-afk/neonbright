@@ -10,9 +10,10 @@ import { cn } from "@/lib/utils";
 type CategoryCardProps = {
   category: PortfolioCategory;
   className?: string;
+  priority?: boolean;
 };
 
-export function CategoryCard({ category, className }: CategoryCardProps) {
+export function CategoryCard({ category, className, priority = false }: CategoryCardProps) {
   return (
     <Link href={category.href} className={cn("group block", className)}>
       <motion.article
@@ -27,7 +28,8 @@ export function CategoryCard({ category, className }: CategoryCardProps) {
             fill
             sizes="(max-width: 768px) 100vw, 1280px"
             className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-            priority
+            priority={priority}
+            loading={priority ? undefined : "lazy"}
             {...localImageUnoptimized(category.coverImage)}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/10" />

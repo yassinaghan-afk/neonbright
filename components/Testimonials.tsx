@@ -8,7 +8,7 @@ import { Container } from "@/components/ui/Container";
 import { SectionReveal } from "@/components/ui/SectionReveal";
 import { getPublicTestimonials } from "@/lib/cms/testimonials";
 import type { CMSTestimonial } from "@/lib/cms/types";
-import { isLocalPublicAsset, isRemoteCmsAsset } from "@/lib/media/local-image";
+import { localImageUnoptimized } from "@/lib/media/local-image";
 import { StarRating } from "@/components/testimonials/StarRating";
 import { TestimonialMedia } from "@/components/testimonials/TestimonialMedia";
 
@@ -106,10 +106,7 @@ export function Testimonials({ items, copy }: TestimonialsProps) {
                             fill
                             className="object-cover"
                             sizes="48px"
-                            unoptimized={
-                              isLocalPublicAsset(current.photo) ||
-                              isRemoteCmsAsset(current.photo)
-                            }
+                            {...localImageUnoptimized(current.photo)}
                           />
                         </div>
                       ) : (
