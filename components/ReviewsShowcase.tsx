@@ -15,7 +15,7 @@ export function ReviewsShowcase({ reviews }: Props) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
   const visibleReviews = useMemo(
-    () => reviews.filter((r) => r.enabled && Boolean(r.image?.trim())),
+    () => reviews.filter((r) => r.enabled === true && Boolean(r.image?.trim())),
     [reviews]
   );
 

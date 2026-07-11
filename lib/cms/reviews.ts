@@ -68,7 +68,8 @@ export function normalizeReviews(items: LegacyReview[]): CMSReview[] {
 }
 
 export function filterPublicReviews(reviews: CMSReview[]): CMSReview[] {
-  return reviews.filter((r) => r.enabled && Boolean(r.image?.trim()));
+  // Strict: only explicitly published reviews reach the website / public API.
+  return reviews.filter((r) => r.enabled === true && Boolean(r.image?.trim()));
 }
 
 export function emptyReview(sortOrder: number): CMSReview {
