@@ -1,4 +1,4 @@
-import dynamic from "next/dynamic";
+import nextDynamic from "next/dynamic";
 import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
 import { PartnerLogoStrip } from "@/components/PartnerLogoStrip";
@@ -8,7 +8,7 @@ import { Footer } from "@/components/Footer";
 import { getPublicHomepageContent } from "@/lib/cms/public";
 import { getInstagramShowcase } from "@/lib/instagram/showcase";
 
-const InstagramMarqueeShowcase = dynamic(
+const InstagramMarqueeShowcase = nextDynamic(
   () =>
     import("@/components/instagram/InstagramMarqueeShowcase").then(
       (m) => m.InstagramMarqueeShowcase
@@ -16,36 +16,37 @@ const InstagramMarqueeShowcase = dynamic(
   { loading: () => null }
 );
 
-const WhyChooseUs = dynamic(
+const WhyChooseUs = nextDynamic(
   () => import("@/components/WhyChooseUs").then((m) => m.WhyChooseUs),
   { loading: () => null }
 );
 
-const Industries = dynamic(
+const Industries = nextDynamic(
   () => import("@/components/Industries").then((m) => m.Industries),
   { loading: () => null }
 );
 
-const ReviewsShowcase = dynamic(
+const ReviewsShowcase = nextDynamic(
   () => import("@/components/ReviewsShowcase").then((m) => m.ReviewsShowcase),
   { loading: () => null }
 );
 
-const Testimonials = dynamic(
+const Testimonials = nextDynamic(
   () => import("@/components/Testimonials").then((m) => m.Testimonials),
   { loading: () => null }
 );
 
-const Process = dynamic(
+const Process = nextDynamic(
   () => import("@/components/Process").then((m) => m.Process),
   { loading: () => null }
 );
 
-const FAQ = dynamic(
+const FAQ = nextDynamic(
   () => import("@/components/FAQ").then((m) => m.FAQ),
   { loading: () => null }
 );
 
+export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function Home() {
