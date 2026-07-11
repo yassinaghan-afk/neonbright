@@ -45,7 +45,9 @@ export const revalidate = 3600;
 
 export default async function Home() {
   const [homepage, instagramShowcase] = await Promise.all([
-    getPublicHomepageContent(),
+    // Fresh CMS read so Admin Reviews (and other) edits appear on the live
+    // homepage immediately after revalidation — no stale ISR/data-cache gap.
+    getPublicHomepageContent({ fresh: true }),
     getInstagramShowcase(),
   ]);
 
