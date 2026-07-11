@@ -21,9 +21,11 @@ async function tryDeleteBlob(url: string): Promise<void> {
     const { del } = await import("@vercel/blob");
     await del(url);
   } catch {
-    // Non-critical — do not block the response.
+    // Non-critical.
   }
 }
+
+// ─── GET — list all reviews (admin) ─────────────────────────────────────────
 
 export async function GET() {
   const { error } = await requireOwner();
@@ -31,6 +33,8 @@ export async function GET() {
   const content = await readCMSContentFresh();
   return jsonOk(normalizeReviews(content.reviews ?? []));
 }
+
+// ─── PUT — replace entire list (reorder / publish / bulk operations) ─────────
 
 export async function PUT(request: Request) {
   const { error } = await requireOwner();
@@ -41,7 +45,6 @@ export async function PUT(request: Request) {
     return jsonError("items array is required");
   }
 
-  // Authoritative list from admin — empty array is a valid wipe.
   const saved = normalizeReviews(body.items as Partial<CMSReview>[]);
 
   let oldReviews: CMSReview[] = [];
@@ -51,15 +54,12 @@ export async function PUT(request: Request) {
     return { ...c, reviews: saved };
   });
 
-  // Belt-and-suspenders: updateCMSContent already revalidates; call again
-  // so homepage ISR/tag cache cannot serve a stale reviews list.
   revalidatePublicSite();
 
   const newUrls = new Set(reviewImageUrls(saved));
   const toDelete = reviewImageUrls(oldReviews).filter(
     (url) => isBlobUrl(url) && !newUrls.has(url)
   );
-  // Await cleanup so deleted images are gone before the response returns.
   await Promise.all(toDelete.map((url) => tryDeleteBlob(url)));
 
   const result = normalizeReviews(persisted.reviews ?? []);
@@ -68,6 +68,43 @@ export async function PUT(request: Request) {
     route: "PUT /api/admin/reviews",
     count: result.length,
     deletedBlobs: toDelete.length,
+    updatedAt: persisted.updatedAt,
+  });
+
+  return jsonOk(result);
+}
+
+// ─── DELETE — remove a single review by id (atomic, no race with PUT) ────────
+
+export async function DELETE(request: Request) {
+  const { error } = await requireOwner();
+  if (error) return error;
+
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get("id");
+  if (!id) return jsonError("id query param is required");
+
+  let deletedUrl: string | undefined;
+
+  const persisted = await updateCMSContent((c) => {
+    const current = normalizeReviews(c.reviews ?? []);
+    const target = current.find((r) => r.id === id);
+    deletedUrl = target?.image;
+    const next = current.filter((r) => r.id !== id);
+    return { ...c, reviews: next };
+  });
+
+  revalidatePublicSite();
+
+  if (deletedUrl && isBlobUrl(deletedUrl)) {
+    await tryDeleteBlob(deletedUrl);
+  }
+
+  const result = normalizeReviews(persisted.reviews ?? []);
+
+  logCmsSync("save", {
+    route: `DELETE /api/admin/reviews?id=${id}`,
+    count: result.length,
     updatedAt: persisted.updatedAt,
   });
 

@@ -1,382 +1,538 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { AdminDraftToolbar } from "@/components/admin/AdminDraftToolbar";
-import { ImageUploadField } from "@/components/admin/ImageUploadField";
-import { useDraftEditor } from "@/components/admin/useDraftEditor";
-import { AdminButton } from "@/components/admin/ui/AdminForm";
-import { uploadAdminFile, uploadAdminFiles } from "@/lib/admin/upload-client";
+import { uploadAdminFile } from "@/lib/admin/upload-client";
 import { createId } from "@/lib/cms/id";
 import type { CMSReview } from "@/lib/cms/types";
 import { cn } from "@/lib/utils";
 
-function reorderDraft(items: CMSReview[], from: number, to: number): CMSReview[] {
-  const next = [...items];
-  const [moved] = next.splice(from, 1);
-  next.splice(to, 0, moved);
-  return next.map((item, i) => ({ ...item, sortOrder: i }));
-}
+// ─── helpers ────────────────────────────────────────────────────────────────
 
-function withSortOrder(items: CMSReview[]): CMSReview[] {
+function numbered(items: CMSReview[]): CMSReview[] {
   return items.map((item, i) => ({ ...item, sortOrder: i }));
 }
 
+function swap(items: CMSReview[], a: number, b: number): CMSReview[] {
+  const next = [...items];
+  [next[a], next[b]] = [next[b], next[a]];
+  return numbered(next);
+}
+
+// ─── one save / one truth ────────────────────────────────────────────────────
+
+async function saveToServer(items: CMSReview[]): Promise<CMSReview[]> {
+  const res = await fetch("/api/admin/reviews", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    cache: "no-store",
+    body: JSON.stringify({ items: numbered(items) }),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(
+      typeof json.error === "string" ? json.error : `Erreur ${res.status}`
+    );
+  }
+  // API returns the authoritative list; use it as the new state.
+  return Array.isArray(json) ? json : (json.data ?? []);
+}
+
+// ─── component ───────────────────────────────────────────────────────────────
+
 export function ReviewsManager() {
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [dragIndex, setDragIndex] = useState<number | null>(null);
-  const [editing, setEditing] = useState<CMSReview | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState("");
-  const [persisting, setPersisting] = useState(false);
-  const dragHandleRef = useRef<number | null>(null);
+  const [items, setItems] = useState<CMSReview[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{
+    done: number;
+    total: number;
+  } | null>(null);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  // Always hold latest draft for async upload/delete so we never clobber concurrent edits.
-  const draftRef = useRef<CMSReview[]>([]);
+  const dragHandleRef = useRef<number | null>(null);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  // Keep a mutable ref so async callbacks always see the latest list.
+  const itemsRef = useRef<CMSReview[]>([]);
+  itemsRef.current = items;
 
-  const { draft, setDraft, dirty, loading, saving, error, success, cancel, commit } =
-    useDraftEditor<CMSReview>("/api/admin/reviews");
+  // ── initial load ────────────────────────────────────────────────────────
+  useEffect(() => {
+    setLoading(true);
+    fetch("/api/admin/reviews", { cache: "no-store", credentials: "include" })
+      .then((r) => r.json())
+      .then((json) => {
+        const data: CMSReview[] = Array.isArray(json)
+          ? json
+          : (json.data ?? []);
+        setItems(numbered(data));
+        itemsRef.current = numbered(data);
+      })
+      .catch(() => setError("Chargement impossible"))
+      .finally(() => setLoading(false));
+  }, []);
 
-  draftRef.current = draft;
-
-  const persist = async (items: CMSReview[]): Promise<boolean> => {
-    setPersisting(true);
+  // ── save helper ─────────────────────────────────────────────────────────
+  const save = async (next: CMSReview[]) => {
+    setBusy(true);
+    setError("");
+    setSuccess("");
     try {
-      return await commit("/api/admin/reviews", { items: withSortOrder(items) });
+      const saved = await saveToServer(next);
+      setItems(saved);
+      itemsRef.current = saved;
+      setSuccess("Enregistré — site mis à jour");
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur");
+      // Rollback to what we showed before the failed save.
+      setItems([...itemsRef.current]);
     } finally {
-      setPersisting(false);
+      setBusy(false);
     }
   };
 
-  const updateDraft = (next: CMSReview[]) => {
-    const ordered = withSortOrder(next);
-    draftRef.current = ordered;
-    setDraft(ordered);
-    return ordered;
+  // ── delete (no confirm, atomic DELETE verb, immediate) ──────────────────
+  const deleteItem = (id: string) => {
+    if (busy || uploadProgress) return;
+    // Optimistic: remove immediately from UI.
+    const next = numbered(itemsRef.current.filter((r) => r.id !== id));
+    setItems(next);
+    itemsRef.current = next;
+    // Atomic DELETE request — cannot race a concurrent PUT.
+    setBusy(true);
+    setError("");
+    setSuccess("");
+    fetch(`/api/admin/reviews?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      credentials: "include",
+      cache: "no-store",
+    })
+      .then((r) => r.json())
+      .then((json) => {
+        const saved: CMSReview[] = Array.isArray(json) ? json : (json.data ?? []);
+        setItems(saved);
+        itemsRef.current = saved;
+        setSuccess("Supprimé — site mis à jour");
+        setTimeout(() => setSuccess(""), 3000);
+      })
+      .catch((err) => {
+        // Rollback: restore the item that failed to delete.
+        setError(err instanceof Error ? err.message : "Erreur suppression");
+        // Re-fetch authoritative list from server.
+        fetch("/api/admin/reviews", { cache: "no-store", credentials: "include" })
+          .then((r) => r.json())
+          .then((json) => {
+            const data: CMSReview[] = Array.isArray(json) ? json : (json.data ?? []);
+            setItems(numbered(data));
+            itemsRef.current = numbered(data);
+          })
+          .catch(() => null);
+      })
+      .finally(() => setBusy(false));
   };
 
-  const toggleSelect = (id: string) => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
-  const deleteSelected = async () => {
-    if (selected.size === 0 || persisting || saving) return;
-    if (!confirm(`Supprimer ${selected.size} capture(s) ?`)) return;
-    const next = updateDraft(draftRef.current.filter((item) => !selected.has(item.id)));
-    setSelected(new Set());
-    await persist(next);
-  };
-
-  const deleteOne = async (id: string) => {
-    if (persisting || saving) return;
-    if (!confirm("Supprimer cette capture ?")) return;
-    const next = updateDraft(draftRef.current.filter((r) => r.id !== id));
-    setSelected((prev) => {
-      const n = new Set(prev);
-      n.delete(id);
-      return n;
-    });
-    await persist(next);
-  };
-
-  const toggleEnabled = async (id: string) => {
-    if (persisting || saving) return;
-    const next = updateDraft(
-      draftRef.current.map((item) =>
-        item.id === id ? { ...item, enabled: !item.enabled } : item
+  // ── toggle publish ───────────────────────────────────────────────────────
+  const toggleEnabled = (id: string) => {
+    if (busy || uploadProgress) return;
+    const next = numbered(
+      itemsRef.current.map((r) =>
+        r.id === id ? { ...r, enabled: !r.enabled } : r
       )
     );
-    await persist(next);
+    setItems(next);
+    itemsRef.current = next;
+    void save(next);
   };
 
-  const moveItem = async (index: number, dir: -1 | 1) => {
-    if (persisting || saving) return;
+  // ── move up / down ───────────────────────────────────────────────────────
+  const move = (index: number, dir: -1 | 1) => {
+    if (busy || uploadProgress) return;
     const to = index + dir;
-    if (to < 0 || to >= draftRef.current.length) return;
-    const next = updateDraft(reorderDraft(draftRef.current, index, to));
-    await persist(next);
+    if (to < 0 || to >= itemsRef.current.length) return;
+    const next = swap(itemsRef.current, index, to);
+    setItems(next);
+    itemsRef.current = next;
+    void save(next);
   };
 
-  const saveAll = () => persist(draftRef.current);
-
-  const onDragStart = (index: number) => {
-    dragHandleRef.current = index;
-    setDragIndex(index);
+  // ── drag & drop ──────────────────────────────────────────────────────────
+  const onDragStart = (i: number) => {
+    dragHandleRef.current = i;
+    setDragIndex(i);
   };
-
-  const onDragOver = (e: React.DragEvent, index: number) => {
+  const onDragOver = (e: React.DragEvent, i: number) => {
     e.preventDefault();
     const from = dragHandleRef.current;
-    if (from === null || from === index) return;
-    updateDraft(reorderDraft(draftRef.current, from, index));
-    dragHandleRef.current = index;
-    setDragIndex(index);
+    if (from === null || from === i) return;
+    const next = swap(itemsRef.current, from, i);
+    setItems(next);
+    itemsRef.current = next;
+    dragHandleRef.current = i;
+    setDragIndex(i);
   };
-
-  const onDragEnd = async () => {
+  const onDragEnd = () => {
     dragHandleRef.current = null;
     setDragIndex(null);
-    if (persisting || saving) return;
-    await persist(draftRef.current);
+    if (!busy && !uploadProgress) void save(itemsRef.current);
   };
 
-  const uploadMany = async (files: File[]) => {
-    const images = files.filter((f) => f.type.startsWith("image/")).slice(0, 40);
+  // ── upload (sequential, each file added immediately as it lands) ─────────
+  const uploadFiles = async (files: File[]) => {
+    const images = files
+      .filter((f) => f.type.startsWith("image/") || /\.(png|jpe?g|webp|gif|svg)$/i.test(f.name))
+      .slice(0, 50);
     if (!images.length) return;
-    setUploading(true);
-    setUploadError("");
-    const added: CMSReview[] = [];
-    try {
-      // Prefer one multi-upload request; fall back to sequential singles.
+    setError("");
+    setSuccess("");
+    setUploadProgress({ done: 0, total: images.length });
+    let successCount = 0;
+    for (let i = 0; i < images.length; i++) {
       try {
-        const results = await uploadAdminFiles(images, "gallery");
-        for (const result of results) {
-          if (!result.url) continue;
-          added.push({
-            id: createId("rev"),
-            image: result.url,
-            enabled: true,
-            sortOrder: 0,
-          });
-        }
+        const result = await uploadAdminFile(images[i], { preset: "gallery" });
+        const newItem: CMSReview = {
+          id: createId("rev"),
+          image: result.url,
+          enabled: true,
+          sortOrder: 0,
+        };
+        const next = numbered([...itemsRef.current, newItem]);
+        setItems(next);
+        itemsRef.current = next;
+        successCount++;
       } catch {
-        for (const file of images) {
-          try {
-            const result = await uploadAdminFile(file, { preset: "gallery" });
-            added.push({
-              id: createId("rev"),
-              image: result.url,
-              enabled: true,
-              sortOrder: 0,
-            });
-          } catch (err) {
-            setUploadError(
-              err instanceof Error ? err.message : "Erreur upload (partiel)"
-            );
-          }
-        }
+        // skip failed file, continue with the rest
       }
+      setUploadProgress({ done: i + 1, total: images.length });
+    }
+    // One single save after all uploads — preserves the final list order.
+    if (successCount > 0) {
+      await save(itemsRef.current);
+    } else {
+      setError("Aucune image téléversée");
+    }
+    setUploadProgress(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
-      if (added.length === 0) {
-        setUploadError((prev) => prev || "Aucune image n'a pu être téléversée");
-        return;
-      }
-
-      // Functional merge against latest draft — never overwrite concurrent deletes.
-      const next = updateDraft([...draftRef.current, ...added]);
-      await persist(next);
+  // ── replace ──────────────────────────────────────────────────────────────
+  const replace = async (id: string, file: File) => {
+    if (busy || uploadProgress) return;
+    setError("");
+    setBusy(true);
+    try {
+      const result = await uploadAdminFile(file, { preset: "gallery" });
+      const next = numbered(
+        itemsRef.current.map((r) =>
+          r.id === id ? { ...r, image: result.url } : r
+        )
+      );
+      setItems(next);
+      itemsRef.current = next;
+      await save(next);
     } catch (err) {
-      setUploadError(err instanceof Error ? err.message : "Erreur upload");
-      if (added.length > 0) {
-        const next = updateDraft([...draftRef.current, ...added]);
-        await persist(next);
-      }
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      setError(err instanceof Error ? err.message : "Erreur remplacement");
+      setBusy(false);
     }
   };
 
-  const openReplace = (item: CMSReview) => setEditing({ ...item });
-
-  const applyReplace = async () => {
-    if (!editing || persisting || saving) return;
-    if (!editing.image.trim()) {
-      alert("Une image est obligatoire.");
-      return;
-    }
-    const next = updateDraft(
-      draftRef.current.map((item) => (item.id === editing.id ? editing : item))
-    );
-    setEditing(null);
-    await persist(next);
-  };
-
+  // ─── render ──────────────────────────────────────────────────────────────
   if (loading) {
-    return <p className="text-sm text-white/45">Chargement...</p>;
+    return (
+      <p className="py-8 text-center text-sm text-white/40">Chargement…</p>
+    );
   }
 
-  const busy = saving || persisting || uploading;
+  const isBlocked = busy || Boolean(uploadProgress);
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="font-display text-xl font-bold">Reviews</h2>
-          <p className="mt-1 max-w-2xl text-sm text-white/45">
-            Galerie de captures d&apos;écran. Upload multiple, réordonner, publier /
-            masquer, enregistrer.
+          <p className="mt-0.5 text-sm text-white/40">
+            {items.length === 0
+              ? "Aucune capture. Cliquez sur « Ajouter » pour commencer."
+              : `${items.length} capture${items.length !== 1 ? "s" : ""} — glissez pour réordonner`}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <AdminButton
-            variant="primary"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={busy}
+        <button
+          type="button"
+          onClick={() => !isBlocked && fileInputRef.current?.click()}
+          disabled={isBlocked}
+          className="rounded-xl bg-neon-pink px-4 py-2 text-sm font-semibold text-white transition disabled:opacity-50 hover:bg-neon-pink/80"
+        >
+          {uploadProgress
+            ? `Upload ${uploadProgress.done}/${uploadProgress.total}…`
+            : busy
+            ? "Enregistrement…"
+            : "+ Ajouter des captures"}
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={(e) => {
+            const files = Array.from(e.target.files ?? []);
+            if (files.length) void uploadFiles(files);
+          }}
+        />
+      </div>
+
+      {/* Status bar */}
+      {(error || success || uploadProgress) && (
+        <div
+          className={cn(
+            "rounded-xl px-4 py-2.5 text-sm",
+            error
+              ? "border border-red-500/30 bg-red-500/10 text-red-400"
+              : success
+              ? "border border-green-500/30 bg-green-500/10 text-green-400"
+              : "border border-white/10 bg-white/5 text-white/60"
+          )}
+        >
+          {error || success || (uploadProgress
+            ? `Téléversement en cours… ${uploadProgress.done} / ${uploadProgress.total}`
+            : "")}
+        </div>
+      )}
+
+      {/* Empty state */}
+      {items.length === 0 && !uploadProgress && (
+        <label
+          className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-white/10 py-16 text-center transition hover:border-neon-pink/40 hover:bg-white/[0.02]"
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault();
+            const files = Array.from(e.dataTransfer.files);
+            if (files.length) void uploadFiles(files);
+          }}
+        >
+          <svg
+            className="h-10 w-10 text-white/20"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={1.2}
           >
-            {uploading ? "Upload..." : "Ajouter des captures"}
-          </AdminButton>
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 16.5V9.75m0 0-3 3m3-3 3 3M6.75 19.5a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.338-2.32 5.25 5.25 0 0 1 1.232 10.095"
+            />
+          </svg>
+          <p className="text-sm text-white/40">
+            Glissez des images ici ou cliquez sur « Ajouter des captures »
+          </p>
           <input
-            ref={fileInputRef}
             type="file"
             accept="image/*"
             multiple
             className="hidden"
             onChange={(e) => {
               const files = Array.from(e.target.files ?? []);
-              if (files.length) void uploadMany(files);
+              if (files.length) void uploadFiles(files);
             }}
           />
-        </div>
-      </div>
-
-      <AdminDraftToolbar
-        dirty={dirty}
-        saving={busy}
-        error={error || uploadError}
-        success={success}
-        onSave={saveAll}
-        onCancel={cancel}
-      />
-
-      {selected.size > 0 && (
-        <AdminButton variant="ghost" onClick={() => void deleteSelected()} disabled={busy}>
-          Supprimer ({selected.size})
-        </AdminButton>
+        </label>
       )}
 
-      {draft.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-white/10 py-12 text-center text-sm text-white/35">
-          Aucune capture. Ajoutez des images pour alimenter la section.
-        </p>
-      ) : (
+      {/* List */}
+      {items.length > 0 && (
         <div className="space-y-2">
-          {draft.map((item, index) => (
-            <div
+          {items.map((item, index) => (
+            <ReviewRow
               key={item.id}
-              draggable={!busy}
+              item={item}
+              index={index}
+              total={items.length}
+              blocked={isBlocked}
+              isDragging={dragIndex === index}
               onDragStart={() => onDragStart(index)}
               onDragOver={(e) => onDragOver(e, index)}
-              onDragEnd={() => void onDragEnd()}
-              className={cn(
-                "flex items-center gap-4 rounded-xl border border-white/10 bg-[#0d0d0d] p-3 transition-opacity",
-                !item.enabled && "opacity-45",
-                dragIndex === index && "ring-1 ring-neon-pink/50"
-              )}
-            >
-              <span className="cursor-grab select-none text-white/25 active:cursor-grabbing">
-                ⠿
-              </span>
-              <input
-                type="checkbox"
-                checked={selected.has(item.id)}
-                onChange={() => toggleSelect(item.id)}
-                disabled={busy}
-              />
-              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-white/10">
-                {item.image ? (
-                  <Image
-                    src={item.image}
-                    alt=""
-                    fill
-                    className="object-cover"
-                    sizes="64px"
-                    unoptimized
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center text-[10px] text-white/30">
-                    Image
-                  </div>
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-white/80">
-                  Capture #{index + 1}
-                </p>
-              </div>
-              <div className="flex shrink-0 flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => void moveItem(index, -1)}
-                  disabled={busy || index === 0}
-                  className="text-xs text-white/45 hover:text-white disabled:opacity-30"
-                >
-                  ↑
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void moveItem(index, 1)}
-                  disabled={busy || index === draft.length - 1}
-                  className="text-xs text-white/45 hover:text-white disabled:opacity-30"
-                >
-                  ↓
-                </button>
-                <button
-                  type="button"
-                  onClick={() => openReplace(item)}
-                  disabled={busy}
-                  className="text-xs text-neon-pink hover:underline disabled:opacity-30"
-                >
-                  Remplacer
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void toggleEnabled(item.id)}
-                  disabled={busy}
-                  className="text-xs text-white/45 hover:text-white disabled:opacity-30"
-                >
-                  {item.enabled ? "Masquer" : "Publier"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void deleteOne(item.id)}
-                  disabled={busy}
-                  className="text-xs text-red-300/80 hover:text-red-300 disabled:opacity-30"
-                >
-                  Supprimer
-                </button>
-              </div>
-            </div>
+              onDragEnd={onDragEnd}
+              onMoveUp={() => move(index, -1)}
+              onMoveDown={() => move(index, 1)}
+              onDelete={() => deleteItem(item.id)}
+              onToggle={() => toggleEnabled(item.id)}
+              onReplace={(file) => void replace(item.id, file)}
+            />
           ))}
         </div>
       )}
-
-      {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="w-full max-w-lg rounded-xl border border-white/10 bg-[#0d0d0d] p-5">
-            <h3 className="font-display text-lg font-semibold">Remplacer la capture</h3>
-            <div className="mt-4 space-y-4">
-              <ImageUploadField
-                label="Capture d'écran"
-                value={editing.image}
-                onChange={(url) => setEditing({ ...editing, image: url })}
-                preset="gallery"
-              />
-              <label className="flex items-center gap-2 text-sm text-white/70">
-                <input
-                  type="checkbox"
-                  checked={editing.enabled}
-                  onChange={(e) => setEditing({ ...editing, enabled: e.target.checked })}
-                />
-                Publié (visible sur le site)
-              </label>
-            </div>
-            <div className="mt-5 flex justify-end gap-2">
-              <AdminButton variant="ghost" onClick={() => setEditing(null)}>
-                Annuler
-              </AdminButton>
-              <AdminButton variant="primary" onClick={() => void applyReplace()} disabled={busy}>
-                Appliquer
-              </AdminButton>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
+  );
+}
+
+// ─── row component ───────────────────────────────────────────────────────────
+
+type RowProps = {
+  item: CMSReview;
+  index: number;
+  total: number;
+  blocked: boolean;
+  isDragging: boolean;
+  onDragStart: () => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDragEnd: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  onDelete: () => void;
+  onToggle: () => void;
+  onReplace: (file: File) => void;
+};
+
+function ReviewRow({
+  item,
+  index,
+  total,
+  blocked,
+  isDragging,
+  onDragStart,
+  onDragOver,
+  onDragEnd,
+  onMoveUp,
+  onMoveDown,
+  onDelete,
+  onToggle,
+  onReplace,
+}: RowProps) {
+  const replaceRef = useRef<HTMLInputElement>(null);
+
+  return (
+    <div
+      draggable={!blocked}
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDragEnd={onDragEnd}
+      className={cn(
+        "flex items-center gap-3 rounded-xl border bg-[#0d0d0d] p-3 transition-all",
+        item.enabled ? "border-white/10" : "border-white/5 opacity-50",
+        isDragging && "ring-1 ring-neon-pink/50 opacity-70"
+      )}
+    >
+      {/* drag handle */}
+      <span className="cursor-grab select-none text-lg text-white/20 active:cursor-grabbing">
+        ⠿
+      </span>
+
+      {/* thumbnail */}
+      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-black">
+        {item.image ? (
+          <Image
+            src={item.image}
+            alt=""
+            fill
+            className="object-cover"
+            sizes="56px"
+            unoptimized
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center text-[9px] text-white/20">
+            ?
+          </div>
+        )}
+      </div>
+
+      {/* label */}
+      <span className="min-w-0 flex-1 truncate text-sm text-white/60">
+        #{index + 1}
+      </span>
+
+      {/* actions */}
+      <div className="flex shrink-0 items-center gap-1.5">
+        <Btn
+          onClick={onMoveUp}
+          disabled={blocked || index === 0}
+          title="Monter"
+        >
+          ↑
+        </Btn>
+        <Btn
+          onClick={onMoveDown}
+          disabled={blocked || index === total - 1}
+          title="Descendre"
+        >
+          ↓
+        </Btn>
+
+        {/* replace */}
+        <Btn
+          onClick={() => !blocked && replaceRef.current?.click()}
+          disabled={blocked}
+          title="Remplacer l'image"
+          className="text-neon-pink/80 hover:text-neon-pink"
+        >
+          ⇄
+        </Btn>
+        <input
+          ref={replaceRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) onReplace(file);
+            if (replaceRef.current) replaceRef.current.value = "";
+          }}
+        />
+
+        {/* publish / unpublish */}
+        <Btn
+          onClick={onToggle}
+          disabled={blocked}
+          title={item.enabled ? "Masquer du site" : "Publier sur le site"}
+          className={item.enabled ? "text-green-400/70 hover:text-green-400" : "text-white/30 hover:text-white/60"}
+        >
+          {item.enabled ? "●" : "○"}
+        </Btn>
+
+        {/* delete — no confirm, immediate */}
+        <Btn
+          onClick={onDelete}
+          disabled={blocked}
+          title="Supprimer définitivement"
+          className="text-red-400/60 hover:text-red-400"
+        >
+          ✕
+        </Btn>
+      </div>
+    </div>
+  );
+}
+
+function Btn({
+  children,
+  onClick,
+  disabled,
+  title,
+  className,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+  title?: string;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      className={cn(
+        "flex h-7 w-7 items-center justify-center rounded-lg text-sm transition",
+        "hover:bg-white/8 disabled:cursor-not-allowed disabled:opacity-25",
+        "text-white/50 hover:text-white",
+        className
+      )}
+    >
+      {children}
+    </button>
   );
 }
