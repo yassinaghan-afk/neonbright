@@ -237,6 +237,8 @@ function mergeContent(parsed: Partial<CMSContent>): CMSContent {
       cta: { ...defaults.sectionCopy.cta, ...(parsed.sectionCopy?.cta ?? {}) },
     },
     instagram: { ...defaults.instagram, ...(parsed.instagram ?? {}) },
+    // Explicit — never drop reviews when blob JSON lacks/omits the key mid-merge.
+    reviews: Array.isArray(parsed.reviews) ? parsed.reviews : defaults.reviews,
     instagramPosts: Array.isArray(parsed.instagramPosts)
       ? parsed.instagramPosts
       : defaults.instagramPosts,
@@ -498,6 +500,7 @@ export async function writeCMSContent(content: CMSContent): Promise<CMSContent> 
   logCmsSync("save", {
     updatedAt: next.updatedAt,
     testimonials: next.testimonials.length,
+    reviews: next.reviews?.length ?? 0,
     portfolioProjects: next.portfolioProjects?.length ?? 0,
     publishedProjects: next.portfolioProjects?.filter((p) => p.published).length ?? 0,
   });

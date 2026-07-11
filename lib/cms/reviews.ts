@@ -7,32 +7,64 @@ type LegacyReview = Partial<CMSReview> & {
 
 export function normalizeReview(item: Partial<CMSReview>, sortOrder: number): CMSReview {
   return {
-    id: item.id ?? createId("rev"),
+    id: item.id && String(item.id).trim() ? String(item.id) : createId("rev"),
     image: String(item.image ?? "").trim(),
     enabled: item.enabled !== false,
     sortOrder,
   };
 }
 
-/** Flatten legacy grouped `screenshots[]` items into one image per entry. */
+/**
+ * Flatten legacy grouped `screenshots[]` into one image per entry.
+ * Preserves existing IDs — never regenerates IDs on every read (that caused
+ * delete/create sync bugs where items appeared to resurrect with new IDs).
+ */
 export function normalizeReviews(items: LegacyReview[]): CMSReview[] {
   const flat: Partial<CMSReview>[] = [];
+
   for (const item of items) {
     const image = String(item.image ?? "").trim();
     if (image) {
-      flat.push(item);
+      flat.push({
+        id: item.id,
+        image,
+        enabled: item.enabled !== false,
+        sortOrder: item.sortOrder,
+      });
       continue;
     }
-    const shots = (item.screenshots ?? []).map((s) => String(s).trim()).filter(Boolean);
-    for (const src of shots) {
+
+    const shots = (item.screenshots ?? [])
+      .map((s) => String(s).trim())
+      .filter(Boolean);
+
+    if (shots.length === 0) continue;
+
+    // Single legacy screenshot → keep the parent id. Multiple → stable
+    // derived ids so re-normalization does not churn identities.
+    if (shots.length === 1) {
       flat.push({
-        id: createId("rev"),
-        image: src,
+        id: item.id,
+        image: shots[0],
         enabled: item.enabled !== false,
+        sortOrder: item.sortOrder,
+      });
+    } else {
+      const baseId = item.id && String(item.id).trim() ? String(item.id) : createId("rev");
+      shots.forEach((src, shotIndex) => {
+        flat.push({
+          id: `${baseId}_s${shotIndex}`,
+          image: src,
+          enabled: item.enabled !== false,
+          sortOrder: typeof item.sortOrder === "number" ? item.sortOrder + shotIndex : undefined,
+        });
       });
     }
   }
-  return flat.map((item, i) => normalizeReview(item, i));
+
+  return flat
+    .filter((item) => Boolean(String(item.image ?? "").trim()))
+    .map((item, i) => normalizeReview(item, i));
 }
 
 export function filterPublicReviews(reviews: CMSReview[]): CMSReview[] {

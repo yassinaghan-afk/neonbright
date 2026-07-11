@@ -6,7 +6,7 @@ import { AdminDraftToolbar } from "@/components/admin/AdminDraftToolbar";
 import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import { useDraftEditor } from "@/components/admin/useDraftEditor";
 import { AdminButton } from "@/components/admin/ui/AdminForm";
-import { uploadAdminFile } from "@/lib/admin/upload-client";
+import { uploadAdminFile, uploadAdminFiles } from "@/lib/admin/upload-client";
 import { createId } from "@/lib/cms/id";
 import type { CMSReview } from "@/lib/cms/types";
 import { cn } from "@/lib/utils";
@@ -18,17 +18,42 @@ function reorderDraft(items: CMSReview[], from: number, to: number): CMSReview[]
   return next.map((item, i) => ({ ...item, sortOrder: i }));
 }
 
+function withSortOrder(items: CMSReview[]): CMSReview[] {
+  return items.map((item, i) => ({ ...item, sortOrder: i }));
+}
+
 export function ReviewsManager() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [editing, setEditing] = useState<CMSReview | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  const [persisting, setPersisting] = useState(false);
   const dragHandleRef = useRef<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Always hold latest draft for async upload/delete so we never clobber concurrent edits.
+  const draftRef = useRef<CMSReview[]>([]);
 
   const { draft, setDraft, dirty, loading, saving, error, success, cancel, commit } =
     useDraftEditor<CMSReview>("/api/admin/reviews");
+
+  draftRef.current = draft;
+
+  const persist = async (items: CMSReview[]): Promise<boolean> => {
+    setPersisting(true);
+    try {
+      return await commit("/api/admin/reviews", { items: withSortOrder(items) });
+    } finally {
+      setPersisting(false);
+    }
+  };
+
+  const updateDraft = (next: CMSReview[]) => {
+    const ordered = withSortOrder(next);
+    draftRef.current = ordered;
+    setDraft(ordered);
+    return ordered;
+  };
 
   const toggleSelect = (id: string) => {
     setSelected((prev) => {
@@ -39,28 +64,45 @@ export function ReviewsManager() {
     });
   };
 
-  const deleteSelected = () => {
-    if (selected.size === 0) return;
+  const deleteSelected = async () => {
+    if (selected.size === 0 || persisting || saving) return;
     if (!confirm(`Supprimer ${selected.size} capture(s) ?`)) return;
-    setDraft(
-      draft
-        .filter((item) => !selected.has(item.id))
-        .map((item, i) => ({ ...item, sortOrder: i }))
-    );
+    const next = updateDraft(draftRef.current.filter((item) => !selected.has(item.id)));
     setSelected(new Set());
+    await persist(next);
   };
 
-  const toggleEnabled = (id: string) => {
-    setDraft(draft.map((item) => (item.id === id ? { ...item, enabled: !item.enabled } : item)));
+  const deleteOne = async (id: string) => {
+    if (persisting || saving) return;
+    if (!confirm("Supprimer cette capture ?")) return;
+    const next = updateDraft(draftRef.current.filter((r) => r.id !== id));
+    setSelected((prev) => {
+      const n = new Set(prev);
+      n.delete(id);
+      return n;
+    });
+    await persist(next);
   };
 
-  const moveItem = (index: number, dir: -1 | 1) => {
+  const toggleEnabled = async (id: string) => {
+    if (persisting || saving) return;
+    const next = updateDraft(
+      draftRef.current.map((item) =>
+        item.id === id ? { ...item, enabled: !item.enabled } : item
+      )
+    );
+    await persist(next);
+  };
+
+  const moveItem = async (index: number, dir: -1 | 1) => {
+    if (persisting || saving) return;
     const to = index + dir;
-    if (to < 0 || to >= draft.length) return;
-    setDraft(reorderDraft(draft, index, to));
+    if (to < 0 || to >= draftRef.current.length) return;
+    const next = updateDraft(reorderDraft(draftRef.current, index, to));
+    await persist(next);
   };
 
-  const saveAll = () => commit("/api/admin/reviews", { items: draft });
+  const saveAll = () => persist(draftRef.current);
 
   const onDragStart = (index: number) => {
     dragHandleRef.current = index;
@@ -71,14 +113,16 @@ export function ReviewsManager() {
     e.preventDefault();
     const from = dragHandleRef.current;
     if (from === null || from === index) return;
-    setDraft(reorderDraft(draft, from, index));
+    updateDraft(reorderDraft(draftRef.current, from, index));
     dragHandleRef.current = index;
     setDragIndex(index);
   };
 
-  const onDragEnd = () => {
+  const onDragEnd = async () => {
     dragHandleRef.current = null;
     setDragIndex(null);
+    if (persisting || saving) return;
+    await persist(draftRef.current);
   };
 
   const uploadMany = async (files: File[]) => {
@@ -86,20 +130,52 @@ export function ReviewsManager() {
     if (!images.length) return;
     setUploading(true);
     setUploadError("");
+    const added: CMSReview[] = [];
     try {
-      const added: CMSReview[] = [];
-      for (const file of images) {
-        const result = await uploadAdminFile(file, { preset: "gallery" });
-        added.push({
-          id: createId("rev"),
-          image: result.url,
-          enabled: true,
-          sortOrder: draft.length + added.length,
-        });
+      // Prefer one multi-upload request; fall back to sequential singles.
+      try {
+        const results = await uploadAdminFiles(images, "gallery");
+        for (const result of results) {
+          if (!result.url) continue;
+          added.push({
+            id: createId("rev"),
+            image: result.url,
+            enabled: true,
+            sortOrder: 0,
+          });
+        }
+      } catch {
+        for (const file of images) {
+          try {
+            const result = await uploadAdminFile(file, { preset: "gallery" });
+            added.push({
+              id: createId("rev"),
+              image: result.url,
+              enabled: true,
+              sortOrder: 0,
+            });
+          } catch (err) {
+            setUploadError(
+              err instanceof Error ? err.message : "Erreur upload (partiel)"
+            );
+          }
+        }
       }
-      setDraft([...draft, ...added].map((item, i) => ({ ...item, sortOrder: i })));
+
+      if (added.length === 0) {
+        setUploadError((prev) => prev || "Aucune image n'a pu être téléversée");
+        return;
+      }
+
+      // Functional merge against latest draft — never overwrite concurrent deletes.
+      const next = updateDraft([...draftRef.current, ...added]);
+      await persist(next);
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : "Erreur upload");
+      if (added.length > 0) {
+        const next = updateDraft([...draftRef.current, ...added]);
+        await persist(next);
+      }
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -108,19 +184,24 @@ export function ReviewsManager() {
 
   const openReplace = (item: CMSReview) => setEditing({ ...item });
 
-  const applyReplace = () => {
-    if (!editing) return;
+  const applyReplace = async () => {
+    if (!editing || persisting || saving) return;
     if (!editing.image.trim()) {
       alert("Une image est obligatoire.");
       return;
     }
-    setDraft(draft.map((item) => (item.id === editing.id ? editing : item)));
+    const next = updateDraft(
+      draftRef.current.map((item) => (item.id === editing.id ? editing : item))
+    );
     setEditing(null);
+    await persist(next);
   };
 
   if (loading) {
     return <p className="text-sm text-white/45">Chargement...</p>;
   }
+
+  const busy = saving || persisting || uploading;
 
   return (
     <div className="space-y-4">
@@ -136,7 +217,7 @@ export function ReviewsManager() {
           <AdminButton
             variant="primary"
             onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
+            disabled={busy}
           >
             {uploading ? "Upload..." : "Ajouter des captures"}
           </AdminButton>
@@ -156,7 +237,7 @@ export function ReviewsManager() {
 
       <AdminDraftToolbar
         dirty={dirty}
-        saving={saving}
+        saving={busy}
         error={error || uploadError}
         success={success}
         onSave={saveAll}
@@ -164,7 +245,7 @@ export function ReviewsManager() {
       />
 
       {selected.size > 0 && (
-        <AdminButton variant="ghost" onClick={deleteSelected}>
+        <AdminButton variant="ghost" onClick={() => void deleteSelected()} disabled={busy}>
           Supprimer ({selected.size})
         </AdminButton>
       )}
@@ -178,10 +259,10 @@ export function ReviewsManager() {
           {draft.map((item, index) => (
             <div
               key={item.id}
-              draggable
+              draggable={!busy}
               onDragStart={() => onDragStart(index)}
               onDragOver={(e) => onDragOver(e, index)}
-              onDragEnd={onDragEnd}
+              onDragEnd={() => void onDragEnd()}
               className={cn(
                 "flex items-center gap-4 rounded-xl border border-white/10 bg-[#0d0d0d] p-3 transition-opacity",
                 !item.enabled && "opacity-45",
@@ -195,6 +276,7 @@ export function ReviewsManager() {
                 type="checkbox"
                 checked={selected.has(item.id)}
                 onChange={() => toggleSelect(item.id)}
+                disabled={busy}
               />
               <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-white/10">
                 {item.image ? (
@@ -220,16 +302,16 @@ export function ReviewsManager() {
               <div className="flex shrink-0 flex-wrap items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => moveItem(index, -1)}
-                  disabled={index === 0}
+                  onClick={() => void moveItem(index, -1)}
+                  disabled={busy || index === 0}
                   className="text-xs text-white/45 hover:text-white disabled:opacity-30"
                 >
                   ↑
                 </button>
                 <button
                   type="button"
-                  onClick={() => moveItem(index, 1)}
-                  disabled={index === draft.length - 1}
+                  onClick={() => void moveItem(index, 1)}
+                  disabled={busy || index === draft.length - 1}
                   className="text-xs text-white/45 hover:text-white disabled:opacity-30"
                 >
                   ↓
@@ -237,28 +319,24 @@ export function ReviewsManager() {
                 <button
                   type="button"
                   onClick={() => openReplace(item)}
-                  className="text-xs text-neon-pink hover:underline"
+                  disabled={busy}
+                  className="text-xs text-neon-pink hover:underline disabled:opacity-30"
                 >
                   Remplacer
                 </button>
                 <button
                   type="button"
-                  onClick={() => toggleEnabled(item.id)}
-                  className="text-xs text-white/45 hover:text-white"
+                  onClick={() => void toggleEnabled(item.id)}
+                  disabled={busy}
+                  className="text-xs text-white/45 hover:text-white disabled:opacity-30"
                 >
                   {item.enabled ? "Masquer" : "Publier"}
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    if (!confirm("Supprimer cette capture ?")) return;
-                    setDraft(
-                      draft
-                        .filter((r) => r.id !== item.id)
-                        .map((r, i) => ({ ...r, sortOrder: i }))
-                    );
-                  }}
-                  className="text-xs text-red-300/80 hover:text-red-300"
+                  onClick={() => void deleteOne(item.id)}
+                  disabled={busy}
+                  className="text-xs text-red-300/80 hover:text-red-300 disabled:opacity-30"
                 >
                   Supprimer
                 </button>
@@ -292,7 +370,7 @@ export function ReviewsManager() {
               <AdminButton variant="ghost" onClick={() => setEditing(null)}>
                 Annuler
               </AdminButton>
-              <AdminButton variant="primary" onClick={applyReplace}>
+              <AdminButton variant="primary" onClick={() => void applyReplace()} disabled={busy}>
                 Appliquer
               </AdminButton>
             </div>

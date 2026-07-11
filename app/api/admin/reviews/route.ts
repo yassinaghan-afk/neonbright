@@ -2,6 +2,7 @@ import { requireOwner, jsonError, jsonOk } from "@/lib/cms/api";
 import { normalizeReviews, reviewImageUrls } from "@/lib/cms/reviews";
 import { readCMSContentFresh, updateCMSContent } from "@/lib/cms/store";
 import { revalidatePublicSite } from "@/lib/cms/revalidate-public";
+import { logCmsSync } from "@/lib/cms/sync-log";
 import type { CMSReview } from "@/lib/cms/types";
 
 export const dynamic = "force-dynamic";
@@ -40,6 +41,7 @@ export async function PUT(request: Request) {
     return jsonError("items array is required");
   }
 
+  // Authoritative list from admin — empty array is a valid wipe.
   const saved = normalizeReviews(body.items as Partial<CMSReview>[]);
 
   let oldReviews: CMSReview[] = [];
@@ -49,15 +51,25 @@ export async function PUT(request: Request) {
     return { ...c, reviews: saved };
   });
 
+  // Belt-and-suspenders: updateCMSContent already revalidates; call again
+  // so homepage ISR/tag cache cannot serve a stale reviews list.
   revalidatePublicSite();
 
   const newUrls = new Set(reviewImageUrls(saved));
   const toDelete = reviewImageUrls(oldReviews).filter(
     (url) => isBlobUrl(url) && !newUrls.has(url)
   );
-  for (const url of toDelete) {
-    void tryDeleteBlob(url);
-  }
+  // Await cleanup so deleted images are gone before the response returns.
+  await Promise.all(toDelete.map((url) => tryDeleteBlob(url)));
 
-  return jsonOk(normalizeReviews(persisted.reviews ?? []));
+  const result = normalizeReviews(persisted.reviews ?? []);
+
+  logCmsSync("save", {
+    route: "PUT /api/admin/reviews",
+    count: result.length,
+    deletedBlobs: toDelete.length,
+    updatedAt: persisted.updatedAt,
+  });
+
+  return jsonOk(result);
 }
