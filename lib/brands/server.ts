@@ -23,6 +23,10 @@ export {
   filterBrands,
 } from "@/lib/brands/types";
 
+function isDirectUrl(value: string): boolean {
+  return value.startsWith("http://") || value.startsWith("https://");
+}
+
 async function buildLogoMap(): Promise<Map<string, string>> {
   if (isLogoMediaSyncEnabled()) {
     const logos = await getPartnerLogosFromMedia();
@@ -37,6 +41,12 @@ async function buildLogoMap(): Promise<Map<string, string>> {
   const map = new Map<string, string>();
   for (const p of content.portfolioProjects) {
     if (!p.logoFile) continue;
+    // New: logoFile is an uploaded blob/direct URL — use it as-is.
+    if (isDirectUrl(p.logoFile)) {
+      map.set(p.logoFile, p.logoFile);
+      continue;
+    }
+    // Legacy: logoFile is a bare filename in /media/logo/.
     const src = resolvePublicAsset(
       `/media/logo/${encodeURIComponent(p.logoFile)}`
     );
@@ -56,8 +66,15 @@ export async function getResolvedBrand(
   const [logoMap, profile] = await Promise.all([buildLogoMap(), getBrandProfileFromCMS(slug)]);
   if (!profile) return undefined;
 
-  if (profile.logoFile && logoMap.has(profile.logoFile)) {
-    return { ...profile, logoSrc: logoMap.get(profile.logoFile)! };
+  if (profile.logoFile) {
+    // Direct URL (blob upload) — use immediately.
+    if (isDirectUrl(profile.logoFile)) {
+      return { ...profile, logoSrc: profile.logoFile };
+    }
+    // Legacy filename mapped through /media/logo/.
+    if (logoMap.has(profile.logoFile)) {
+      return { ...profile, logoSrc: logoMap.get(profile.logoFile)! };
+    }
   }
 
   // Fallback: use project images so published brands are always accessible.

@@ -4,7 +4,6 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import { AdminDraftToolbar } from "@/components/admin/AdminDraftToolbar";
 import { GalleryUploadField } from "@/components/admin/GalleryUploadField";
-import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import { useDraftEditor } from "@/components/admin/useDraftEditor";
 import {
   AdminButton,
@@ -110,7 +109,7 @@ export function InstagramPostsManager() {
   const applyEdit = () => {
     if (!editing) return;
     if (!editing.image.trim()) {
-      alert("L'image principale est obligatoire.");
+      alert("Au moins une image est obligatoire.");
       return;
     }
     const exists = draft.some((item) => item.id === editing.id);
@@ -205,9 +204,9 @@ export function InstagramPostsManager() {
                 </p>
                 <p className="truncate text-xs text-white/35">
                   {item.instagramUrl || "URL Instagram non définie"}
-                  {item.carouselImages?.length
-                    ? ` · ${item.carouselImages.length + 1} image(s)`
-                    : ""}
+                  {(item.carouselImages?.length ?? 0) > 0
+                    ? ` · ${(item.carouselImages?.length ?? 0) + 1} image(s)`
+                    : " · 1 image"}
                 </p>
               </div>
               <div className="flex shrink-0 flex-wrap gap-2">
@@ -241,19 +240,17 @@ export function InstagramPostsManager() {
                 : "Nouvelle publication"}
             </h3>
             <div className="mt-4 space-y-4">
-              <ImageUploadField
-                label="Image de couverture"
-                value={editing.image}
-                onChange={(url) => setEditing({ ...editing, image: url })}
-                preset="gallery"
-              />
               <GalleryUploadField
-                label="Galerie d'images (optionnel)"
-                value={editing.carouselImages ?? []}
+                label="Images de la publication"
+                value={[editing.image, ...(editing.carouselImages ?? [])].filter(Boolean)}
                 onChange={(urls) =>
-                  setEditing({ ...editing, carouselImages: urls })
+                  setEditing({
+                    ...editing,
+                    image: urls[0] ?? "",
+                    carouselImages: urls.slice(1),
+                  })
                 }
-                hint="Images supplémentaires affichées dans le modal."
+                hint="La première image devient la miniature. Sélection multiple, glisser-déposer pour réordonner."
               />
               <AdminField label="Légende">
                 <AdminTextarea

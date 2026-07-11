@@ -12,6 +12,8 @@ type ImageUploadFieldProps = {
   hint?: string;
   className?: string;
   preset?: "gallery" | "thumbnail" | "hero";
+  accept?: string;
+  fileHint?: string;
 };
 
 export function ImageUploadField({
@@ -21,6 +23,8 @@ export function ImageUploadField({
   hint,
   className,
   preset = "gallery",
+  accept = "image/*",
+  fileHint = "PNG, JPG, WebP — max 10 Mo",
 }: ImageUploadFieldProps) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
@@ -64,7 +68,7 @@ export function ImageUploadField({
             <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/0 opacity-0 transition-all hover:bg-black/60 hover:opacity-100">
               <label className="cursor-pointer rounded-lg bg-white/10 px-3 py-1.5 text-xs font-medium text-white backdrop-blur hover:bg-white/20">
                 Remplacer
-                <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFile} disabled={uploading} />
+                <input ref={inputRef} type="file" accept={accept} className="hidden" onChange={handleFile} disabled={uploading} />
               </label>
               <AdminButton variant="danger" className="text-xs px-3 py-1.5" onClick={() => onChange("")}>
                 Supprimer
@@ -88,8 +92,8 @@ export function ImageUploadField({
             <span className="text-sm text-white/40">
               {uploading ? "Upload en cours..." : "Glisser-déposer ou cliquer"}
             </span>
-            <span className="text-xs text-white/25">PNG, JPG, WebP — max 10 Mo</span>
-            <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFile} disabled={uploading} />
+            <span className="text-xs text-white/25">{fileHint}</span>
+            <input ref={inputRef} type="file" accept={accept} className="hidden" onChange={handleFile} disabled={uploading} />
           </label>
         )}
         {error && <p className="text-xs text-red-400">{error}</p>}

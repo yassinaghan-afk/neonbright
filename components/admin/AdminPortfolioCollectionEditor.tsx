@@ -894,13 +894,14 @@ export function AdminPortfolioCollectionEditor({
                         />
                       </AdminField>
                       <div className="sm:col-span-2">
-                        <AdminField label="Fichier logo (nom dans /media/logo/)">
-                          <AdminInput
-                            value={editingProject.logoFile ?? ""}
-                            onChange={(e) => setEP({ logoFile: e.target.value })}
-                            placeholder="PHOTO-2026-06-23-18-20-29.jpg"
-                          />
-                        </AdminField>
+                        <ImageUploadField
+                          label="Logo de la marque"
+                          value={editingProject.logoFile ?? ""}
+                          onChange={(url) => setEP({ logoFile: url })}
+                          accept="image/*,.svg"
+                          fileHint="PNG, JPG, WEBP, SVG — max 10 Mo"
+                          preset="gallery"
+                        />
                       </div>
                       <AdminField label="Technologies (virgule)">
                         <AdminInput

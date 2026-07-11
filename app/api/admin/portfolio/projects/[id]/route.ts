@@ -4,6 +4,23 @@ import { updateCMSContent } from "@/lib/cms/store";
 import { logCmsSync } from "@/lib/cms/sync-log";
 import type { CMSPortfolioProject } from "@/lib/cms/types";
 
+function isBlobUrl(url: string | undefined): url is string {
+  if (!url) return false;
+  return (
+    url.includes(".blob.vercel-storage.com/") ||
+    url.includes(".public.blob.vercel-storage.com/")
+  );
+}
+
+async function tryDeleteBlob(url: string): Promise<void> {
+  try {
+    const { del } = await import("@vercel/blob");
+    await del(url);
+  } catch {
+    // Non-critical — log but don't block the response.
+  }
+}
+
 function normalizeBrandProjectUpdate(
   item: CMSPortfolioProject,
   body: Partial<CMSPortfolioProject>,
@@ -52,19 +69,31 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const { id } = await params;
   const body = await req.json().catch(() => ({}));
 
-  const updated = await updateCMSContent((c) => ({
-    ...c,
-    portfolioProjects: (c.portfolioProjects ?? []).map((item) => {
-      if (item.id !== id) return item;
-      const categorySlug = c.portfolioCategories.find(
-        (category) => category.id === item.categoryId
-      )?.slug;
-      return normalizeBrandProjectUpdate(item, body, categorySlug);
-    }),
-  }));
+  let oldLogoFile: string | undefined;
+
+  const updated = await updateCMSContent((c) => {
+    const existing = (c.portfolioProjects ?? []).find((p) => p.id === id);
+    oldLogoFile = existing?.logoFile;
+    return {
+      ...c,
+      portfolioProjects: (c.portfolioProjects ?? []).map((item) => {
+        if (item.id !== id) return item;
+        const categorySlug = c.portfolioCategories.find(
+          (category) => category.id === item.categoryId
+        )?.slug;
+        return normalizeBrandProjectUpdate(item, body, categorySlug);
+      }),
+    };
+  });
 
   const item = updated.portfolioProjects.find((p) => p.id === id);
   if (!item) return jsonError("Project not found.", 404);
+
+  // Delete the old logo blob when it was replaced or removed.
+  const newLogoFile = item.logoFile ?? "";
+  if (isBlobUrl(oldLogoFile) && oldLogoFile !== newLogoFile) {
+    void tryDeleteBlob(oldLogoFile);
+  }
 
   logCmsSync("save", {
     type: "portfolio-project",
@@ -82,15 +111,23 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
   const { id } = await params;
   let found = false;
+  let deletedLogoFile: string | undefined;
 
   const updated = await updateCMSContent((c) => {
     const before = c.portfolioProjects ?? [];
-    found = before.some((item) => item.id === id);
+    const item = before.find((p) => p.id === id);
+    found = Boolean(item);
+    deletedLogoFile = item?.logoFile;
     const after = before.filter((item) => item.id !== id);
     return { ...c, portfolioProjects: after };
   });
 
   if (!found) return jsonError("Project not found.", 404);
+
+  // Delete the logo blob file when the project is removed.
+  if (isBlobUrl(deletedLogoFile)) {
+    void tryDeleteBlob(deletedLogoFile!);
+  }
 
   logCmsSync("delete", {
     type: "portfolio-project",
