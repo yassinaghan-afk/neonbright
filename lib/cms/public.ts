@@ -4,6 +4,7 @@ import { getPartnerLogosFromMedia, type PartnerLogo } from "@/lib/cms/logo-media
 import { toPortfolioCategory } from "@/lib/cms/portfolio";
 import { normalizeHeroSlides, normalizePartners, sortByOrder } from "@/lib/cms/normalize";
 import { getPublicTestimonials } from "@/lib/cms/testimonials";
+import { filterPublicReviews, normalizeReviews } from "@/lib/cms/reviews";
 import type { PortfolioCategory } from "@/lib/portfolio/types";
 import type {
   CMSFAQItem,
@@ -13,6 +14,7 @@ import type {
   CMSNavLink,
   CMSPartner,
   CMSProcessStep,
+  CMSReview,
   CMSSectionCopy,
   CMSTestimonial,
   CMSInstagramSettings,
@@ -31,6 +33,7 @@ export type PublicHomepageContent = {
   heroMediaVersion?: string;
   portfolioCategories: PortfolioCategory[];
   testimonials: CMSTestimonial[];
+  reviews: CMSReview[];
   features: CMSFeature[];
   industries: CMSIndustry[];
   processSteps: CMSProcessStep[];
@@ -82,6 +85,9 @@ export async function getPublicHomepageContent(): Promise<PublicHomepageContent>
     .map(toPortfolioCategory);
 
   const testimonials = getPublicTestimonials(content.testimonials);
+  const reviews = filterPublicReviews(
+    normalizeReviews(sortByOrder(content.reviews ?? []))
+  );
 
   return {
     hero: content.hero,
@@ -92,6 +98,7 @@ export async function getPublicHomepageContent(): Promise<PublicHomepageContent>
     heroMediaVersion: content.heroMediaVersion,
     portfolioCategories,
     testimonials,
+    reviews,
     features,
     industries,
     processSteps,

@@ -364,6 +364,7 @@ export function getDefaultCMSContent(): CMSContent {
       buttonText: "Voir tout sur Instagram",
       url: "https://www.instagram.com/_neonbright_?igsh=NHQxN3MzcjJhdGZ0",
     },
+    reviews: [],
     instagramPosts: [],
     instagramReels: [],
     nav: [

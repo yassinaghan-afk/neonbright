@@ -31,6 +31,11 @@ const Testimonials = dynamic(
   { loading: () => null }
 );
 
+const ReviewsShowcase = dynamic(
+  () => import("@/components/ReviewsShowcase").then((m) => m.ReviewsShowcase),
+  { loading: () => null }
+);
+
 const Process = dynamic(
   () => import("@/components/Process").then((m) => m.Process),
   { loading: () => null }
@@ -56,6 +61,7 @@ export default async function Home() {
     trustStripLabel,
     portfolioCategories,
     testimonials,
+    reviews,
     features,
     industries,
     processSteps,
@@ -74,6 +80,7 @@ export default async function Home() {
         <InstagramMarqueeShowcase data={instagramShowcase} />
         <WhyChooseUs items={features} copy={sectionCopy.services} />
         <Industries items={industries} copy={sectionCopy.industries} />
+        <ReviewsShowcase reviews={reviews} />
         <Testimonials items={testimonials} copy={sectionCopy.testimonials} />
         <Process steps={processSteps} copy={sectionCopy.process} />
         <FAQ items={faq} copy={sectionCopy.faq} />

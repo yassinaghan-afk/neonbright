@@ -189,6 +189,21 @@ export type CMSInstagramSettings = {
   url: string;
 };
 
+/** Admin-managed customer review with screenshot gallery for the homepage marquee. */
+export type CMSReview = {
+  id: string;
+  /** Uploaded screenshot images (at least one required for display). */
+  screenshots: string[];
+  company: string;
+  reviewer?: string;
+  /** 1–5 star rating. */
+  rating: number;
+  title?: string;
+  description?: string;
+  enabled: boolean;
+  sortOrder: number;
+};
+
 /** Admin-managed Instagram post for the homepage marquee. */
 export type CMSInstagramPost = {
   id: string;
@@ -285,6 +300,7 @@ export type CMSContent = {
   processSteps: CMSProcessStep[];
   sectionCopy: CMSSectionCopy;
   instagram: CMSInstagramSettings;
+  reviews: CMSReview[];
   instagramPosts: CMSInstagramPost[];
   instagramReels: CMSInstagramReel[];
   nav: CMSNavLink[];
@@ -310,6 +326,7 @@ export type CMSSection =
   | "processSteps"
   | "sectionCopy"
   | "instagram"
+  | "reviews"
   | "instagramPosts"
   | "instagramReels"
   | "nav"
