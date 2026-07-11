@@ -94,9 +94,14 @@ function isContentAtLeastAsFresh(
  *    object (no CDN lag). Works in API routes and Server Actions.
  * 2. Public-URL fetch — auth-free fallback for cold Lambdas / background
  *    revalidations where OIDC is unavailable.
- * 3. In-memory overlay — last resort for 304 Not Modified SDK responses.
+ * 3. In-memory overlay — last resort for 304 Not Modified SDK responses
+ *    ONLY when bypassMemory is false (same-Lambda optimistic reads).
  */
-async function readCMSFromBlob(): Promise<Partial<CMSContent> | null> {
+async function readCMSFromBlob(options?: {
+  bypassMemory?: boolean;
+}): Promise<Partial<CMSContent> | null> {
+  const bypassMemory = Boolean(options?.bypassMemory);
+
   // ── PRIMARY: SDK get (fresh, no CDN lag) ─────────────────────────────────
   try {
     const auth = await getBlobCommandOptions();
@@ -105,7 +110,9 @@ async function readCMSFromBlob(): Promise<Partial<CMSContent> | null> {
 
     if (result) {
       if (result.statusCode === 304 || !result.stream) {
-        if (memoryCMS) {
+        // Never overlay stale Lambda memory when the caller asked for a fresh read
+        // (admin sync / homepage after publish toggle). Fall through to public URL.
+        if (!bypassMemory && memoryCMS) {
           logCmsSync("storage-read", {
             source: "304-memory-overlay",
             updatedAt: memoryCMS.updatedAt,
@@ -121,6 +128,7 @@ async function readCMSFromBlob(): Promise<Partial<CMSContent> | null> {
           updatedAt: parsed.updatedAt,
           testimonials: parsed.testimonials?.length ?? 0,
           portfolioProjects: parsed.portfolioProjects?.length ?? 0,
+          reviews: parsed.reviews?.length ?? 0,
         });
         return parsed;
       }
@@ -146,6 +154,7 @@ async function readCMSFromBlob(): Promise<Partial<CMSContent> | null> {
           updatedAt: parsed.updatedAt,
           testimonials: parsed.testimonials?.length ?? 0,
           portfolioProjects: parsed.portfolioProjects?.length ?? 0,
+          reviews: parsed.reviews?.length ?? 0,
         });
         return parsed;
       }
@@ -336,21 +345,33 @@ type LoadCMSOptions = {
 async function loadCMSContent(options?: LoadCMSOptions): Promise<CMSContent> {
   noStore();
 
+  const bypassMemory = Boolean(options?.bypassMemory);
+
   try {
     let parsed: Partial<CMSContent> | null = null;
 
     if (shouldUseBlobStorage()) {
-      parsed = await readCMSFromBlob();
+      // Fresh reads must not short-circuit on SDK 304 → stale Lambda memory
+      // (that kept deactivated Reviews visible on the homepage).
+      parsed = await readCMSFromBlob({ bypassMemory });
     } else {
       await ensureDataDir();
       parsed = await readCMSFileFromDisk();
     }
 
-    // Prefer the in-memory overlay ONLY when it is at least as fresh as Blob/disk
-    // (same-Lambda read-after-write). A newer Blob always wins so another
-    // instance's write is never masked by a stale local overlay.
-    if (memoryCMS && isContentAtLeastAsFresh(memoryCMS, parsed)) {
-      return applyContentMigrations(memoryCMS);
+    if (memoryCMS) {
+      if (bypassMemory) {
+        // Authoritative read: pick the newer snapshot between this Lambda's
+        // just-written memory and Blob. Same-Lambda read-after-write keeps
+        // working when Blob CDN lags; another instance's newer Blob still wins
+        // so publish/deactivate from Admin propagates.
+        if (!parsed || isContentAtLeastAsFresh(memoryCMS, parsed)) {
+          return applyContentMigrations(memoryCMS);
+        }
+      } else if (isContentAtLeastAsFresh(memoryCMS, parsed)) {
+        // Non-fresh: same-Lambda optimistic overlay when memory is ≥ Blob.
+        return applyContentMigrations(memoryCMS);
+      }
     }
 
     if (!parsed) {
