@@ -64,8 +64,8 @@ export function ReviewsShowcase({ reviews }: Props) {
 
         <Container className="relative">
           <SectionReveal className="mx-auto max-w-3xl text-center">
-            <h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl">
-              Ils nous font confiance
+            <h2 className="font-display text-3xl font-bold uppercase tracking-tight sm:text-4xl md:text-5xl lg:text-6xl">
+              Reviews
             </h2>
           </SectionReveal>
         </Container>

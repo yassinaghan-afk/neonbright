@@ -25,13 +25,10 @@ function ReviewCard({ review, onSelect, imageFailed, onImageError }: ReviewCardP
     >
       <div
         className={cn(
-          "instagram-marquee-card relative overflow-hidden rounded-2xl border border-white/10 bg-[#0a0a0a]",
-          "aspect-square w-[200px] sm:w-[220px] md:w-[240px] lg:w-[260px]",
-          "shadow-[0_8px_32px_rgba(0,0,0,0.45)]",
-          "transition-all duration-500 ease-out",
-          "group-hover:border-neon-pink/45 group-hover:scale-[1.05]",
-          "group-hover:shadow-[0_0_36px_rgba(236,72,153,0.28),0_0_64px_rgba(168,85,247,0.12),0_12px_48px_rgba(0,0,0,0.5)]",
-          "group-focus-visible:ring-2 group-focus-visible:ring-neon-pink/50"
+          "relative overflow-hidden",
+          "h-[260px] w-[190px] sm:h-[300px] sm:w-[220px] md:h-[340px] md:w-[250px] lg:h-[380px] lg:w-[280px]",
+          "transition-transform duration-500 ease-out",
+          "group-hover:scale-[1.04]"
         )}
       >
         {src && !imageFailed ? (
@@ -40,15 +37,13 @@ function ReviewCard({ review, onSelect, imageFailed, onImageError }: ReviewCardP
             alt=""
             fill
             loading="lazy"
-            sizes="(max-width: 640px) 200px, (max-width: 1024px) 240px, 260px"
-            className="pointer-events-none object-cover"
+            sizes="(max-width: 640px) 190px, (max-width: 1024px) 250px, 280px"
+            className="pointer-events-none object-contain"
             draggable={false}
             onError={() => onImageError(review.id)}
             {...localImageUnoptimized(src)}
           />
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] to-white/[0.02]" aria-hidden />
-        )}
+        ) : null}
       </div>
     </button>
   );

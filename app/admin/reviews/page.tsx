@@ -7,9 +7,11 @@ export default function AdminReviewsPage() {
   return (
     <AdminShell>
       <div className="mb-6">
-        <h1 className="font-display text-2xl font-bold">Reviews</h1>
+        <h1 className="font-display text-2xl font-bold">Reviews Gallery</h1>
         <p className="mt-1 text-sm text-white/45">
-          Galerie de captures d&apos;écran affichées sur la page d&apos;accueil.
+          Galerie de captures d&apos;écran (WhatsApp, Instagram, Messenger...)
+          affichées dans la section « Reviews » de la page d&apos;accueil —
+          section indépendante des Témoignages.
         </p>
       </div>
       <ReviewsManager />

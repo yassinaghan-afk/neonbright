@@ -182,31 +182,26 @@ export function ReviewsModal({ reviews, activeIndex, onNavigate, onClose }: Prop
 
               <motion.div
                 key={review.id}
-                className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-[#0a0a0a]/80 shadow-[0_24px_80px_rgba(0,0,0,0.65)] backdrop-blur-sm sm:rounded-3xl"
+                className="relative w-full"
                 initial={{ opacity: 0, scale: 0.96, y: 12 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.97, y: 8 }}
                 transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
               >
-                <div className="relative aspect-[4/5] w-full max-h-[min(80vh,800px)] sm:aspect-square sm:max-h-[min(75vh,750px)]">
+                <div className="relative h-[min(82vh,850px)] w-full">
                   {currentSrc && !imgFailed ? (
                     <Image
                       src={currentSrc}
                       alt=""
                       fill
-                      className="object-contain p-2 sm:p-3"
+                      className="object-contain"
                       sizes="(max-width: 768px) 100vw, 900px"
                       unoptimized={unoptimized}
                       priority
                       draggable={false}
                       onError={() => setImgFailed(true)}
                     />
-                  ) : (
-                    <div
-                      className="absolute inset-0 bg-gradient-to-br from-white/[0.04] to-white/[0.02]"
-                      aria-hidden
-                    />
-                  )}
+                  ) : null}
                 </div>
               </motion.div>
 

@@ -183,7 +183,7 @@ export function ReviewsManager() {
   const uploadFiles = async (files: File[]) => {
     const images = files
       .filter((f) => f.type.startsWith("image/") || /\.(png|jpe?g|webp|gif|svg)$/i.test(f.name))
-      .slice(0, 50);
+      .slice(0, 200);
     if (!images.length) return;
     setError("");
     setSuccess("");
@@ -252,7 +252,7 @@ export function ReviewsManager() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="font-display text-xl font-bold">Reviews</h2>
+          <h2 className="font-display text-xl font-bold">Reviews Gallery</h2>
           <p className="mt-0.5 text-sm text-white/40">
             {items.length === 0
               ? "Aucune capture. Cliquez sur « Ajouter » pour commencer."

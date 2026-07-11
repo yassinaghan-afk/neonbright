@@ -31,6 +31,11 @@ const ReviewsShowcase = dynamic(
   { loading: () => null }
 );
 
+const Testimonials = dynamic(
+  () => import("@/components/Testimonials").then((m) => m.Testimonials),
+  { loading: () => null }
+);
+
 const Process = dynamic(
   () => import("@/components/Process").then((m) => m.Process),
   { loading: () => null }
@@ -57,6 +62,7 @@ export default async function Home() {
     partnerLogos,
     trustStripLabel,
     portfolioCategories,
+    testimonials,
     reviews,
     features,
     industries,
@@ -77,6 +83,7 @@ export default async function Home() {
         <WhyChooseUs items={features} copy={sectionCopy.services} />
         <Industries items={industries} copy={sectionCopy.industries} />
         <ReviewsShowcase reviews={reviews} />
+        <Testimonials items={testimonials} copy={sectionCopy.testimonials} />
         <Process steps={processSteps} copy={sectionCopy.process} />
         <FAQ items={faq} copy={sectionCopy.faq} />
         <QuoteCTA />
