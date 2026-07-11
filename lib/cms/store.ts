@@ -346,29 +346,17 @@ async function loadCMSContent(options?: LoadCMSOptions): Promise<CMSContent> {
       parsed = await readCMSFileFromDisk();
     }
 
-    // Fresh reads must come from blob/disk — never a stale in-memory overlay.
-    if (options?.bypassMemory) {
-      if (!parsed) {
-        if (memoryCMS) {
-          console.warn("[cms-store] bypassMemory: blob unreadable — serving memory overlay");
-          return applyContentMigrations(memoryCMS);
-        }
-        if (shouldUseBlobStorage()) {
-          console.error(
-            "[cms-store] bypassMemory: blob unreadable with no overlay — serving defaults to avoid 500"
-          );
-          return applyContentMigrations(getDefaultCMSContent());
-        }
-        throw new Error("CMS content not found");
-      }
-    } else if (memoryCMS && isContentAtLeastAsFresh(memoryCMS, parsed)) {
-      return memoryCMS;
+    // Prefer the in-memory overlay ONLY when it is at least as fresh as Blob/disk
+    // (same-Lambda read-after-write). A newer Blob always wins so another
+    // instance's write is never masked by a stale local overlay.
+    if (memoryCMS && isContentAtLeastAsFresh(memoryCMS, parsed)) {
+      return applyContentMigrations(memoryCMS);
     }
 
     if (!parsed) {
       if (memoryCMS) {
         console.warn("[cms-store] blob unreadable — serving in-memory overlay");
-        return memoryCMS;
+        return applyContentMigrations(memoryCMS);
       }
       if (shouldUseBlobStorage()) {
         // Serve default content rather than crash with HTTP 500.
@@ -508,11 +496,28 @@ export async function writeCMSContent(content: CMSContent): Promise<CMSContent> 
   if (shouldUseBlobStorage()) {
     await writeCMSToBlob(next);
     memoryCMS = next;
+    // Read-after-write guard: if Blob still returns an older snapshot, rewrite once.
+    try {
+      const verify = await readCMSFromBlob();
+      if (verify && !isContentAtLeastAsFresh(verify, next)) {
+        console.warn(
+          "[cms-store] read-after-write lag detected — retrying blob put",
+          { written: next.updatedAt, read: verify.updatedAt }
+        );
+        await writeCMSToBlob(next);
+      }
+    } catch (err) {
+      console.warn(
+        "[cms-store] read-after-write verify skipped:",
+        err instanceof Error ? err.message : err
+      );
+    }
     tryRevalidateCMS();
     logCmsSync("storage-updated", {
       storage: "blob",
       updatedAt: next.updatedAt,
       testimonials: next.testimonials.length,
+      reviews: next.reviews?.length ?? 0,
       portfolioProjects: next.portfolioProjects?.length ?? 0,
       publishedProjects: next.portfolioProjects?.filter((p) => p.published).length ?? 0,
       projectIds: next.portfolioProjects?.map((p) => `${p.id}:${p.published ? "pub" : "hid"}`).join(","),
