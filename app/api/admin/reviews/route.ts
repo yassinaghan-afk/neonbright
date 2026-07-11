@@ -1,5 +1,5 @@
 import { requireOwner, jsonError, jsonOk } from "@/lib/cms/api";
-import { normalizeReviews } from "@/lib/cms/reviews";
+import { normalizeReviews, reviewImageUrls } from "@/lib/cms/reviews";
 import { readCMSContentFresh, updateCMSContent } from "@/lib/cms/store";
 import { revalidatePublicSite } from "@/lib/cms/revalidate-public";
 import type { CMSReview } from "@/lib/cms/types";
@@ -45,17 +45,16 @@ export async function PUT(request: Request) {
   let oldReviews: CMSReview[] = [];
 
   const persisted = await updateCMSContent((c) => {
-    oldReviews = c.reviews ?? [];
+    oldReviews = normalizeReviews(c.reviews ?? []);
     return { ...c, reviews: saved };
   });
 
   revalidatePublicSite();
 
-  // Delete blobs for screenshots no longer referenced by any review.
-  const newUrls = new Set(saved.flatMap((r) => r.screenshots));
-  const toDelete = oldReviews
-    .flatMap((r) => r.screenshots)
-    .filter((url) => isBlobUrl(url) && !newUrls.has(url));
+  const newUrls = new Set(reviewImageUrls(saved));
+  const toDelete = reviewImageUrls(oldReviews).filter(
+    (url) => isBlobUrl(url) && !newUrls.has(url)
+  );
   for (const url of toDelete) {
     void tryDeleteBlob(url);
   }

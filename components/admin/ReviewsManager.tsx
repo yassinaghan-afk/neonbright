@@ -3,11 +3,11 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import { AdminDraftToolbar } from "@/components/admin/AdminDraftToolbar";
-import { GalleryUploadField } from "@/components/admin/GalleryUploadField";
+import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import { useDraftEditor } from "@/components/admin/useDraftEditor";
 import { AdminButton } from "@/components/admin/ui/AdminForm";
+import { uploadAdminFile } from "@/lib/admin/upload-client";
 import { createId } from "@/lib/cms/id";
-import { emptyReview } from "@/lib/cms/reviews";
 import type { CMSReview } from "@/lib/cms/types";
 import { cn } from "@/lib/utils";
 
@@ -22,7 +22,10 @@ export function ReviewsManager() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [editing, setEditing] = useState<CMSReview | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
   const dragHandleRef = useRef<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { draft, setDraft, dirty, loading, saving, error, success, cancel, commit } =
     useDraftEditor<CMSReview>("/api/admin/reviews");
@@ -38,7 +41,7 @@ export function ReviewsManager() {
 
   const deleteSelected = () => {
     if (selected.size === 0) return;
-    if (!confirm(`Supprimer ${selected.size} avis ?`)) return;
+    if (!confirm(`Supprimer ${selected.size} capture(s) ?`)) return;
     setDraft(
       draft
         .filter((item) => !selected.has(item.id))
@@ -51,9 +54,10 @@ export function ReviewsManager() {
     setDraft(draft.map((item) => (item.id === id ? { ...item, enabled: !item.enabled } : item)));
   };
 
-  const duplicate = (review: CMSReview) => {
-    const copy: CMSReview = { ...review, id: createId("rev"), sortOrder: draft.length };
-    setDraft([...draft, copy]);
+  const moveItem = (index: number, dir: -1 | 1) => {
+    const to = index + dir;
+    if (to < 0 || to >= draft.length) return;
+    setDraft(reorderDraft(draft, index, to));
   };
 
   const saveAll = () => commit("/api/admin/reviews", { items: draft });
@@ -77,20 +81,40 @@ export function ReviewsManager() {
     setDragIndex(null);
   };
 
-  const openNew = () => setEditing(emptyReview(draft.length));
+  const uploadMany = async (files: File[]) => {
+    const images = files.filter((f) => f.type.startsWith("image/")).slice(0, 40);
+    if (!images.length) return;
+    setUploading(true);
+    setUploadError("");
+    try {
+      const added: CMSReview[] = [];
+      for (const file of images) {
+        const result = await uploadAdminFile(file, { preset: "gallery" });
+        added.push({
+          id: createId("rev"),
+          image: result.url,
+          enabled: true,
+          sortOrder: draft.length + added.length,
+        });
+      }
+      setDraft([...draft, ...added].map((item, i) => ({ ...item, sortOrder: i })));
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Erreur upload");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
-  const applyEdit = () => {
+  const openReplace = (item: CMSReview) => setEditing({ ...item });
+
+  const applyReplace = () => {
     if (!editing) return;
-    if (editing.screenshots.length === 0) {
-      alert("Ajoutez au moins une capture d'écran.");
+    if (!editing.image.trim()) {
+      alert("Une image est obligatoire.");
       return;
     }
-    const exists = draft.some((item) => item.id === editing.id);
-    if (exists) {
-      setDraft(draft.map((item) => (item.id === editing.id ? editing : item)));
-    } else {
-      setDraft([...draft, editing]);
-    }
+    setDraft(draft.map((item) => (item.id === editing.id ? editing : item)));
     setEditing(null);
   };
 
@@ -102,21 +126,38 @@ export function ReviewsManager() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="font-display text-xl font-bold">Avis Clients</h2>
+          <h2 className="font-display text-xl font-bold">Reviews</h2>
           <p className="mt-1 max-w-2xl text-sm text-white/45">
-            Captures d&apos;écran d&apos;avis affichées dans le défilement de la page
-            d&apos;accueil. Glisser-déposer pour réordonner.
+            Galerie de captures d&apos;écran. Upload multiple, réordonner, publier /
+            masquer, enregistrer.
           </p>
         </div>
-        <AdminButton variant="primary" onClick={openNew}>
-          Ajouter un avis
-        </AdminButton>
+        <div className="flex flex-wrap gap-2">
+          <AdminButton
+            variant="primary"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+          >
+            {uploading ? "Upload..." : "Ajouter des captures"}
+          </AdminButton>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              const files = Array.from(e.target.files ?? []);
+              if (files.length) void uploadMany(files);
+            }}
+          />
+        </div>
       </div>
 
       <AdminDraftToolbar
         dirty={dirty}
         saving={saving}
-        error={error}
+        error={error || uploadError}
         success={success}
         onSave={saveAll}
         onCancel={cancel}
@@ -130,7 +171,7 @@ export function ReviewsManager() {
 
       {draft.length === 0 ? (
         <p className="rounded-xl border border-dashed border-white/10 py-12 text-center text-sm text-white/35">
-          Aucun avis. Ajoutez des captures d&apos;écran pour alimenter la section.
+          Aucune capture. Ajoutez des images pour alimenter la section.
         </p>
       ) : (
         <div className="space-y-2">
@@ -156,9 +197,9 @@ export function ReviewsManager() {
                 onChange={() => toggleSelect(item.id)}
               />
               <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-white/10">
-                {item.screenshots[0] ? (
+                {item.image ? (
                   <Image
-                    src={item.screenshots[0]}
+                    src={item.image}
                     alt=""
                     fill
                     className="object-cover"
@@ -167,41 +208,60 @@ export function ReviewsManager() {
                   />
                 ) : (
                   <div className="flex h-full items-center justify-center text-[10px] text-white/30">
-                    Capture
+                    Image
                   </div>
                 )}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-white/80">
-                  Avis #{index + 1}
-                </p>
-                <p className="truncate text-xs text-white/35">
-                  {item.screenshots.length} capture{item.screenshots.length !== 1 ? "s" : ""}
+                  Capture #{index + 1}
                 </p>
               </div>
-              <div className="flex shrink-0 flex-wrap gap-2">
+              <div className="flex shrink-0 flex-wrap items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setEditing(item)}
-                  className="text-xs text-neon-pink hover:underline"
+                  onClick={() => moveItem(index, -1)}
+                  disabled={index === 0}
+                  className="text-xs text-white/45 hover:text-white disabled:opacity-30"
                 >
-                  Modifier
+                  ↑
                 </button>
                 <button
                   type="button"
-                  onClick={() => duplicate(item)}
-                  className="text-xs text-neon-purple hover:underline"
+                  onClick={() => moveItem(index, 1)}
+                  disabled={index === draft.length - 1}
+                  className="text-xs text-white/45 hover:text-white disabled:opacity-30"
                 >
-                  Dupliquer
+                  ↓
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openReplace(item)}
+                  className="text-xs text-neon-pink hover:underline"
+                >
+                  Remplacer
                 </button>
                 <button
                   type="button"
                   onClick={() => toggleEnabled(item.id)}
                   className="text-xs text-white/45 hover:text-white"
                 >
-                  {item.enabled ? "Masquer" : "Activer"}
+                  {item.enabled ? "Masquer" : "Publier"}
                 </button>
-                <span className="text-xs text-white/25">#{index + 1}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!confirm("Supprimer cette capture ?")) return;
+                    setDraft(
+                      draft
+                        .filter((r) => r.id !== item.id)
+                        .map((r, i) => ({ ...r, sortOrder: i }))
+                    );
+                  }}
+                  className="text-xs text-red-300/80 hover:text-red-300"
+                >
+                  Supprimer
+                </button>
               </div>
             </div>
           ))}
@@ -210,16 +270,14 @@ export function ReviewsManager() {
 
       {editing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-white/10 bg-[#0d0d0d] p-5">
-            <h3 className="font-display text-lg font-semibold">
-              {draft.some((p) => p.id === editing.id) ? "Modifier l'avis" : "Nouvel avis"}
-            </h3>
+          <div className="w-full max-w-lg rounded-xl border border-white/10 bg-[#0d0d0d] p-5">
+            <h3 className="font-display text-lg font-semibold">Remplacer la capture</h3>
             <div className="mt-4 space-y-4">
-              <GalleryUploadField
-                label="Captures d'écran"
-                value={editing.screenshots}
-                onChange={(urls) => setEditing({ ...editing, screenshots: urls })}
-                hint="Téléversez une ou plusieurs captures. La première est affichée comme miniature."
+              <ImageUploadField
+                label="Capture d'écran"
+                value={editing.image}
+                onChange={(url) => setEditing({ ...editing, image: url })}
+                preset="gallery"
               />
               <label className="flex items-center gap-2 text-sm text-white/70">
                 <input
@@ -227,14 +285,14 @@ export function ReviewsManager() {
                   checked={editing.enabled}
                   onChange={(e) => setEditing({ ...editing, enabled: e.target.checked })}
                 />
-                Actif (visible sur le site)
+                Publié (visible sur le site)
               </label>
             </div>
             <div className="mt-5 flex justify-end gap-2">
               <AdminButton variant="ghost" onClick={() => setEditing(null)}>
                 Annuler
               </AdminButton>
-              <AdminButton variant="primary" onClick={applyEdit}>
+              <AdminButton variant="primary" onClick={applyReplace}>
                 Appliquer
               </AdminButton>
             </div>

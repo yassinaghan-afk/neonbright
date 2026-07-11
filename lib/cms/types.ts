@@ -190,10 +190,10 @@ export type CMSInstagramSettings = {
 };
 
 /** Admin-managed customer review with screenshot gallery for the homepage marquee. */
-/** Admin-managed review — one or more uploaded screenshots for the homepage marquee. */
+/** Admin-managed review screenshot for the homepage marquee gallery. */
 export type CMSReview = {
   id: string;
-  screenshots: string[];
+  image: string;
   enabled: boolean;
   sortOrder: number;
 };

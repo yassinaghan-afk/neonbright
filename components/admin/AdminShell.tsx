@@ -32,6 +32,7 @@ const NAV: NavItem[] = [
   { href: "/admin/industries", label: "Secteurs", icon: "🏭", roles: ["owner"] },
   { href: "/admin/process", label: "Processus", icon: "◎", roles: ["owner"] },
   { href: "/admin/testimonials", label: "Témoignages", icon: "◉", roles: ["owner"] },
+  { href: "/admin/reviews", label: "Reviews", icon: "★", roles: ["owner"] },
   { href: "/admin/faq", label: "FAQ", icon: "?", roles: ["owner"] },
   { href: "/admin/section-copy", label: "Textes sections", icon: "✎", roles: ["owner"] },
   { href: "/admin/instagram", label: "Instagram", icon: "◑", roles: ["owner"] },
