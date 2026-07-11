@@ -351,29 +351,31 @@ async function loadCMSContent(options?: LoadCMSOptions): Promise<CMSContent> {
     let parsed: Partial<CMSContent> | null = null;
 
     if (shouldUseBlobStorage()) {
+      // Fresh reads must not short-circuit on SDK 304 → stale Lambda memory
+      // (that kept deactivated Reviews visible on the homepage).
       parsed = await readCMSFromBlob({ bypassMemory });
     } else {
       await ensureDataDir();
       parsed = await readCMSFileFromDisk();
     }
 
-    // Prefer the in-memory overlay ONLY when:
-    // - caller did NOT request a fresh/authoritative read (bypassMemory), AND
-    // - memory is at least as fresh as Blob/disk (same-Lambda read-after-write).
-    // A newer Blob always wins so another instance's write (e.g. publish toggle)
-    // is never masked by a stale local overlay.
-    if (
-      !bypassMemory &&
-      memoryCMS &&
-      isContentAtLeastAsFresh(memoryCMS, parsed)
-    ) {
-      return applyContentMigrations(memoryCMS);
+    if (memoryCMS) {
+      if (bypassMemory) {
+        // Authoritative read: pick the newer snapshot between this Lambda's
+        // just-written memory and Blob. Same-Lambda read-after-write keeps
+        // working when Blob CDN lags; another instance's newer Blob still wins
+        // so publish/deactivate from Admin propagates.
+        if (!parsed || isContentAtLeastAsFresh(memoryCMS, parsed)) {
+          return applyContentMigrations(memoryCMS);
+        }
+      } else if (isContentAtLeastAsFresh(memoryCMS, parsed)) {
+        // Non-fresh: same-Lambda optimistic overlay when memory is ≥ Blob.
+        return applyContentMigrations(memoryCMS);
+      }
     }
 
     if (!parsed) {
-      // Fresh reads must not silently serve defaults/memory when Blob fails —
-      // fall back only when we have no other choice.
-      if (!bypassMemory && memoryCMS) {
+      if (memoryCMS) {
         console.warn("[cms-store] blob unreadable — serving in-memory overlay");
         return applyContentMigrations(memoryCMS);
       }
