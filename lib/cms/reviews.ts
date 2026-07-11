@@ -7,13 +7,6 @@ export function normalizeReview(item: Partial<CMSReview>, sortOrder: number): CM
     screenshots: (item.screenshots ?? [])
       .map((s) => String(s).trim())
       .filter(Boolean),
-    company: String(item.company ?? "").trim(),
-    reviewer: item.reviewer ? String(item.reviewer).trim() || undefined : undefined,
-    rating: Math.min(5, Math.max(1, Math.round(Number(item.rating) || 5))),
-    title: item.title ? String(item.title).trim() || undefined : undefined,
-    description: item.description
-      ? String(item.description).trim() || undefined
-      : undefined,
     enabled: item.enabled !== false,
     sortOrder,
   };
@@ -31,11 +24,6 @@ export function emptyReview(sortOrder: number): CMSReview {
   return {
     id: createId("rev"),
     screenshots: [],
-    company: "",
-    reviewer: undefined,
-    rating: 5,
-    title: undefined,
-    description: undefined,
     enabled: true,
     sortOrder,
   };

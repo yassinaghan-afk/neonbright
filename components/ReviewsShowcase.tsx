@@ -6,7 +6,6 @@ import { Container } from "@/components/ui/Container";
 import { ReviewsMarqueeRow } from "@/components/reviews/ReviewsMarqueeRow";
 import { ReviewsModal } from "@/components/reviews/ReviewsModal";
 import type { CMSReview } from "@/lib/cms/types";
-import { cn } from "@/lib/utils";
 
 type Props = {
   reviews: CMSReview[];
@@ -33,10 +32,10 @@ export function ReviewsShowcase({ reviews }: Props) {
   const handleNavigate = useCallback(
     (index: number) => {
       if (!visibleReviews.length) return;
-      const next =
+      setActiveIndex(
         ((index % visibleReviews.length) + visibleReviews.length) %
-        visibleReviews.length;
-      setActiveIndex(next);
+          visibleReviews.length
+      );
     },
     [visibleReviews.length]
   );
@@ -48,10 +47,7 @@ export function ReviewsShowcase({ reviews }: Props) {
       <SectionDivider />
       <section
         id="reviews"
-        className={cn(
-          "relative overflow-hidden py-20 sm:py-28 lg:py-32",
-          "bg-[#050505]"
-        )}
+        className="relative overflow-hidden py-20 bg-[#050505] sm:py-28 lg:py-32"
       >
         <div
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(168,85,247,0.10),transparent)]"
