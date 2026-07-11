@@ -7,18 +7,12 @@ export async function POST() {
   if (error) return error;
 
   try {
-    try {
-      updateTag(CMS_CACHE_TAG);
-    } catch {
-      // Fallback below.
-    }
-    revalidateTag(CMS_CACHE_TAG, { expire: 0 });
-  } catch (err) {
-    console.warn("[api/admin/revalidate] tag invalidate failed:", err);
+    updateTag(CMS_CACHE_TAG);
+  } catch {
+    // Fallback below.
   }
-
-  // Path invalidation must not depend on tag success — otherwise published
-  // Reviews can stay visible on the homepage after deactivate.
+  revalidateTag(CMS_CACHE_TAG, { expire: 0 });
+  // Revalidate every public page and the root layout after any CMS change.
   revalidatePath("/", "page");
   revalidatePath("/realisations/events", "page");
   revalidatePath("/realisations/brands", "page");
