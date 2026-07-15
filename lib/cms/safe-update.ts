@@ -3,13 +3,14 @@
  *
  * NEVER use `{ ...existing, ...body }` directly for partial updates!
  * That pattern cannot distinguish between "field omitted" and "field is undefined".
+ *
+ * Field sets must match `@/lib/cms/types` exactly.
  */
 
 import type {
   CMSPortfolioProject,
   CMSHeroSlide,
   CMSPartner,
-  CMSTestimonial,
   CMSFeature,
   CMSIndustry,
   CMSProcessStep,
@@ -77,6 +78,21 @@ function safeNumber(
 }
 
 /**
+ * Safe optional number getter (preserves undefined).
+ */
+function safeOptionalNumber(
+  body: Record<string, unknown>,
+  key: string,
+  existing: number | undefined
+): number | undefined {
+  if (!Object.prototype.hasOwnProperty.call(body, key)) {
+    return existing;
+  }
+  const value = body[key];
+  return typeof value === "number" ? value : existing;
+}
+
+/**
  * Safe boolean getter.
  */
 function safeBoolean(
@@ -84,6 +100,20 @@ function safeBoolean(
   key: string,
   existing: boolean
 ): boolean {
+  if (!Object.prototype.hasOwnProperty.call(body, key)) {
+    return existing;
+  }
+  return body[key] !== false;
+}
+
+/**
+ * Safe optional boolean getter (preserves undefined).
+ */
+function safeOptionalBoolean(
+  body: Record<string, unknown>,
+  key: string,
+  existing: boolean | undefined
+): boolean | undefined {
   if (!Object.prototype.hasOwnProperty.call(body, key)) {
     return existing;
   }
@@ -151,6 +181,7 @@ export function safeUpdatePortfolioProject(
 
 /**
  * Safely update a hero slide, preserving unchanged fields.
+ * Schema: id, src, alt, enabled, sortOrder (no link).
  */
 export function safeUpdateHeroSlide(
   existing: CMSHeroSlide,
@@ -162,13 +193,14 @@ export function safeUpdateHeroSlide(
     id: existing.id,
     src: safeString(bodyRecord, "src", existing.src),
     alt: safeString(bodyRecord, "alt", existing.alt),
-    link: safeGet(bodyRecord, "link", existing.link),
+    enabled: safeBoolean(bodyRecord, "enabled", existing.enabled),
     sortOrder: safeNumber(bodyRecord, "sortOrder", existing.sortOrder),
   };
 }
 
 /**
  * Safely update a partner, preserving unchanged fields.
+ * Schema: id, name, logoUrl, enabled, sortOrder.
  */
 export function safeUpdatePartner(
   existing: CMSPartner,
@@ -179,10 +211,9 @@ export function safeUpdatePartner(
   return {
     id: existing.id,
     name: safeString(bodyRecord, "name", existing.name),
-    logo: safeString(bodyRecord, "logo", existing.logo),
-    url: safeString(bodyRecord, "url", existing.url ?? ""),
+    logoUrl: safeString(bodyRecord, "logoUrl", existing.logoUrl),
+    enabled: safeBoolean(bodyRecord, "enabled", existing.enabled),
     sortOrder: safeNumber(bodyRecord, "sortOrder", existing.sortOrder),
-    category: safeGet(bodyRecord, "category", existing.category),
   };
 }
 
@@ -201,11 +232,13 @@ export function safeUpdateFeature(
     title: safeString(bodyRecord, "title", existing.title),
     description: safeString(bodyRecord, "description", existing.description),
     sortOrder: safeNumber(bodyRecord, "sortOrder", existing.sortOrder),
+    enabled: safeBoolean(bodyRecord, "enabled", existing.enabled),
   };
 }
 
 /**
  * Safely update an industry, preserving unchanged fields.
+ * Schema: id, name, icon, sortOrder, enabled (no description/examples).
  */
 export function safeUpdateIndustry(
   existing: CMSIndustry,
@@ -217,14 +250,14 @@ export function safeUpdateIndustry(
     id: existing.id,
     name: safeString(bodyRecord, "name", existing.name),
     icon: safeString(bodyRecord, "icon", existing.icon),
-    description: safeString(bodyRecord, "description", existing.description),
-    examples: safeArray(bodyRecord, "examples", existing.examples ?? []),
     sortOrder: safeNumber(bodyRecord, "sortOrder", existing.sortOrder),
+    enabled: safeBoolean(bodyRecord, "enabled", existing.enabled),
   };
 }
 
 /**
  * Safely update a process step, preserving unchanged fields.
+ * Schema: id, step, title, description, sortOrder.
  */
 export function safeUpdateProcessStep(
   existing: CMSProcessStep,
@@ -234,7 +267,7 @@ export function safeUpdateProcessStep(
 
   return {
     id: existing.id,
-    number: safeString(bodyRecord, "number", existing.number),
+    step: safeString(bodyRecord, "step", existing.step),
     title: safeString(bodyRecord, "title", existing.title),
     description: safeString(bodyRecord, "description", existing.description),
     sortOrder: safeNumber(bodyRecord, "sortOrder", existing.sortOrder),
@@ -243,6 +276,7 @@ export function safeUpdateProcessStep(
 
 /**
  * Safely update an FAQ item, preserving unchanged fields.
+ * Schema: id, question, answer, sortOrder, enabled (no category).
  */
 export function safeUpdateFAQ(
   existing: CMSFAQItem,
@@ -254,13 +288,14 @@ export function safeUpdateFAQ(
     id: existing.id,
     question: safeString(bodyRecord, "question", existing.question),
     answer: safeString(bodyRecord, "answer", existing.answer),
-    category: safeString(bodyRecord, "category", existing.category ?? ""),
     sortOrder: safeNumber(bodyRecord, "sortOrder", existing.sortOrder),
+    enabled: safeBoolean(bodyRecord, "enabled", existing.enabled),
   };
 }
 
 /**
  * Safely update a service, preserving unchanged fields.
+ * Schema: id, title, description, icon, sortOrder?, enabled? (no features).
  */
 export function safeUpdateService(
   existing: CMSService,
@@ -273,7 +308,7 @@ export function safeUpdateService(
     icon: safeString(bodyRecord, "icon", existing.icon),
     title: safeString(bodyRecord, "title", existing.title),
     description: safeString(bodyRecord, "description", existing.description),
-    features: safeArray(bodyRecord, "features", existing.features ?? []),
-    sortOrder: safeNumber(bodyRecord, "sortOrder", existing.sortOrder),
+    sortOrder: safeOptionalNumber(bodyRecord, "sortOrder", existing.sortOrder),
+    enabled: safeOptionalBoolean(bodyRecord, "enabled", existing.enabled),
   };
 }

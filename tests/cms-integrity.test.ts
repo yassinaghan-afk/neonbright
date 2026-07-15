@@ -180,14 +180,13 @@ test("safeUpdateHeroSlide: preserves unchanged fields", () => {
     alt: "Hero 1",
     enabled: true,
     sortOrder: 0,
-    link: "/products",
   };
 
   const updated = safeUpdateHeroSlide(existing, { enabled: false });
 
   assert.equal(updated.src, "/images/hero1.jpg", "Should preserve src");
   assert.equal(updated.alt, "Hero 1", "Should preserve alt");
-  assert.equal(updated.link, "/products", "Should preserve link");
+  assert.equal(updated.sortOrder, 0, "Should preserve sortOrder");
   assert.equal(updated.enabled, false, "Should update enabled");
 });
 
@@ -195,17 +194,16 @@ test("safeUpdatePartner: preserves unchanged fields", () => {
   const existing: CMSPartner = {
     id: "partner_1",
     name: "Partner A",
-    logo: "/logos/partner-a.png",
-    url: "https://partner-a.com",
+    logoUrl: "/logos/partner-a.png",
+    enabled: true,
     sortOrder: 0,
-    category: "tech",
   };
 
   const updated = safeUpdatePartner(existing, { sortOrder: 5 });
 
   assert.equal(updated.name, "Partner A", "Should preserve name");
-  assert.equal(updated.logo, "/logos/partner-a.png", "Should preserve logo");
-  assert.equal(updated.url, "https://partner-a.com", "Should preserve URL");
+  assert.equal(updated.logoUrl, "/logos/partner-a.png", "Should preserve logoUrl");
+  assert.equal(updated.enabled, true, "Should preserve enabled");
   assert.equal(updated.sortOrder, 5, "Should update sortOrder");
 });
 
