@@ -27,14 +27,18 @@ function reorderDraft(
 }
 
 function emptyPost(sortOrder: number): CMSInstagramPost {
+  const now = new Date().toISOString();
   return {
     id: createId("igp"),
     image: "",
     carouselImages: [],
+    altText: undefined,
     caption: "",
     instagramUrl: "",
     enabled: true,
     sortOrder,
+    createdAt: now,
+    updatedAt: now,
   };
 }
 
@@ -252,6 +256,15 @@ export function InstagramPostsManager() {
                 }
                 hint="La première image devient la miniature. Sélection multiple, glisser-déposer pour réordonner."
               />
+              <AdminField label="Texte alternatif (accessibilité)">
+                <AdminInput
+                  value={editing.altText ?? ""}
+                  onChange={(e) =>
+                    setEditing({ ...editing, altText: e.target.value || undefined })
+                  }
+                  placeholder="Optionnel — décrit l'image pour les lecteurs d'écran"
+                />
+              </AdminField>
               <AdminField label="Légende">
                 <AdminTextarea
                   value={editing.caption}

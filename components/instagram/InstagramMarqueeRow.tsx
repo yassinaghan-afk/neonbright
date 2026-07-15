@@ -47,6 +47,7 @@ function PostCard({
   className,
 }: PostCardProps) {
   const openPost = () => onSelect(post);
+  const alt = post.altText || post.caption || "";
 
   return (
     <button
@@ -56,7 +57,7 @@ function PostCard({
         "instagram-marquee-item group relative z-10 shrink-0 cursor-pointer border-0 bg-transparent p-0",
         className
       )}
-      aria-label="Ouvrir"
+      aria-label={alt || "Ouvrir"}
     >
       <div className={CARD_CLASS}>
         {imageFailed ? (
@@ -64,7 +65,7 @@ function PostCard({
         ) : (
           <Image
             src={post.image}
-            alt=""
+            alt={alt}
             fill
             loading="lazy"
             sizes="(max-width: 640px) 200px, (max-width: 1024px) 240px, 260px"

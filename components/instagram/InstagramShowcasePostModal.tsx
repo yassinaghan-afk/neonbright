@@ -157,6 +157,7 @@ export function InstagramShowcasePostModal({
   );
 
   const instagramUrl = currentPost?.instagramUrl?.trim() || profileUrl?.trim() || "";
+  const imageAlt = currentPost?.altText || currentPost?.caption || "";
 
   if (!mounted) return null;
 
@@ -236,7 +237,7 @@ export function InstagramShowcasePostModal({
                   {currentImage && !imageFailed ? (
                     <Image
                       src={currentImage}
-                      alt=""
+                      alt={imageAlt}
                       fill
                       className="object-contain p-2 sm:p-3"
                       sizes="(max-width: 768px) 100vw, 900px"

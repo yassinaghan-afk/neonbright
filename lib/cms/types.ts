@@ -205,10 +205,16 @@ export type CMSInstagramPost = {
   image: string;
   /** Optional additional carousel images. */
   carouselImages?: string[];
+  /** Optional alt text for accessibility. Falls back to caption. */
+  altText?: string;
   caption: string;
   instagramUrl: string;
   enabled: boolean;
   sortOrder: number;
+  /** ISO timestamp when the post was created. */
+  createdAt?: string;
+  /** ISO timestamp when the post was last updated. */
+  updatedAt?: string;
 };
 
 /** Admin-managed Instagram reel for the homepage marquee. */

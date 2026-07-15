@@ -23,15 +23,21 @@ export function normalizeInstagramPost(
   const carouselImages = (item.carouselImages ?? [])
     .map((url) => String(url).trim())
     .filter(Boolean);
+  
+  const now = new Date().toISOString();
+  const isNew = !item.id || !item.createdAt;
 
   return {
     id: item.id ?? createId("igp"),
     image,
     carouselImages: carouselImages.length ? carouselImages : undefined,
+    altText: item.altText ? String(item.altText).trim() : undefined,
     caption: String(item.caption ?? item.alt ?? "").trim(),
     instagramUrl: String(item.instagramUrl ?? item.url ?? "").trim(),
     enabled: item.enabled !== false,
     sortOrder,
+    createdAt: item.createdAt ?? (isNew ? now : undefined),
+    updatedAt: now,
   };
 }
 
