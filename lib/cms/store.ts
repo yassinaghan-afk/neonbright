@@ -25,6 +25,7 @@ import {
 import { ensureUploadDirectories } from "@/lib/cms/upload-storage";
 import { FileLock } from "@/lib/cms/file-lock";
 import { createBackup } from "@/lib/cms/backup";
+import { getCmsStorageMode } from "@/lib/cms/repository/types";
 
 const LEGACY_TESTIMONIALS_HEADLINE = "La confiance des grandes marques";
 const TESTIMONIALS_HEADLINE = "Ils nous font confiance";
@@ -281,15 +282,82 @@ async function loadCMSContent(options?: LoadCMSOptions): Promise<CMSContent> {
   }
 }
 
+/**
+ * CMS_STORAGE=postgres: reads/writes go to PostgreSQL (JSON becomes read-only
+ * rollback data). compare mode reads JSON and diff-logs PostgreSQL in the
+ * background (handled by the repository layer). Default json.
+ */
+async function loadFromPostgres(): Promise<CMSContent> {
+  noStore();
+  const { PostgresCmsRepository } = await import(
+    "@/lib/cms/repository/postgres-repository"
+  );
+  return new PostgresCmsRepository().getContent();
+}
+
+/** compare mode: serve JSON, diff PostgreSQL in the background (read-only). */
+function comparePostgresInBackground(jsonContent: CMSContent): void {
+  void (async () => {
+    try {
+      const pg = await loadFromPostgres();
+      const collections: Array<[string, unknown[], unknown[]]> = [
+        ["portfolioProjects", jsonContent.portfolioProjects ?? [], pg.portfolioProjects ?? []],
+        ["testimonials", jsonContent.testimonials ?? [], pg.testimonials ?? []],
+        ["reviews", jsonContent.reviews ?? [], pg.reviews ?? []],
+        ["instagramPosts", jsonContent.instagramPosts ?? [], pg.instagramPosts ?? []],
+        ["heroSlides", jsonContent.heroSlides ?? [], pg.heroSlides ?? []],
+        ["partners", jsonContent.partners ?? [], pg.partners ?? []],
+      ];
+      for (const [label, a, b] of collections) {
+        if (a.length !== b.length) {
+          console.warn(`[cms-compare] ${label}: count ${a.length} (json) ≠ ${b.length} (pg)`);
+        }
+      }
+    } catch (err) {
+      console.warn(
+        "[cms-compare] postgres read failed:",
+        err instanceof Error ? err.message.split("\n")[0] : err
+      );
+    }
+  })();
+}
+
 export const readCMSContent: () => Promise<CMSContent> = cache(
-  async (): Promise<CMSContent> => loadCMSContent()
+  async (): Promise<CMSContent> => {
+    const mode = getCmsStorageMode();
+    if (mode === "postgres") return loadFromPostgres();
+    const content = await loadCMSContent();
+    if (mode === "compare") comparePostgresInBackground(content);
+    return content;
+  }
 );
 
 export async function readCMSContentFresh(): Promise<CMSContent> {
+  if (getCmsStorageMode() === "postgres") return loadFromPostgres();
   return loadCMSContent({ bypassMemory: true });
 }
 
+async function writeToPostgres(content: CMSContent): Promise<CMSContent> {
+  const { writeContentToPostgres } = await import(
+    "@/lib/cms/repository/postgres-writer"
+  );
+  const saved = await writeContentToPostgres(content);
+  revalidatePublicSite();
+  logCmsSync("storage-updated", {
+    storage: "postgres",
+    revision: saved.revision,
+    updatedAt: saved.updatedAt,
+    testimonials: saved.testimonials.length,
+    reviews: saved.reviews?.length ?? 0,
+    portfolioProjects: saved.portfolioProjects?.length ?? 0,
+  });
+  return saved;
+}
+
 export async function writeCMSContent(content: CMSContent): Promise<CMSContent> {
+  if (getCmsStorageMode() === "postgres") {
+    return writeToPostgres(content);
+  }
   // Acquire exclusive lock to prevent concurrent writes.
   return await cmsLock.withLock(async () => {
     await ensureCmsBootstrap();
@@ -350,6 +418,13 @@ export async function writeCMSContent(content: CMSContent): Promise<CMSContent> 
 export async function updateCMSContent(
   updater: (current: CMSContent) => CMSContent
 ): Promise<CMSContent> {
+  if (getCmsStorageMode() === "postgres") {
+    // Transactional read-modify-write against PostgreSQL.
+    const current = await loadFromPostgres();
+    const updated = updater(current);
+    return writeToPostgres(updated);
+  }
+
   // CRITICAL: Lock must cover BOTH read and write to prevent lost updates.
   return await cmsLock.withLock(async () => {
     const current = await readCMSContentFresh();
