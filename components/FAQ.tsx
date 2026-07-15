@@ -79,7 +79,7 @@ export function FAQ({ items, copy }: FAQProps) {
   const faqCopy = copy ?? staticCopy.faq;
 
   return (
-    <section className="py-24 sm:py-32">
+    <section className="py-16 sm:py-24 md:py-32">
       <Container>
         <div className="grid gap-12 lg:grid-cols-2 lg:gap-20">
           <SectionReveal>

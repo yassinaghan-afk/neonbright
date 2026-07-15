@@ -44,7 +44,7 @@ export function Hero({ slides = [], hero }: HeroProps) {
   return (
     <section
       ref={ref}
-      className="noise-overlay relative flex min-h-screen items-center overflow-hidden pt-28 pb-20"
+      className="noise-overlay relative flex min-h-[600px] sm:min-h-[700px] md:min-h-screen items-center overflow-hidden pt-28 pb-20"
     >
       <HeroSlideshow slides={slides} />
 

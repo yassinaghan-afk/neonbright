@@ -135,8 +135,8 @@ export function HeroSlideshow({ slides }: HeroSlideshowProps) {
                 fill
                 priority={i === 0}
                 loading={i === 0 ? undefined : "lazy"}
-                sizes="100vw"
-                quality={i === 0 ? 80 : 70}
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 100vw"
+                quality={i === 0 ? 75 : 60}
                 className="object-cover object-center"
               />
             </motion.div>

@@ -74,7 +74,7 @@ export function InstagramMarqueeShowcase({ data }: Props) {
       <section
         id="instagram"
         className={cn(
-          "relative overflow-hidden py-20 sm:py-28 lg:py-32",
+          "relative overflow-hidden py-16 sm:py-20 md:py-28 lg:py-32",
           "bg-[#050505]"
         )}
       >

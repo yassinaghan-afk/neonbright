@@ -36,7 +36,7 @@ export function WhyChooseUs({ items, copy }: WhyChooseUsProps) {
   return (
     <>
       <SectionDivider />
-      <section id="services" className="relative section-glow-bottom py-28 sm:py-36">
+      <section id="services" className="relative section-glow-bottom py-16 sm:py-28 md:py-36">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-neon-purple/[0.04] to-transparent" />
 
         <Container className="relative">

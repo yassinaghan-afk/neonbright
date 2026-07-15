@@ -33,7 +33,7 @@ export function Industries({ items, copy }: IndustriesProps) {
   const sectionsCopy = copy ?? staticCopy.industries;
 
   return (
-    <section id="about" className="py-24 sm:py-32">
+    <section id="about" className="py-16 sm:py-24 md:py-32">
       <Container>
         <SectionReveal className="mx-auto max-w-2xl text-center">
           <span className="text-xs font-medium uppercase tracking-[0.2em] text-neon-blue">

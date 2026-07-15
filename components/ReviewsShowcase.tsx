@@ -47,7 +47,7 @@ export function ReviewsShowcase({ reviews }: Props) {
       <SectionDivider />
       <section
         id="reviews"
-        className="relative overflow-hidden py-20 bg-[#050505] sm:py-28 lg:py-32"
+        className="relative overflow-hidden py-16 bg-[#050505] sm:py-20 md:py-28 lg:py-32"
       >
         <div
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(168,85,247,0.10),transparent)]"

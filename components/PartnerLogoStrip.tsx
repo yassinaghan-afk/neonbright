@@ -47,14 +47,14 @@ export function PartnerLogoStrip({
       className={cn("relative bg-[#050505]", className)}
       aria-label={label}
     >
-      <div className="px-4 py-10 sm:py-12">
+      <div className="px-4 py-6 sm:py-10 md:py-12">
         <p className="text-center text-xs font-semibold uppercase tracking-[0.3em] text-white/45">
           {title}
         </p>
       </div>
 
       <div className="partner-white-strip">
-        <div className="partner-marquee-mask overflow-hidden py-8 sm:py-10 lg:py-12">
+        <div className="partner-marquee-mask overflow-hidden py-6 sm:py-8 md:py-10 lg:py-12">
           <div className="partner-marquee-track flex w-max items-center">
             {track.map((logo, i) => (
               <LogoItem key={`${logo.id}-${i}`} logo={logo} />

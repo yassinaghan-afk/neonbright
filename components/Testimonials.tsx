@@ -54,7 +54,7 @@ export function Testimonials({ items, copy }: TestimonialsProps) {
   if (!testimonialItems.length) return null;
 
   return (
-    <section className="relative py-24 sm:py-32">
+    <section className="relative py-16 sm:py-24 md:py-32">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-neon-pink/[0.02] to-transparent" />
 
       <Container className="relative">

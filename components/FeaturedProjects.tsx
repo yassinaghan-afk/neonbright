@@ -25,7 +25,7 @@ export function FeaturedProjects({ copy, categories }: FeaturedProjectsProps) {
       <SectionDivider />
       <section
         id="portfolio"
-        className="section-glow-top relative overflow-hidden py-20 sm:py-28 md:py-32"
+        className="section-glow-top relative overflow-hidden py-16 sm:py-20 md:py-28 lg:py-32"
       >
         <div
           aria-hidden
@@ -34,7 +34,7 @@ export function FeaturedProjects({ copy, categories }: FeaturedProjectsProps) {
 
         <Container>
           <SectionReveal className="relative mx-auto max-w-4xl text-center">
-            <div className="flex min-h-[12rem] flex-col items-center justify-center sm:min-h-[14rem] md:min-h-[16rem]">
+            <div className="flex flex-col items-center justify-center">
               <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-neon-pink sm:text-xs sm:tracking-[0.32em]">
                 {sectionsCopy.title}
               </span>
