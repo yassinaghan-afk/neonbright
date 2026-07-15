@@ -5,7 +5,16 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ["framer-motion"],
   },
 
-  // Ensure CMS JSON shipped with serverless functions (read via fs at runtime).
+  // Public upload URLs (/uploads/...) rewrite to the secure API file server.
+  async rewrites() {
+    return [
+      {
+        source: "/uploads/:path*",
+        destination: "/api/uploads/:path*",
+      },
+    ];
+  },
+
   outputFileTracingIncludes: {
     "**": [
       "./data/cms-content.json",
@@ -15,15 +24,13 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  // Exclude static media from Lambda NFT bundles.
-  // public/media/ and MEDIA/ are served by Vercel's CDN, not the Lambda.
-  // Without this, Vercel lstat-fails on any media file missing from git.
   outputFileTracingExcludes: {
     "**": [
       "public/media/**",
       "MEDIA/**",
       "public/uploads/**",
       "scripts/**",
+      "storage/**",
     ],
   },
 
@@ -41,6 +48,7 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "**.fbcdn.net",
       },
+      // Legacy Blob URLs — existing CMS image URLs until migration utility is run.
       {
         protocol: "https",
         hostname: "**.public.blob.vercel-storage.com",

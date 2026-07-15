@@ -22,12 +22,12 @@ export type MediaFile = {
   createdAt: string;
 };
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const { error } = await requireAdmin();
     if (error) return jsonFailure("Unauthorized", 401);
 
-    const stored = await listUploadFiles(req);
+    const stored = await listUploadFiles();
     const results: MediaFile[] = stored.map((file) => ({
       filename: file.filename,
       url: file.url,
@@ -49,17 +49,19 @@ export async function DELETE(req: NextRequest) {
     if (error) return jsonFailure("Unauthorized", 401);
 
     const body = await req.json().catch(() => null);
-    const filename = (body?.filename as string | undefined) ?? (body?.url as string | undefined);
+    const filename =
+      (body?.filename as string | undefined) ?? (body?.url as string | undefined);
     if (!filename) {
       return jsonFailure("Filename requis", 400);
     }
 
+    const isLegacyBlob = filename.includes(".blob.vercel-storage.com/");
     const safe = resolveUploadFilename(filename);
-    if (!safe && !filename.includes(".blob.vercel-storage.com/")) {
+    if (!safe && !isLegacyBlob && !filename.startsWith("/uploads/")) {
       return jsonFailure("Filename invalide", 400);
     }
 
-    const deleted = await deleteUploadFile(filename, req);
+    const deleted = await deleteUploadFile(filename);
     if (!deleted) {
       return jsonFailure("Fichier introuvable", 404);
     }

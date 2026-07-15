@@ -1,16 +1,14 @@
 import { promises as fs } from "fs";
 import path from "path";
 import {
-  BlobNotConfiguredError,
-  getBlobCommandOptions,
-  shouldUseBlobStorage,
-} from "@/lib/cms/blob-client";
-
-const PUBLIC_UPLOAD_DIR = path.join(process.cwd(), "public/uploads/cms");
-const BLOB_PREFIX = "cms/";
+  getUploadsCategoryDir,
+  getUploadsRoot,
+  isUploadCategory,
+  type UploadCategory,
+} from "@/lib/cms/storage-paths";
 
 const IMAGE_EXTS = new Set(["png", "jpg", "jpeg", "webp", "svg", "gif", "avif"]);
-const VIDEO_EXTS = new Set(["mp4", "webm", "mov", "avi", "mpeg", "mkv"]);
+const VIDEO_EXTS = new Set(["mp4", "webm", "mov"]);
 
 const MIME_BY_EXT: Record<string, string> = {
   jpg: "image/jpeg",
@@ -23,10 +21,39 @@ const MIME_BY_EXT: Record<string, string> = {
   mp4: "video/mp4",
   webm: "video/webm",
   mov: "video/quicktime",
-  avi: "video/x-msvideo",
-  mpeg: "video/mpeg",
-  mkv: "video/x-matroska",
 };
+
+/** Extensions that are never allowed as uploads (executables / scripts). */
+const BLOCKED_EXTS = new Set([
+  "exe",
+  "sh",
+  "bash",
+  "bat",
+  "cmd",
+  "com",
+  "msi",
+  "dll",
+  "so",
+  "dylib",
+  "jar",
+  "php",
+  "py",
+  "rb",
+  "pl",
+  "cgi",
+  "asp",
+  "aspx",
+  "js",
+  "mjs",
+  "cjs",
+  "ts",
+  "tsx",
+  "jsx",
+  "html",
+  "htm",
+  "svgz",
+  "wasm",
+]);
 
 type StoredUpload = {
   filename: string;
@@ -34,11 +61,6 @@ type StoredUpload = {
   size: number;
   createdAt: string;
 };
-
-/** Local dev: public/uploads/cms. Vercel: Blob when store is linked. */
-export function usesRuntimeUploadStorage(): boolean {
-  return shouldUseBlobStorage();
-}
 
 export function extOf(name: string): string {
   return name.split(".").pop()?.toLowerCase() ?? "";
@@ -55,108 +77,169 @@ export function contentTypeForFilename(filename: string): string {
   return MIME_BY_EXT[extOf(filename)] ?? "application/octet-stream";
 }
 
+export function isAllowedUploadExtension(filename: string): boolean {
+  const ext = extOf(filename);
+  if (!ext || BLOCKED_EXTS.has(ext)) return false;
+  return IMAGE_EXTS.has(ext) || VIDEO_EXTS.has(ext);
+}
+
+/**
+ * Sanitize a filename or URL path segment.
+ * Rejects path traversal and directory separators.
+ */
 export function resolveUploadFilename(urlOrName: string): string | null {
-  const raw = decodeURIComponent(urlOrName.split("/").pop() ?? "");
-  if (!raw || raw.includes("..") || raw.includes("/") || raw.includes("\\")) {
+  if (!urlOrName || typeof urlOrName !== "string") return null;
+
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(urlOrName.split("?")[0] ?? "");
+  } catch {
     return null;
   }
+
+  if (
+    !decoded ||
+    decoded.includes("\0") ||
+    decoded.includes("..") ||
+    /[:*?"<>|]/.test(decoded)
+  ) {
+    return null;
+  }
+
+  // Use only the final segment (supports /uploads/cat/file.jpg inputs).
+  const segments = decoded.split(/[/\\]/).filter(Boolean);
+  const raw = segments[segments.length - 1] ?? "";
+  if (!raw || raw === "." || raw === "..") {
+    return null;
+  }
+
+  // Only allow safe characters in stored filenames.
+  if (!/^[A-Za-z0-9._-]+$/.test(raw)) {
+    return null;
+  }
+
   return raw;
 }
 
-function blobPathname(filename: string): string {
-  return `${BLOB_PREFIX}${filename}`;
-}
-
 function isBlobUrl(url: string): boolean {
-  return url.includes(".blob.vercel-storage.com/");
+  return (
+    url.includes(".blob.vercel-storage.com/") ||
+    url.includes(".public.blob.vercel-storage.com/")
+  );
 }
 
-async function ensureLocalUploadDir(): Promise<string> {
-  await fs.mkdir(PUBLIC_UPLOAD_DIR, { recursive: true });
-  return PUBLIC_UPLOAD_DIR;
-}
-
-async function writeLocalFile(filename: string, buffer: Buffer): Promise<void> {
-  const safe = resolveUploadFilename(filename);
-  if (!safe) throw new Error("Invalid filename");
-  const dir = await ensureLocalUploadDir();
-  await fs.writeFile(path.join(dir, safe), buffer);
-}
-
-async function writeBlobFile(
+/**
+ * Resolve a file path under uploads and ensure it stays inside STORAGE_ROOT/uploads.
+ */
+export function resolveSafeUploadPath(
   filename: string,
-  buffer: Buffer,
-  request?: Request
-): Promise<{ url: string; size: number }> {
-  const { put } = await import("@vercel/blob");
+  category?: string
+): string | null {
   const safe = resolveUploadFilename(filename);
-  if (!safe) throw new Error("Invalid filename");
+  if (!safe) return null;
 
-  const auth = await getBlobCommandOptions(request);
-  const blob = await put(blobPathname(safe), buffer, {
-    ...auth,
-    access: "public",
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    contentType: contentTypeForFilename(safe),
-  });
+  if (category !== undefined && category !== "") {
+    if (!isUploadCategory(category)) return null;
+  }
 
-  return { url: blob.url, size: buffer.length };
+  const root = path.resolve(getUploadsRoot());
+  const candidate = path.resolve(
+    category ? path.join(getUploadsCategoryDir(category), safe) : path.join(root, safe)
+  );
+
+  if (candidate !== root && !candidate.startsWith(root + path.sep)) {
+    return null;
+  }
+
+  return candidate;
 }
 
-/** Write file and return its public URL. */
+async function ensureUploadDir(category?: string): Promise<string> {
+  if (category && !isUploadCategory(category)) {
+    throw new Error(`Invalid upload category: ${category}`);
+  }
+  const dir = getUploadsCategoryDir(category);
+  await fs.mkdir(dir, { recursive: true });
+  return dir;
+}
+
+/**
+ * Write file under STORAGE_ROOT/uploads/[category]/ and return public URL
+ * `/uploads/[category]/filename`.
+ */
 export async function writeUploadFile(
   filename: string,
   buffer: Buffer,
-  request?: Request
+  category: UploadCategory = "cms"
 ): Promise<string> {
-  const safe = resolveUploadFilename(filename);
-  if (!safe) throw new Error("Invalid filename");
-
-  if (shouldUseBlobStorage()) {
-    const blob = await writeBlobFile(safe, buffer, request);
-    return blob.url;
+  if (!isUploadCategory(category)) {
+    throw new Error(`Invalid upload category: ${category}`);
+  }
+  if (!isAllowedUploadExtension(filename)) {
+    throw new Error("File type not allowed");
   }
 
-  if (process.env.VERCEL) {
-    throw new BlobNotConfiguredError();
-  }
+  const filePath = resolveSafeUploadPath(filename, category);
+  if (!filePath) throw new Error("Invalid filename");
 
-  await writeLocalFile(safe, buffer);
-  return getUploadPublicUrl(safe);
+  await ensureUploadDir(category);
+  await fs.writeFile(filePath, buffer);
+
+  return getUploadPublicUrl(path.basename(filePath), category);
 }
 
-export function getUploadPublicUrl(filename: string): string {
-  const safe = path.basename(filename);
-  return `/uploads/cms/${encodeURIComponent(safe)}`;
-}
-
-export async function readUploadFileForServe(filename: string): Promise<Buffer> {
+/**
+ * Public URL format: /uploads/[category]/filename
+ * Served via Next.js rewrite → /api/uploads/:path*
+ */
+export function getUploadPublicUrl(
+  filename: string,
+  category: UploadCategory = "cms"
+): string {
   const safe = resolveUploadFilename(filename);
   if (!safe) throw new Error("Invalid filename");
+  return `/uploads/${category}/${encodeURIComponent(safe)}`;
+}
+
+export async function readUploadFileForServe(
+  filename: string,
+  category?: string
+): Promise<Buffer> {
+  const filePath = resolveSafeUploadPath(filename, category);
+  if (!filePath) throw new Error("Invalid filename");
 
   try {
-    return await fs.readFile(path.join(PUBLIC_UPLOAD_DIR, safe));
+    return await fs.readFile(filePath);
   } catch {
-    throw new Error(`File not found: ${safe}`);
+    throw new Error(`File not found: ${filename}`);
   }
 }
 
+/**
+ * Delete an uploaded file. Legacy Blob URLs are ignored (no-op success).
+ * Never deletes paths outside STORAGE_ROOT/uploads.
+ */
 export async function deleteUploadFile(
   filenameOrUrl: string,
-  request?: Request
+  category?: string
 ): Promise<boolean> {
-  let deleted = false;
-
   if (isBlobUrl(filenameOrUrl)) {
-    if (!shouldUseBlobStorage()) return false;
+    console.log(
+      "[upload-storage] skipping delete of legacy Blob URL:",
+      filenameOrUrl
+    );
+    return true;
+  }
+
+  // Prefer explicit /uploads/category/file URL parsing
+  const fromUrl = parseUploadsPublicUrl(filenameOrUrl);
+  if (fromUrl) {
+    const filePath = resolveSafeUploadPath(fromUrl.filename, fromUrl.category);
+    if (!filePath) return false;
     try {
-      const { del } = await import("@vercel/blob");
-      const auth = await getBlobCommandOptions(request);
-      await del(filenameOrUrl, auth);
+      await fs.unlink(filePath);
       return true;
-    } catch (err) {
-      console.error("[upload-storage] blob delete by URL failed:", err);
+    } catch {
       return false;
     }
   }
@@ -164,96 +247,103 @@ export async function deleteUploadFile(
   const safe = resolveUploadFilename(filenameOrUrl);
   if (!safe) return false;
 
-  if (shouldUseBlobStorage()) {
+  const categories: Array<string | undefined> = category
+    ? [category]
+    : [undefined, ...(["hero", "events", "brands", "reviews", "testimonials", "logos", "cms"] as const)];
+
+  for (const cat of categories) {
+    const filePath = resolveSafeUploadPath(safe, cat);
+    if (!filePath) continue;
     try {
-      const { del } = await import("@vercel/blob");
-      const auth = await getBlobCommandOptions(request);
-      await del(blobPathname(safe), auth);
-      deleted = true;
-    } catch (err) {
-      console.error("[upload-storage] blob delete failed:", err);
+      await fs.unlink(filePath);
+      return true;
+    } catch {
+      // try next
     }
   }
 
-  try {
-    await fs.unlink(path.join(PUBLIC_UPLOAD_DIR, safe));
-    deleted = true;
-  } catch {
-    /* file may only exist in blob */
-  }
-
-  return deleted;
+  return false;
 }
 
-async function listBlobUploads(request?: Request): Promise<StoredUpload[]> {
-  const { list } = await import("@vercel/blob");
-  const auth = await getBlobCommandOptions(request);
-  const { blobs } = await list({ ...auth, prefix: BLOB_PREFIX });
-  return blobs.map((blob) => {
-    const filename = blob.pathname.replace(BLOB_PREFIX, "");
-    return {
-      filename,
-      url: blob.url,
-      size: blob.size,
-      createdAt: blob.uploadedAt.toISOString(),
-    };
-  });
+function parseUploadsPublicUrl(
+  url: string
+): { category: UploadCategory; filename: string } | null {
+  if (!url.startsWith("/uploads/")) return null;
+  const parts = url.slice("/uploads/".length).split("/").filter(Boolean);
+  if (parts.length !== 2) return null;
+  const [category, filenameRaw] = parts;
+  if (!isUploadCategory(category)) return null;
+  const filename = resolveUploadFilename(filenameRaw);
+  if (!filename) return null;
+  return { category, filename };
 }
 
-async function listLocalUploads(): Promise<StoredUpload[]> {
-  const names = new Set<string>();
-  try {
-    await fs.mkdir(PUBLIC_UPLOAD_DIR, { recursive: true });
-    const files = await fs.readdir(PUBLIC_UPLOAD_DIR);
-    for (const f of files) {
-      if (!f.startsWith(".")) names.add(f);
-    }
-  } catch {
-    return [];
-  }
-
+async function listLocalUploads(category?: string): Promise<StoredUpload[]> {
   const results: StoredUpload[] = [];
-  for (const filename of names) {
+  const categories: UploadCategory[] = category
+    ? isUploadCategory(category)
+      ? [category]
+      : []
+    : ["hero", "events", "brands", "reviews", "testimonials", "logos", "cms"];
+
+  for (const cat of categories) {
+    const dir = getUploadsCategoryDir(cat);
     try {
-      const stat = await fs.stat(path.join(PUBLIC_UPLOAD_DIR, filename));
-      results.push({
-        filename,
-        url: getUploadPublicUrl(filename),
-        size: Number(stat.size),
-        createdAt: stat.birthtime.toISOString(),
-      });
-    } catch (err) {
-      console.error("[upload-storage] skip local file:", filename, err);
+      await fs.mkdir(dir, { recursive: true });
+      const files = await fs.readdir(dir);
+      for (const filename of files) {
+        if (filename.startsWith(".")) continue;
+        const filePath = resolveSafeUploadPath(filename, cat);
+        if (!filePath) continue;
+        try {
+          const stat = await fs.stat(filePath);
+          if (stat.isFile()) {
+            results.push({
+              filename,
+              url: getUploadPublicUrl(filename, cat),
+              size: Number(stat.size),
+              createdAt: stat.birthtime.toISOString(),
+            });
+          }
+        } catch (err) {
+          console.error("[upload-storage] skip file:", filename, err);
+        }
+      }
+    } catch {
+      // missing category dir
     }
   }
+
   return results;
 }
 
-export async function listUploadFiles(request?: Request): Promise<StoredUpload[]> {
-  if (shouldUseBlobStorage()) {
-    return listBlobUploads(request);
-  }
-  return listLocalUploads();
+export async function listUploadFiles(category?: string): Promise<StoredUpload[]> {
+  return listLocalUploads(category);
 }
 
-export async function statUploadFile(filename: string) {
-  const safe = resolveUploadFilename(filename);
-  if (!safe) throw new Error("Invalid filename");
-
-  if (shouldUseBlobStorage()) {
-    const files = await listBlobUploads();
-    const match = files.find((f) => f.filename === safe);
-    if (match) {
-      return {
-        size: match.size,
-        birthtime: new Date(match.createdAt),
-      } as Awaited<ReturnType<typeof fs.stat>>;
-    }
-  }
-
+export async function statUploadFile(filename: string, category?: string) {
+  const filePath = resolveSafeUploadPath(filename, category);
+  if (!filePath) throw new Error("Invalid filename");
   try {
-    return await fs.stat(path.join(PUBLIC_UPLOAD_DIR, safe));
+    return await fs.stat(filePath);
   } catch {
-    throw new Error(`File not found: ${safe}`);
+    throw new Error(`File not found: ${filename}`);
+  }
+}
+
+/** Ensure STORAGE_ROOT/uploads and category folders exist. */
+export async function ensureUploadDirectories(): Promise<void> {
+  const root = getUploadsRoot();
+  await fs.mkdir(root, { recursive: true });
+  for (const cat of [
+    "hero",
+    "events",
+    "brands",
+    "reviews",
+    "testimonials",
+    "logos",
+    "cms",
+  ] as const) {
+    await fs.mkdir(getUploadsCategoryDir(cat), { recursive: true });
   }
 }

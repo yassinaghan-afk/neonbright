@@ -45,3 +45,7 @@ next-env.d.ts
 
 # operational data
 /data/orders.json
+
+# EasyPanel / Docker persistent volume (never commit runtime CMS or uploads)
+/storage
+/storage/**

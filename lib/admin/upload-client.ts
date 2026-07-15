@@ -8,7 +8,6 @@ export type UploadFileResult = {
 };
 
 const MAX_VIDEO_SIZE = 200 * 1024 * 1024;
-const VERCEL_SERVER_BODY_LIMIT = 4.5 * 1024 * 1024;
 const ALLOWED_VIDEO_MIMES = new Set([
   "video/mp4",
   "video/webm",
@@ -18,79 +17,6 @@ const ALLOWED_VIDEO_MIMES = new Set([
 function isAllowedVideoFile(file: File): boolean {
   if (ALLOWED_VIDEO_MIMES.has(file.type)) return true;
   return /\.(mp4|webm|mov)$/i.test(file.name);
-}
-
-function videoContentType(file: File): string | undefined {
-  if (file.type && ALLOWED_VIDEO_MIMES.has(file.type)) return file.type;
-  const ext = file.name.split(".").pop()?.toLowerCase();
-  if (ext === "mp4") return "video/mp4";
-  if (ext === "webm") return "video/webm";
-  if (ext === "mov") return "video/quicktime";
-  return undefined;
-}
-
-type PresignApiPayload = {
-  success?: boolean;
-  data?: {
-    presignedUrl: string;
-    url: string;
-    pathname: string;
-  };
-  error?: string;
-};
-
-async function requestVideoPresignUrl(file: File): Promise<{
-  presignedUrl: string;
-  url: string;
-  pathname: string;
-}> {
-  const ext = file.name.split(".").pop()?.toLowerCase() ?? "mp4";
-  const res = await fetch("/api/admin/upload/blob/presign", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({
-      ext,
-      contentType: videoContentType(file),
-      size: file.size,
-    }),
-  });
-
-  const text = await res.text();
-  let payload: PresignApiPayload;
-  try {
-    payload = text ? (JSON.parse(text) as PresignApiPayload) : {};
-  } catch {
-    if (res.status === 413) {
-      throw new Error(
-        "Upload failed: file too large for server request"
-      );
-    }
-    throw new Error(
-      text.startsWith("<!")
-        ? `Upload failed: server returned HTML (HTTP ${res.status})`
-        : `Upload failed: invalid server response (HTTP ${res.status})`
-    );
-  }
-
-  if (!res.ok || payload.success === false || !payload.data?.presignedUrl) {
-    const err = new Error(
-      typeof payload.error === "string" && payload.error
-        ? payload.error
-        : `Upload failed (HTTP ${res.status})`
-    );
-    (err as Error & { status?: number }).status = res.status;
-    throw err;
-  }
-
-  return payload.data;
-}
-
-function blobUploadErrorMessage(err: unknown): string {
-  if (err instanceof Error && err.message) {
-    return err.message.replace(/^Vercel Blob:\s*/i, "");
-  }
-  return "Upload failed";
 }
 
 type UploadApiPayload = {
@@ -132,9 +58,7 @@ async function parseUploadResponse(res: Response): Promise<UploadApiPayload> {
     return JSON.parse(text) as UploadApiPayload;
   } catch {
     if (res.status === 413) {
-      throw new Error(
-        "Upload failed: file too large for server upload. Use direct Blob upload for videos over 4.5 MB."
-      );
+      throw new Error("Upload failed: file too large for server upload.");
     }
     throw new Error(
       text.startsWith("<!")
@@ -152,13 +76,18 @@ function uploadErrorMessage(payload: UploadApiPayload, status: number): string {
 /** Upload a single file to /api/admin/upload with safe JSON parsing. */
 export async function uploadAdminFile(
   file: File,
-  options?: { preset?: string }
+  options?: { preset?: string; category?: string }
 ): Promise<UploadFileResult> {
   const fd = new FormData();
   fd.append("file", file);
   if (options?.preset) fd.append("preset", options.preset);
+  if (options?.category) fd.append("category", options.category);
 
-  const res = await fetch("/api/admin/upload", {
+  const qs = options?.category
+    ? `?category=${encodeURIComponent(options.category)}`
+    : "";
+
+  const res = await fetch(`/api/admin/upload${qs}`, {
     method: "POST",
     body: fd,
     credentials: "include",
@@ -173,9 +102,8 @@ export async function uploadAdminFile(
 }
 
 /**
- * Upload a testimonial/CMS video directly to Vercel Blob from the browser.
- * Bypasses the ~4.5 MB Vercel serverless request body limit.
- * Never proxies video bytes through /api/admin/upload on production.
+ * Upload a CMS video via the same local multipart route.
+ * (Legacy Vercel Blob presign path removed.)
  */
 export async function uploadAdminVideoFile(file: File): Promise<UploadFileResult> {
   if (!isAllowedVideoFile(file)) {
@@ -187,37 +115,7 @@ export async function uploadAdminVideoFile(file: File): Promise<UploadFileResult
     throw new Error(`${file.name}: vidéos max 200 Mo`);
   }
 
-  let presign: { presignedUrl: string; url: string; pathname: string };
-  try {
-    presign = await requestVideoPresignUrl(file);
-  } catch (err) {
-    const status = (err as Error & { status?: number }).status;
-    // Local dev without Blob: allow small files via the legacy multipart route.
-    if (status === 503 && file.size <= VERCEL_SERVER_BODY_LIMIT) {
-      return uploadAdminFile(file, { preset: "video" });
-    }
-    throw err instanceof Error ? err : new Error(blobUploadErrorMessage(err));
-  }
-
-  const putRes = await fetch(presign.presignedUrl, {
-    method: "PUT",
-    body: file,
-    headers: {
-      "Content-Type": videoContentType(file) ?? "application/octet-stream",
-    },
-  });
-
-  if (!putRes.ok) {
-    throw new Error(`Blob upload failed (HTTP ${putRes.status})`);
-  }
-
-  const filename = presign.pathname.replace(/^cms\//, "");
-  return {
-    url: presign.url,
-    filename,
-    label: filenameToLabel(file.name),
-    type: "video",
-  };
+  return uploadAdminFile(file, { preset: "video", category: "cms" });
 }
 
 /** Upload multiple files in one request. */
@@ -247,3 +145,6 @@ export async function uploadAdminFiles(
 
   throw new Error("Invalid multi-upload response");
 }
+
+// Re-export label helper for callers that expected previous module shape
+export { filenameToLabel };

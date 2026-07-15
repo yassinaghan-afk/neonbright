@@ -2,24 +2,8 @@ import { NextRequest } from "next/server";
 import { jsonOk, jsonError, requireOwner } from "@/lib/cms/api";
 import { updateCMSContent } from "@/lib/cms/store";
 import { logCmsSync } from "@/lib/cms/sync-log";
+import { deleteUploadFile } from "@/lib/cms/upload-storage";
 import type { CMSPortfolioProject } from "@/lib/cms/types";
-
-function isBlobUrl(url: string | undefined): url is string {
-  if (!url) return false;
-  return (
-    url.includes(".blob.vercel-storage.com/") ||
-    url.includes(".public.blob.vercel-storage.com/")
-  );
-}
-
-async function tryDeleteBlob(url: string): Promise<void> {
-  try {
-    const { del } = await import("@vercel/blob");
-    await del(url);
-  } catch {
-    // Non-critical — log but don't block the response.
-  }
-}
 
 function normalizeBrandProjectUpdate(
   item: CMSPortfolioProject,
@@ -91,10 +75,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const item = updated.portfolioProjects.find((p) => p.id === id);
   if (!item) return jsonError("Project not found.", 404);
 
-  // Delete the old logo blob when it was replaced or removed.
+  // Delete the old logo file when it was replaced or removed.
   const newLogoFile = item.logoFile ?? "";
-  if (isBlobUrl(oldLogoFile) && oldLogoFile !== newLogoFile) {
-    void tryDeleteBlob(oldLogoFile);
+  if (oldLogoFile && oldLogoFile !== newLogoFile) {
+    void deleteUploadFile(oldLogoFile, "logos");
   }
 
   logCmsSync("save", {
@@ -126,9 +110,9 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
   if (!found) return jsonError("Project not found.", 404);
 
-  // Delete the logo blob file when the project is removed.
-  if (isBlobUrl(deletedLogoFile)) {
-    void tryDeleteBlob(deletedLogoFile!);
+  // Delete the logo file when the project is removed.
+  if (deletedLogoFile) {
+    void deleteUploadFile(deletedLogoFile, "logos");
   }
 
   logCmsSync("delete", {

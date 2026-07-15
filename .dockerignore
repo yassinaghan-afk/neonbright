@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.vercel
+.env*
+*.md
+storage
+coverage
+MEDIA
+scripts/persist-*
+.tmp
+.DS_Store
+agent-transcripts
+*.log

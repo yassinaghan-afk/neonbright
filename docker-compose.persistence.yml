@@ -1,0 +1,22 @@
+# Local persistence proof for EasyPanel-style volume mount.
+# Usage: ./scripts/docker-persistence-test.sh
+#
+# Does NOT touch production. Uses an isolated named volume.
+
+services:
+  neonbright:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      STORAGE_ROOT: /app/storage
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
+    volumes:
+      - neonbright_storage_test:/app/storage
+
+volumes:
+  neonbright_storage_test:

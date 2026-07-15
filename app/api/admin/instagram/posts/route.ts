@@ -2,24 +2,8 @@ import { requireOwner, jsonError, jsonOk } from "@/lib/cms/api";
 import { normalizeInstagramPosts } from "@/lib/cms/instagram-normalize";
 import { readCMSContentFresh, updateCMSContent } from "@/lib/cms/store";
 import { revalidatePublicSite } from "@/lib/cms/revalidate-public";
+import { deleteUploadFile } from "@/lib/cms/upload-storage";
 import type { CMSInstagramPost } from "@/lib/cms/types";
-
-function isBlobUrl(url: string | undefined): url is string {
-  if (!url) return false;
-  return (
-    url.includes(".blob.vercel-storage.com/") ||
-    url.includes(".public.blob.vercel-storage.com/")
-  );
-}
-
-async function tryDeleteBlob(url: string): Promise<void> {
-  try {
-    const { del } = await import("@vercel/blob");
-    await del(url);
-  } catch {
-    // Non-critical.
-  }
-}
 
 function postImageUrls(post: CMSInstagramPost): string[] {
   return [post.image, ...(post.carouselImages ?? [])].filter(Boolean);
@@ -59,9 +43,9 @@ export async function PUT(request: Request) {
   const newUrlSet = new Set(saved.flatMap(postImageUrls));
   const toDelete = oldPosts
     .flatMap(postImageUrls)
-    .filter((url) => isBlobUrl(url) && !newUrlSet.has(url));
+    .filter((url) => !newUrlSet.has(url));
   for (const url of toDelete) {
-    void tryDeleteBlob(url);
+    void deleteUploadFile(url, "cms");
   }
 
   return jsonOk(normalizeInstagramPosts(persisted.instagramPosts ?? []));

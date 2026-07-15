@@ -3,27 +3,11 @@ import { normalizeReviews, reviewImageUrls } from "@/lib/cms/reviews";
 import { readCMSContentFresh, updateCMSContent } from "@/lib/cms/store";
 import { revalidatePublicSite } from "@/lib/cms/revalidate-public";
 import { logCmsSync } from "@/lib/cms/sync-log";
+import { deleteUploadFile } from "@/lib/cms/upload-storage";
 import type { CMSReview } from "@/lib/cms/types";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-
-function isBlobUrl(url: string | undefined): url is string {
-  if (!url) return false;
-  return (
-    url.includes(".blob.vercel-storage.com/") ||
-    url.includes(".public.blob.vercel-storage.com/")
-  );
-}
-
-async function tryDeleteBlob(url: string): Promise<void> {
-  try {
-    const { del } = await import("@vercel/blob");
-    await del(url);
-  } catch {
-    // Non-critical.
-  }
-}
 
 // ─── GET — list all reviews (admin) ─────────────────────────────────────────
 
@@ -57,10 +41,8 @@ export async function PUT(request: Request) {
   revalidatePublicSite();
 
   const newUrls = new Set(reviewImageUrls(saved));
-  const toDelete = reviewImageUrls(oldReviews).filter(
-    (url) => isBlobUrl(url) && !newUrls.has(url)
-  );
-  await Promise.all(toDelete.map((url) => tryDeleteBlob(url)));
+  const toDelete = reviewImageUrls(oldReviews).filter((url) => !newUrls.has(url));
+  await Promise.all(toDelete.map((url) => deleteUploadFile(url, "reviews")));
 
   const result = normalizeReviews(persisted.reviews ?? []);
 
@@ -96,8 +78,8 @@ export async function DELETE(request: Request) {
 
   revalidatePublicSite();
 
-  if (deletedUrl && isBlobUrl(deletedUrl)) {
-    await tryDeleteBlob(deletedUrl);
+  if (deletedUrl) {
+    await deleteUploadFile(deletedUrl, "reviews");
   }
 
   const result = normalizeReviews(persisted.reviews ?? []);
