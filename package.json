@@ -14,7 +14,13 @@
     "cms:db:import": "npx --yes tsx scripts/import-cms-json-to-postgres.ts --apply",
     "cms:db:verify": "npx --yes tsx scripts/import-cms-json-to-postgres.ts --verify",
     "db:generate": "prisma generate",
-    "db:migrate:deploy": "prisma migrate deploy"
+    "db:migrate:deploy": "prisma migrate deploy",
+    "images:static:dry": "node scripts/optimize-static-images.mjs dry",
+    "images:static:apply": "node scripts/optimize-static-images.mjs apply",
+    "images:static:verify": "node scripts/optimize-static-images.mjs verify",
+    "images:uploads:dry": "node scripts/migrate-existing-images-to-webp.mjs dry",
+    "images:uploads:apply": "node scripts/migrate-existing-images-to-webp.mjs apply",
+    "images:uploads:verify": "node scripts/migrate-existing-images-to-webp.mjs verify"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",

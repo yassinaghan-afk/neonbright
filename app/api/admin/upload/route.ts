@@ -6,7 +6,8 @@ import {
   jsonSuccess,
   requireOwner,
 } from "@/lib/cms/api";
-import { filenameToLabel } from "@/lib/cms/image-process";
+import { optimizeUploadedImage } from "@/lib/cms/image-process";
+import { filenameToLabel } from "@/lib/cms/filename-utils";
 import {
   writeUploadFile,
   extOf,
@@ -37,6 +38,24 @@ const ALLOWED_VIDEO_TYPES = new Set([
   "video/webm",
   "video/quicktime",
 ]);
+
+/** MIME types that carry their own validated magic bytes from the server.  */
+const IMAGE_MAGIC: Array<{ bytes: number[]; mime: string }> = [
+  { bytes: [0xff, 0xd8, 0xff], mime: "image/jpeg" },
+  { bytes: [0x89, 0x50, 0x4e, 0x47], mime: "image/png" },
+  { bytes: [0x52, 0x49, 0x46, 0x46], mime: "image/webp" }, // RIFF….WEBP
+  { bytes: [0x47, 0x49, 0x46], mime: "image/gif" },
+];
+
+function detectMimeFromBuffer(buf: Buffer): string | null {
+  for (const sig of IMAGE_MAGIC) {
+    if (sig.bytes.every((b, i) => buf[i] === b)) return sig.mime;
+  }
+  // SVG heuristic: starts with <? or <svg
+  const head = buf.slice(0, 64).toString("utf8");
+  if (head.includes("<svg") || head.startsWith("<?xml")) return "image/svg+xml";
+  return null;
+}
 
 function resolveCategory(
   request: NextRequest,
@@ -75,6 +94,7 @@ async function processOneFile(
   category: UploadCategory
 ): Promise<{
   url: string;
+  thumbnailUrl?: string;
   filename: string;
   label: string;
   type: "image" | "video" | "audio";
@@ -110,19 +130,76 @@ async function processOneFile(
     throw new Error("Images max 10 Mo");
   }
 
-  const prefix = isVideo ? "vid" : "img";
-  const filename = `${createId(prefix)}.${ext}`;
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const url = await writeUploadFile(filename, buffer, category);
-  const kind = mediaTypeOf(filename);
+  const rawBuffer = Buffer.from(await file.arrayBuffer());
+
+  // For images, validate magic bytes against declared MIME.
+  if (isImage && ext !== "svg") {
+    const detectedMime = detectMimeFromBuffer(rawBuffer);
+    if (detectedMime && declaredType && declaredType !== "application/octet-stream") {
+      // WEBP magic: RIFF header, verify WEBP marker at offset 8
+      const effectiveDetected =
+        detectedMime === "image/webp"
+          ? rawBuffer.slice(8, 12).toString("ascii") === "WEBP"
+            ? "image/webp"
+            : null
+          : detectedMime;
+      if (effectiveDetected && effectiveDetected !== declaredType) {
+        throw new Error("Le contenu du fichier ne correspond pas au type déclaré");
+      }
+    }
+  }
+
+  // Videos: store as-is.
+  if (isVideo) {
+    const prefix = "vid";
+    const filename = `${createId(prefix)}.${ext}`;
+    const url = await writeUploadFile(filename, rawBuffer, category);
+    const kind = mediaTypeOf(filename);
+    return {
+      url,
+      filename,
+      label: filenameToLabel(file.name),
+      type: kind === "other" ? "image" : kind,
+      size: file.size,
+      contentType: file.type || "video/mp4",
+    };
+  }
+
+  // SVG: store as-is.
+  if (ext === "svg" || declaredType === "image/svg+xml") {
+    const filename = `${createId("img")}.svg`;
+    const url = await writeUploadFile(filename, rawBuffer, category);
+    return {
+      url,
+      filename,
+      label: filenameToLabel(file.name),
+      type: "image",
+      size: rawBuffer.byteLength,
+      contentType: "image/svg+xml",
+    };
+  }
+
+  // Raster images: convert to WebP via Sharp.
+  const effectiveMime = declaredType || "image/jpeg";
+  const processed = await optimizeUploadedImage(rawBuffer, effectiveMime, category);
+
+  const mainFilename = `${createId("img")}.${processed.main.ext}`;
+  const mainUrl = await writeUploadFile(mainFilename, processed.main.buffer, category);
+
+  let thumbnailUrl: string | undefined;
+  if (processed.thumbnail) {
+    const thumbFilename = `thumb_${mainFilename}`;
+    thumbnailUrl = await writeUploadFile(thumbFilename, processed.thumbnail.buffer, category);
+  }
 
   return {
-    url,
-    filename,
+    url: mainUrl,
+    thumbnailUrl,
+    filename: mainFilename,
     label: filenameToLabel(file.name),
-    type: kind === "other" ? "image" : kind,
-    size: file.size,
-    contentType: file.type || (isVideo ? "video/mp4" : "image/jpeg"),
+    type: "image",
+    size: processed.main.buffer.byteLength,
+    contentType: processed.main.mime,
   };
 }
 

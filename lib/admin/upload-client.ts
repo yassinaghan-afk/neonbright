@@ -1,4 +1,4 @@
-import { filenameToLabel } from "@/lib/cms/image-process";
+import { filenameToLabel } from "@/lib/cms/filename-utils";
 
 export type UploadFileResult = {
   url: string;

@@ -1,0 +1,212 @@
+[
+  {
+    "src": "public/media/hero-slider/13978eaa-af3e-422b-afce-217b5298c6ed.jpg",
+    "dest": "public/media/hero-slider/13978eaa-af3e-422b-afce-217b5298c6ed.webp",
+    "origBytes": 156013,
+    "webpBytes": 81326,
+    "savingPct": 48,
+    "width": 1022,
+    "height": 1280,
+    "group": "hero-slider"
+  },
+  {
+    "src": "public/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.jpg",
+    "dest": "public/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.webp",
+    "origBytes": 65919,
+    "webpBytes": 43230,
+    "savingPct": 34,
+    "width": 881,
+    "height": 1280,
+    "group": "hero-slider"
+  },
+  {
+    "src": "public/media/hero-slider/64550da3-6666-41e4-ae29-6d8422853ffd.jpg",
+    "dest": "public/media/hero-slider/64550da3-6666-41e4-ae29-6d8422853ffd.webp",
+    "origBytes": 271870,
+    "webpBytes": 215178,
+    "savingPct": 21,
+    "width": 864,
+    "height": 1080,
+    "group": "hero-slider"
+  },
+  {
+    "src": "public/media/hero-slider/82efd0d2-2918-440b-9d23-41974d6cbb59.jpg",
+    "dest": "public/media/hero-slider/82efd0d2-2918-440b-9d23-41974d6cbb59.webp",
+    "origBytes": 155010,
+    "webpBytes": 139322,
+    "savingPct": 10,
+    "width": 1080,
+    "height": 1080,
+    "group": "hero-slider"
+  },
+  {
+    "src": "public/media/hero-slider/c465b19f-3967-4486-b3eb-d4eda34b9c7b.jpg",
+    "dest": "public/media/hero-slider/c465b19f-3967-4486-b3eb-d4eda34b9c7b.webp",
+    "origBytes": 125682,
+    "webpBytes": 93234,
+    "savingPct": 26,
+    "width": 1188,
+    "height": 1280,
+    "group": "hero-slider"
+  },
+  {
+    "src": "public/media/hero-slider/d35fa705-f3f5-4435-a878-d6d3f99c92cc.jpg",
+    "dest": "public/media/hero-slider/d35fa705-f3f5-4435-a878-d6d3f99c92cc.webp",
+    "origBytes": 129168,
+    "webpBytes": 99330,
+    "savingPct": 23,
+    "width": 913,
+    "height": 1280,
+    "group": "hero-slider"
+  },
+  {
+    "src": "public/media/hero-slider/d4aa5e68-81c9-4331-8a8f-83b20958ef85.jpg",
+    "dest": "public/media/hero-slider/d4aa5e68-81c9-4331-8a8f-83b20958ef85.webp",
+    "origBytes": 87959,
+    "webpBytes": 51786,
+    "savingPct": 41,
+    "width": 720,
+    "height": 1280,
+    "group": "hero-slider"
+  },
+  {
+    "src": "public/media/hero-slider/efa6a01f-04f7-4220-8080-c35519c6539f.jpg",
+    "dest": "public/media/hero-slider/efa6a01f-04f7-4220-8080-c35519c6539f.webp",
+    "origBytes": 111485,
+    "webpBytes": 82514,
+    "savingPct": 26,
+    "width": 1024,
+    "height": 1280,
+    "group": "hero-slider"
+  },
+  {
+    "src": "public/media/logo/PHOTO-2026-06-23-18-20-29 2.jpg",
+    "dest": "public/media/logo/PHOTO-2026-06-23-18-20-29 2.webp",
+    "origBytes": 10376,
+    "webpBytes": 3610,
+    "savingPct": 65,
+    "width": 585,
+    "height": 585,
+    "group": "partner-logos"
+  },
+  {
+    "src": "public/media/logo/PHOTO-2026-06-23-18-20-29 3.jpg",
+    "dest": "public/media/logo/PHOTO-2026-06-23-18-20-29 3.webp",
+    "origBytes": 28868,
+    "webpBytes": 5778,
+    "savingPct": 80,
+    "width": 1200,
+    "height": 675,
+    "group": "partner-logos"
+  },
+  {
+    "src": "public/media/logo/PHOTO-2026-06-23-18-20-29 4.jpg",
+    "dest": "public/media/logo/PHOTO-2026-06-23-18-20-29 4.webp",
+    "origBytes": 32544,
+    "webpBytes": 2984,
+    "savingPct": 91,
+    "width": 1200,
+    "height": 1200,
+    "group": "partner-logos"
+  },
+  {
+    "src": "public/media/logo/PHOTO-2026-06-23-18-20-29 5.jpg",
+    "dest": "public/media/logo/PHOTO-2026-06-23-18-20-29 5.webp",
+    "origBytes": 11719,
+    "webpBytes": 1652,
+    "savingPct": 86,
+    "width": 866,
+    "height": 650,
+    "group": "partner-logos"
+  },
+  {
+    "src": "public/media/logo/PHOTO-2026-06-23-18-20-29 6.jpg",
+    "dest": "public/media/logo/PHOTO-2026-06-23-18-20-29 6.webp",
+    "origBytes": 52670,
+    "webpBytes": 8926,
+    "savingPct": 83,
+    "width": 1199,
+    "height": 975,
+    "group": "partner-logos"
+  },
+  {
+    "src": "public/media/logo/PHOTO-2026-06-23-18-20-29.jpg",
+    "dest": "public/media/logo/PHOTO-2026-06-23-18-20-29.webp",
+    "origBytes": 27544,
+    "webpBytes": 4880,
+    "savingPct": 82,
+    "width": 1000,
+    "height": 1000,
+    "group": "partner-logos"
+  },
+  {
+    "src": "public/media/logo/PHOTO-2026-06-23-18-32-12 2.jpg",
+    "dest": "public/media/logo/PHOTO-2026-06-23-18-32-12 2.webp",
+    "origBytes": 28868,
+    "webpBytes": 5778,
+    "savingPct": 80,
+    "width": 1200,
+    "height": 675,
+    "group": "partner-logos"
+  },
+  {
+    "src": "public/media/logo/PHOTO-2026-06-23-18-32-12.jpg",
+    "dest": "public/media/logo/PHOTO-2026-06-23-18-32-12.webp",
+    "origBytes": 11158,
+    "webpBytes": 8110,
+    "savingPct": 27,
+    "width": 318,
+    "height": 318,
+    "group": "partner-logos"
+  },
+  {
+    "src": "public/brand/logo-icon.png",
+    "dest": "public/brand/logo-icon.webp",
+    "origBytes": 37786,
+    "webpBytes": 32844,
+    "savingPct": 13,
+    "width": 512,
+    "height": 512,
+    "group": "brand-logos"
+  },
+  {
+    "src": "public/brand/logo-wide.png",
+    "dest": "public/brand/logo-wide.webp",
+    "origBytes": 44307,
+    "webpBytes": 23036,
+    "savingPct": 48,
+    "width": 813,
+    "height": 188,
+    "group": "brand-logos"
+  },
+  {
+    "src": "public/brand/neon-bright-logo.png",
+    "dest": "public/brand/neon-bright-logo.webp",
+    "origBytes": 181798,
+    "webpBytes": 59730,
+    "savingPct": 67,
+    "width": 813,
+    "height": 187,
+    "group": "brand-logos"
+  },
+  {
+    "src": "public/uploads/cms/img_mqe60cnt_j5p777.png",
+    "dest": "public/uploads/cms/img_mqe60cnt_j5p777.webp",
+    "origBytes": 236191,
+    "webpBytes": 21578,
+    "savingPct": 91,
+    "width": 500,
+    "height": 500,
+    "group": "cms-uploads"
+  },
+  {
+    "src": "public/uploads/cms/img_mqe60f1b_gw39nc.png",
+    "dest": "public/uploads/cms/img_mqe60f1b_gw39nc.webp",
+    "origBytes": 299029,
+    "webpBytes": 26952,
+    "savingPct": 91,
+    "width": 500,
+    "height": 500,
+    "group": "cms-uploads"
+  }
+]
