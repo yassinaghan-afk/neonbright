@@ -35,12 +35,16 @@ export async function DELETE(_req: Request, { params }: Params) {
   const { id } = await params;
 
   let existed = false;
-  await updateCMSContent((c) => {
+  const updated = await updateCMSContent((c) => {
     existed = c.testimonials.some((t) => t.id === id);
-    return { ...c, testimonials: c.testimonials.filter((t) => t.id !== id) };
+    // Remove item and preserve relative order of remaining testimonials.
+    const next = c.testimonials
+      .filter((t) => t.id !== id)
+      .map((t, i) => ({ ...t, sortOrder: i }));
+    return { ...c, testimonials: next };
   });
 
   if (!existed) return jsonError("Not found", 404);
   revalidatePublicSite();
-  return jsonOk({ success: true });
+  return jsonOk({ success: true, testimonials: updated.testimonials });
 }

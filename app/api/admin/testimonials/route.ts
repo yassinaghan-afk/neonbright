@@ -58,11 +58,11 @@ export async function PUT(request: Request) {
   const body = await request.json().catch(() => null);
   if (!Array.isArray(body)) return jsonError("Expected array of testimonials");
 
-  const content = await readCMSContentFresh();
+  // Authoritative list from admin (including []). Only the testimonials array is replaced.
   const normalized = normalizeTestimonials(
     body as Partial<CMSTestimonial>[],
-    content.testimonials
-  );
+    []
+  ).map((t, i) => ({ ...t, sortOrder: i }));
 
   const updated = await updateCMSContent((c) => ({
     ...c,

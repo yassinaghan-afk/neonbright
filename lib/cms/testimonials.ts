@@ -12,11 +12,15 @@ function asStringArray(value: unknown): string[] {
   return value.filter((v): v is string => typeof v === "string" && v.trim().length > 0);
 }
 
+/**
+ * Normalize an admin payload into CMS testimonials.
+ * An empty array is a valid intentional clear — never fall back to previous items.
+ */
 export function normalizeTestimonials(
   items: Partial<CMSTestimonial>[] | undefined,
   fallback: CMSTestimonial[]
 ): CMSTestimonial[] {
-  const source = items?.length ? items : fallback;
+  const source = Array.isArray(items) ? items : fallback;
   return sortByOrder(
     source.map((t, i) => ({
       id: t.id ?? `test_${i}`,
@@ -34,6 +38,7 @@ export function normalizeTestimonials(
       linkedinUrl: String(t.linkedinUrl ?? "").trim(),
       websiteUrl: String(t.websiteUrl ?? "").trim(),
       sortOrder: typeof t.sortOrder === "number" ? t.sortOrder : i,
+      // Public by default; explicit false = Masqué
       enabled: t.enabled !== false,
     }))
   );
@@ -110,6 +115,9 @@ export function emptyTestimonial(sortOrder: number): Omit<CMSTestimonial, "id"> 
   };
 }
 
+/** Public homepage: only enabled (Public) testimonials with quote + author. */
 export function getPublicTestimonials(items: CMSTestimonial[]): CMSTestimonial[] {
-  return sortByOrder(items).filter((t) => t.enabled && t.quote && t.author);
+  return sortByOrder(items).filter(
+    (t) => t.enabled !== false && t.quote && t.author
+  );
 }

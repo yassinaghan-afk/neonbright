@@ -20,6 +20,20 @@ import { emptyTestimonial } from "@/lib/cms/testimonials";
 import type { CMSTestimonial } from "@/lib/cms/types";
 import { cn } from "@/lib/utils";
 
+async function revalidateHomepage() {
+  try {
+    await fetch("/api/admin/revalidate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ paths: ["/"] }),
+      cache: "no-store",
+      credentials: "include",
+    });
+  } catch {
+    /* best-effort; CMS write already revalidated server-side */
+  }
+}
+
 function reorderDraft(
   items: CMSTestimonial[],
   from: number,
@@ -89,9 +103,14 @@ export function TestimonialsManager() {
     saving,
     error,
     success,
+    setError,
+    setSuccess,
+    load,
     cancel,
     commit,
   } = useDraftEditor<CMSTestimonial>("/api/admin/testimonials");
+
+  const [mutatingId, setMutatingId] = useState<string | null>(null);
 
   const saveAll = () => commit("/api/admin/testimonials", draft);
 
@@ -131,19 +150,68 @@ export function TestimonialsManager() {
     setEditing(null);
   };
 
-  const removeFromDraft = (id: string) => {
+  /** Persist delete immediately so the homepage updates after confirmation. */
+  const removeTestimonial = async (id: string) => {
     if (!confirm("Supprimer ce témoignage ?")) return;
-    setDraft(
-      draft.filter((item) => item.id !== id).map((item, i) => ({ ...item, sortOrder: i }))
-    );
+    setMutatingId(id);
+    setError("");
+    setSuccess("");
+    try {
+      const res = await fetch(`/api/admin/testimonials/${id}`, {
+        method: "DELETE",
+        cache: "no-store",
+        credentials: "include",
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(
+          typeof json.error === "string" ? json.error : "Échec de la suppression"
+        );
+      }
+      await revalidateHomepage();
+      await load();
+      setSuccess("Témoignage supprimé — site mis à jour");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur");
+    } finally {
+      setMutatingId(null);
+    }
   };
 
-  const toggleEnabled = (id: string) => {
-    setDraft(
-      draft.map((item) =>
-        item.id === id ? { ...item, enabled: !item.enabled } : item
-      )
-    );
+  /** Persist Public / Masqué immediately. */
+  const setVisibility = async (id: string, enabled: boolean) => {
+    const current = draft.find((item) => item.id === id);
+    if (!current || current.enabled === enabled) return;
+
+    setMutatingId(id);
+    setError("");
+    setSuccess("");
+    try {
+      const res = await fetch(`/api/admin/testimonials/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled }),
+        cache: "no-store",
+        credentials: "include",
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(
+          typeof json.error === "string" ? json.error : "Échec de la mise à jour"
+        );
+      }
+      await revalidateHomepage();
+      await load();
+      setSuccess(
+        enabled
+          ? "Témoignage public — site mis à jour"
+          : "Témoignage masqué — retiré du site"
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur");
+    } finally {
+      setMutatingId(null);
+    }
   };
 
   if (loading) {
@@ -178,7 +246,7 @@ export function TestimonialsManager() {
             className={cn(
               "flex cursor-grab items-start gap-4 rounded-xl border bg-[#0d0d0d] p-4 transition-colors active:cursor-grabbing",
               dragIndex === index ? "border-neon-pink/50" : "border-white/10",
-              !item.enabled && "opacity-50"
+              item.enabled === false && "opacity-50"
             )}
           >
             <div className="flex shrink-0 flex-col items-center gap-1 pt-1 text-white/25">
@@ -203,11 +271,16 @@ export function TestimonialsManager() {
                   <span className="text-xs text-white/45">· {item.company}</span>
                 )}
                 <StarRating rating={item.rating ?? 5} />
-                {!item.enabled && (
-                  <span className="rounded bg-white/10 px-2 py-0.5 text-[10px] text-white/50">
-                    Inactif
-                  </span>
-                )}
+                <span
+                  className={cn(
+                    "rounded px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider",
+                    item.enabled !== false
+                      ? "bg-neon-pink/15 text-neon-pink"
+                      : "bg-white/10 text-white/50"
+                  )}
+                >
+                  {item.enabled !== false ? "Public" : "Masqué"}
+                </span>
               </div>
               <p className="mt-1 line-clamp-2 text-sm italic text-white/50">
                 &ldquo;{item.quote}&rdquo;
@@ -223,20 +296,25 @@ export function TestimonialsManager() {
                 variant="ghost"
                 className="text-xs"
                 onClick={() => setEditing(item)}
+                disabled={mutatingId === item.id}
               >
                 Modifier
               </AdminButton>
               <AdminButton
                 variant="ghost"
                 className="text-xs"
-                onClick={() => toggleEnabled(item.id)}
+                onClick={() =>
+                  setVisibility(item.id, item.enabled === false)
+                }
+                disabled={mutatingId === item.id}
               >
-                {item.enabled ? "Désactiver" : "Activer"}
+                {item.enabled !== false ? "Masqué" : "Public"}
               </AdminButton>
               <AdminButton
                 variant="ghost"
                 className="text-xs text-red-400"
-                onClick={() => removeFromDraft(item.id)}
+                onClick={() => removeTestimonial(item.id)}
+                disabled={mutatingId === item.id}
               >
                 Supprimer
               </AdminButton>
@@ -347,17 +425,27 @@ export function TestimonialsManager() {
                     placeholder="https://..."
                   />
                 </AdminField>
-                <label className="flex items-center gap-2 text-sm text-white/70">
-                  <input
-                    type="checkbox"
-                    checked={editing.enabled}
-                    onChange={(e) =>
-                      setEditing({ ...editing, enabled: e.target.checked })
-                    }
-                    className="rounded border-white/20"
-                  />
-                  Actif sur le site
-                </label>
+                <AdminField label="Visibilité">
+                  <div className="flex gap-2">
+                    <AdminButton
+                      variant={editing.enabled !== false ? "primary" : "ghost"}
+                      className="text-xs"
+                      onClick={() => setEditing({ ...editing, enabled: true })}
+                    >
+                      Public
+                    </AdminButton>
+                    <AdminButton
+                      variant={editing.enabled === false ? "primary" : "ghost"}
+                      className="text-xs"
+                      onClick={() => setEditing({ ...editing, enabled: false })}
+                    >
+                      Masqué
+                    </AdminButton>
+                  </div>
+                  <p className="mt-1 text-[10px] text-white/35">
+                    Masqué reste visible ici uniquement — jamais sur le site public.
+                  </p>
+                </AdminField>
               </div>
 
               <div className="lg:sticky lg:top-0 lg:self-start">
