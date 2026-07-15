@@ -648,10 +648,23 @@ export function AdminPortfolioCollectionEditor({
                       </div>
                     }
                   >
-                    {(project.featuredImage || project.coverImage) && (
+                    {(project.featuredImage ||
+                      project.coverImage ||
+                      project.thumbnail ||
+                      project.gallery?.[0] ||
+                      project.images?.[0] ||
+                      project.logoFile) && (
                       <div className="relative mb-3 h-28 overflow-hidden rounded-lg">
                         <Image
-                          src={project.featuredImage || project.coverImage}
+                          src={
+                            project.featuredImage ||
+                            project.coverImage ||
+                            project.thumbnail ||
+                            project.gallery?.[0] ||
+                            project.images?.[0] ||
+                            project.logoFile ||
+                            ""
+                          }
                           alt={project.imageAlt || project.title}
                           fill
                           className="object-cover"
@@ -1032,7 +1045,7 @@ export function AdminPortfolioCollectionEditor({
                     <GalleryUploadField
                       label="Galerie"
                       value={editingProject.gallery ?? []}
-                      onChange={(urls) => setEP({ gallery: urls })}
+                      onChange={(urls) => setEP({ gallery: urls, images: urls })}
                       hint="Cliquez les flèches pour réordonner"
                     />
                   </div>

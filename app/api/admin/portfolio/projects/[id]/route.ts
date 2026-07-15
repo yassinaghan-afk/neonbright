@@ -36,15 +36,17 @@ function normalizeBrandProjectUpdate(
     Object.prototype.hasOwnProperty.call(body, "gallery") ||
     Object.prototype.hasOwnProperty.call(body, "images");
 
+  if (!galleryTouched) {
+    return next;
+  }
+
   const canonicalGallery = Array.isArray(body.gallery)
     ? body.gallery
     : Array.isArray(body.images)
       ? body.images
-      : galleryTouched
-        ? []
-        : Array.isArray(item.gallery)
-          ? item.gallery
-          : [];
+      : Array.isArray(item.gallery)
+        ? item.gallery
+        : [];
 
   next.gallery = canonicalGallery;
   next.images = canonicalGallery;

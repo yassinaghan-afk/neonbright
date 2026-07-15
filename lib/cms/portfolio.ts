@@ -11,7 +11,7 @@ import type {
 } from "@/lib/cms/types";
 
 function projectGallerySource(project: CMSPortfolioProject): string[] {
-  if (Array.isArray(project.gallery)) {
+  if (Array.isArray(project.gallery) && project.gallery.length > 0) {
     return project.gallery;
   }
   return project.images ?? [];
@@ -19,7 +19,13 @@ function projectGallerySource(project: CMSPortfolioProject): string[] {
 
 /** Brands use gallery as the single source of truth — never resurrect stale images[]. */
 function brandProjectGallerySource(project: CMSPortfolioProject): string[] {
-  return Array.isArray(project.gallery) ? project.gallery : [];
+  if (Array.isArray(project.gallery) && project.gallery.length > 0) {
+    return project.gallery;
+  }
+  if (Array.isArray(project.images) && project.images.length > 0) {
+    return project.images;
+  }
+  return [];
 }
 
 function isBrandPortfolioProject(
