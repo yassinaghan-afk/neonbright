@@ -38,6 +38,7 @@ export function Hero({ slides = [], hero }: HeroProps) {
     target: ref,
     offset: ["start start", "end start"],
   });
+  // Scroll-based parallax — only active after hydration, does not hide initial content
   const y = useTransform(scrollYProgress, [0, 1], [0, 120]);
   const opacity = useTransform(scrollYProgress, [0, 0.75], [1, 0]);
 
@@ -53,54 +54,43 @@ export function Hero({ slides = [], hero }: HeroProps) {
         <div className="absolute top-1/3 -right-24 h-80 w-80 rounded-full bg-neon-purple/8 blur-[100px]" />
       </div>
 
+      {/*
+       * motion.div only drives the scroll-based parallax (y + opacity).
+       * It does NOT set initial opacity to 0, so SSR HTML is fully visible.
+       * All entrance animations use CSS @keyframes via hero-*-animated classes.
+       */}
       <Container className="relative z-10">
         <motion.div className="max-w-3xl" style={{ y, opacity }}>
           <h1 className="display-headline">
             <span className="block overflow-hidden">
               {headlineWords.map((word, i) => (
-                <motion.span
+                <span
                   key={word}
-                  className="mr-[0.2em] inline-block text-4xl sm:text-6xl md:text-7xl lg:text-[5.5rem] xl:text-[6.5rem]"
-                  initial={{ opacity: 0, y: 80 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    duration: 0.9,
-                    delay: 0.15 + i * 0.08,
-                    ease: [0.16, 1, 0.3, 1],
-                  }}
+                  className="hero-word-animated mr-[0.2em] inline-block text-4xl sm:text-6xl md:text-7xl lg:text-[5.5rem] xl:text-[6.5rem]"
+                  style={{ animationDelay: `${0.15 + i * 0.08}s` }}
                 >
                   {word}
-                </motion.span>
+                </span>
               ))}
             </span>
-            <motion.span
-              className="mt-1 block text-4xl sm:text-6xl md:text-7xl lg:text-[5.5rem] xl:text-[6.5rem] neon-text-gradient"
-              initial={{ opacity: 0, y: 80, filter: "blur(12px)" }}
-              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              transition={{
-                duration: 1,
-                delay: 0.45,
-                ease: [0.16, 1, 0.3, 1],
-              }}
+            <span
+              className="hero-blur-animated mt-1 block text-4xl sm:text-6xl md:text-7xl lg:text-[5.5rem] xl:text-[6.5rem] neon-text-gradient"
+              style={{ animationDelay: "0.45s" }}
             >
               {content.headlineAccent}
-            </motion.span>
+            </span>
           </h1>
 
-          <motion.p
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.55, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-8 max-w-xl text-base leading-relaxed text-white/75 sm:text-xl"
+          <p
+            className="hero-text-animated mt-8 max-w-xl text-base leading-relaxed text-white/75 sm:text-xl"
+            style={{ animationDelay: "0.55s" }}
           >
             {content.subheadline}
-          </motion.p>
+          </p>
 
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.65, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-10 flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:gap-4"
+          <div
+            className="hero-text-animated mt-10 flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:gap-4"
+            style={{ animationDelay: "0.65s" }}
           >
             <Button href="/designer" size="lg" className="w-full sm:w-auto">
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -114,21 +104,14 @@ export function Hero({ slides = [], hero }: HeroProps) {
               </svg>
               {content.secondaryCta}
             </Button>
-          </motion.div>
+          </div>
 
           {content.trustBlock.enabled && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.9, duration: 0.8 }}
-              className="mt-14 grid grid-cols-2 gap-6 border-t border-white/10 pt-10 sm:grid-cols-4 sm:gap-8"
+            <div
+              className="hero-text-animated mt-14 grid grid-cols-2 gap-6 border-t border-white/10 pt-10 sm:grid-cols-4 sm:gap-8"
+              style={{ animationDelay: "0.9s" }}
             >
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1 }}
-                className="col-span-2 text-center sm:col-span-4"
-              >
+              <div className="col-span-2 text-center sm:col-span-4">
                 <p className="font-display text-2xl font-bold text-white sm:text-3xl">
                   {content.trustBlock.value}
                 </p>
@@ -138,8 +121,8 @@ export function Hero({ slides = [], hero }: HeroProps) {
                 <p className="mt-1 text-xs text-white/55 sm:text-sm">
                   {content.trustBlock.sublabel}
                 </p>
-              </motion.div>
-            </motion.div>
+              </div>
+            </div>
           )}
         </motion.div>
       </Container>

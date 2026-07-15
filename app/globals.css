@@ -401,13 +401,80 @@ body {
   }
 }
 
+/* ── Hero CSS entrance animations (no-JS fallback, mobile-first) ── */
+@keyframes hero-word-in {
+  from {
+    opacity: 0;
+    transform: translateY(80px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hero-blur-in {
+  from {
+    opacity: 0;
+    transform: translateY(80px);
+    filter: blur(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0px);
+  }
+}
+
+@keyframes hero-text-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-word-animated {
+  opacity: 0;
+  animation: hero-word-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.hero-blur-animated {
+  opacity: 0;
+  animation: hero-blur-in 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.hero-text-animated {
+  opacity: 0;
+  animation: hero-text-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-word-animated,
+  .hero-blur-animated,
+  .hero-text-animated {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
+}
+
 /* ── Partner logo marquee ── */
+/*
+ * Dynamic copy count: --partner-copies is set by JS (ResizeObserver).
+ * The animation distance = 100% / N = exactly one original set.
+ * SSR default of 4 copies is safe for any viewport up to 4K.
+ */
 @keyframes partner-marquee {
   0% {
     transform: translateX(0);
   }
   100% {
-    transform: translateX(-50%);
+    transform: translateX(calc(-100% / var(--partner-copies, 4)));
   }
 }
 
