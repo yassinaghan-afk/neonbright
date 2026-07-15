@@ -1,37 +1,49 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { AdminDraftToolbar } from "@/components/admin/AdminDraftToolbar";
-import { GalleryUploadField } from "@/components/admin/GalleryUploadField";
-import { useDraftEditor } from "@/components/admin/useDraftEditor";
-import {
-  AdminButton,
-  AdminField,
-  AdminInput,
-  AdminTextarea,
-} from "@/components/admin/ui/AdminForm";
+import { uploadAdminFile } from "@/lib/admin/upload-client";
 import { createId } from "@/lib/cms/id";
 import type { CMSInstagramPost } from "@/lib/cms/types";
 import { cn } from "@/lib/utils";
 
-function reorderDraft(
-  items: CMSInstagramPost[],
-  from: number,
-  to: number
-): CMSInstagramPost[] {
-  const next = [...items];
-  const [moved] = next.splice(from, 1);
-  next.splice(to, 0, moved);
-  return next.map((item, i) => ({ ...item, sortOrder: i }));
+function numbered(items: CMSInstagramPost[]): CMSInstagramPost[] {
+  return items.map((item, i) => ({ ...item, sortOrder: i }));
 }
 
-function emptyPost(sortOrder: number): CMSInstagramPost {
+function swap(
+  items: CMSInstagramPost[],
+  a: number,
+  b: number
+): CMSInstagramPost[] {
+  const next = [...items];
+  [next[a], next[b]] = [next[b], next[a]];
+  return numbered(next);
+}
+
+async function saveToServer(items: CMSInstagramPost[]): Promise<CMSInstagramPost[]> {
+  const res = await fetch("/api/admin/instagram/posts", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    cache: "no-store",
+    body: JSON.stringify({ items: numbered(items) }),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(
+      typeof json.error === "string" ? json.error : `Erreur ${res.status}`
+    );
+  }
+  return Array.isArray(json) ? json : (json.data ?? []);
+}
+
+function newPostFromUrl(url: string, sortOrder: number): CMSInstagramPost {
   const now = new Date().toISOString();
   return {
     id: createId("igp"),
-    image: "",
-    carouselImages: [],
+    image: url,
+    carouselImages: undefined,
     altText: undefined,
     caption: "",
     instagramUrl: "",
@@ -43,267 +55,393 @@ function emptyPost(sortOrder: number): CMSInstagramPost {
 }
 
 export function InstagramPostsManager() {
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [dragIndex, setDragIndex] = useState<number | null>(null);
-  const [editing, setEditing] = useState<CMSInstagramPost | null>(null);
+  const [items, setItems] = useState<CMSInstagramPost[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{
+    done: number;
+    total: number;
+  } | null>(null);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [editingUrlId, setEditingUrlId] = useState<string | null>(null);
+  const [urlDraft, setUrlDraft] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const dragHandleRef = useRef<number | null>(null);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const itemsRef = useRef<CMSInstagramPost[]>([]);
+  itemsRef.current = items;
 
-  const {
-    draft,
-    setDraft,
-    dirty,
-    loading,
-    saving,
-    error,
-    success,
-    cancel,
-    commit,
-  } = useDraftEditor<CMSInstagramPost>("/api/admin/instagram/posts");
+  useEffect(() => {
+    setLoading(true);
+    fetch("/api/admin/instagram/posts", {
+      cache: "no-store",
+      credentials: "include",
+    })
+      .then((r) => r.json())
+      .then((json) => {
+        const data: CMSInstagramPost[] = Array.isArray(json)
+          ? json
+          : (json.data ?? []);
+        const next = numbered(data);
+        setItems(next);
+        itemsRef.current = next;
+      })
+      .catch(() => setError("Chargement impossible"))
+      .finally(() => setLoading(false));
+  }, []);
 
-  const toggleSelect = (id: string) => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  const save = async (next: CMSInstagramPost[]) => {
+    setBusy(true);
+    setError("");
+    setSuccess("");
+    try {
+      const saved = await saveToServer(next);
+      setItems(saved);
+      itemsRef.current = saved;
+      setSuccess("Enregistré — site mis à jour");
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur");
+      setItems([...itemsRef.current]);
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const deleteSelected = () => {
-    if (selected.size === 0) return;
-    if (!confirm(`Supprimer ${selected.size} publication(s) ?`)) return;
-    setDraft(
-      draft
-        .filter((item) => !selected.has(item.id))
-        .map((item, i) => ({ ...item, sortOrder: i }))
-    );
-    setSelected(new Set());
+  const deleteItem = (id: string) => {
+    if (busy || uploadProgress) return;
+    if (!confirm("Supprimer cette publication ?")) return;
+    const next = numbered(itemsRef.current.filter((r) => r.id !== id));
+    setItems(next);
+    itemsRef.current = next;
+    void save(next);
   };
 
   const toggleEnabled = (id: string) => {
-    setDraft(
-      draft.map((item) =>
-        item.id === id ? { ...item, enabled: !item.enabled } : item
+    if (busy || uploadProgress) return;
+    const now = new Date().toISOString();
+    const next = numbered(
+      itemsRef.current.map((r) =>
+        r.id === id ? { ...r, enabled: !r.enabled, updatedAt: now } : r
       )
     );
+    setItems(next);
+    itemsRef.current = next;
+    void save(next);
   };
 
-  const saveAll = () => commit("/api/admin/instagram/posts", { items: draft });
-
-  const onDragStart = (index: number) => {
-    dragHandleRef.current = index;
-    setDragIndex(index);
+  const startEditUrl = (item: CMSInstagramPost) => {
+    setEditingUrlId(item.id);
+    setUrlDraft(item.instagramUrl ?? "");
   };
 
-  const onDragOver = (e: React.DragEvent, index: number) => {
+  const commitUrl = () => {
+    if (!editingUrlId || busy || uploadProgress) return;
+    const now = new Date().toISOString();
+    const next = numbered(
+      itemsRef.current.map((r) =>
+        r.id === editingUrlId
+          ? { ...r, instagramUrl: urlDraft.trim(), updatedAt: now }
+          : r
+      )
+    );
+    setItems(next);
+    itemsRef.current = next;
+    setEditingUrlId(null);
+    void save(next);
+  };
+
+  const move = (index: number, dir: -1 | 1) => {
+    if (busy || uploadProgress) return;
+    const to = index + dir;
+    if (to < 0 || to >= itemsRef.current.length) return;
+    const next = swap(itemsRef.current, index, to);
+    setItems(next);
+    itemsRef.current = next;
+    void save(next);
+  };
+
+  const onDragStart = (i: number) => {
+    dragHandleRef.current = i;
+    setDragIndex(i);
+  };
+
+  const onDragOver = (e: React.DragEvent, i: number) => {
     e.preventDefault();
     const from = dragHandleRef.current;
-    if (from === null || from === index) return;
-    setDraft(reorderDraft(draft, from, index));
-    dragHandleRef.current = index;
-    setDragIndex(index);
+    if (from === null || from === i) return;
+    const next = swap(itemsRef.current, from, i);
+    setItems(next);
+    itemsRef.current = next;
+    dragHandleRef.current = i;
+    setDragIndex(i);
   };
 
   const onDragEnd = () => {
     dragHandleRef.current = null;
     setDragIndex(null);
+    if (!busy && !uploadProgress) void save(itemsRef.current);
   };
 
-  const openNew = () => setEditing(emptyPost(draft.length));
-  const applyEdit = () => {
-    if (!editing) return;
-    if (!editing.image.trim()) {
-      alert("Au moins une image est obligatoire.");
-      return;
+  /**
+   * Multi-upload: each file becomes an independent post and is APPENDED.
+   * Never replaces the existing array, never collapses into one record.
+   */
+  const uploadFiles = async (files: File[]) => {
+    const images = files
+      .filter(
+        (f) =>
+          f.type.startsWith("image/") ||
+          /\.(png|jpe?g|webp|gif|svg)$/i.test(f.name)
+      )
+      .slice(0, 200);
+    if (!images.length) return;
+
+    setError("");
+    setSuccess("");
+    setUploadProgress({ done: 0, total: images.length });
+    let successCount = 0;
+
+    for (let i = 0; i < images.length; i++) {
+      try {
+        const result = await uploadAdminFile(images[i], {
+          preset: "instagram",
+          category: "instagram",
+        });
+        const post = newPostFromUrl(result.url, itemsRef.current.length);
+        const next = numbered([...itemsRef.current, post]);
+        setItems(next);
+        itemsRef.current = next;
+        successCount++;
+      } catch {
+        // Skip failed file; continue appending others.
+      }
+      setUploadProgress({ done: i + 1, total: images.length });
     }
-    const exists = draft.some((item) => item.id === editing.id);
-    if (exists) {
-      setDraft(draft.map((item) => (item.id === editing.id ? editing : item)));
+
+    if (successCount > 0) {
+      await save(itemsRef.current);
     } else {
-      setDraft([...draft, editing]);
+      setError("Aucune image téléversée");
     }
-    setEditing(null);
+    setUploadProgress(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   if (loading) {
-    return <p className="text-sm text-white/45">Chargement...</p>;
+    return (
+      <p className="py-8 text-center text-sm text-white/40">Chargement…</p>
+    );
   }
 
+  const isBlocked = busy || Boolean(uploadProgress);
+
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="font-display text-xl font-bold">Instagram Posts</h2>
-          <p className="mt-1 max-w-2xl text-sm text-white/45">
-            Publications affichées sur la rangée du haut. Image obligatoire, carousel
-            optionnel, tri par glisser-déposer.
+          <p className="mt-0.5 text-sm text-white/40">
+            {items.length === 0
+              ? "Aucune publication. Uploadez plusieurs images — chaque fichier crée un post séparé."
+              : `${items.length} publication${items.length !== 1 ? "s" : ""} — chaque image = 1 post. Glissez pour réordonner.`}
           </p>
         </div>
-        <AdminButton variant="primary" onClick={openNew}>
-          Ajouter une publication
-        </AdminButton>
+        <button
+          type="button"
+          onClick={() => !isBlocked && fileInputRef.current?.click()}
+          disabled={isBlocked}
+          className="rounded-xl bg-neon-pink px-4 py-2 text-sm font-semibold text-white transition disabled:opacity-50 hover:bg-neon-pink/80"
+        >
+          {uploadProgress
+            ? `Upload ${uploadProgress.done}/${uploadProgress.total}…`
+            : busy
+              ? "Enregistrement…"
+              : "Ajouter des publications"}
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={(e) => {
+            const files = Array.from(e.target.files ?? []);
+            if (files.length) void uploadFiles(files);
+          }}
+        />
       </div>
 
-      <AdminDraftToolbar
-        dirty={dirty}
-        saving={saving}
-        error={error}
-        success={success}
-        onSave={saveAll}
-        onCancel={cancel}
-      />
-
-      {selected.size > 0 && (
-        <AdminButton variant="ghost" onClick={deleteSelected}>
-          Supprimer ({selected.size})
-        </AdminButton>
+      {(error || success || uploadProgress) && (
+        <div
+          className={cn(
+            "rounded-xl px-4 py-2.5 text-sm",
+            error
+              ? "border border-red-500/30 bg-red-500/10 text-red-400"
+              : success
+                ? "border border-green-500/30 bg-green-500/10 text-green-400"
+                : "border border-white/10 bg-white/5 text-white/60"
+          )}
+        >
+          {error ||
+            success ||
+            (uploadProgress
+              ? `Téléversement… ${uploadProgress.done} / ${uploadProgress.total}`
+              : "")}
+        </div>
       )}
 
-      {draft.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-white/10 py-12 text-center text-sm text-white/35">
-          Aucune publication. Ajoutez des posts pour alimenter le slider.
-        </p>
-      ) : (
+      {items.length === 0 && !uploadProgress && (
+        <label
+          className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-white/10 py-16 text-center transition hover:border-neon-pink/40 hover:bg-white/[0.02]"
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault();
+            const files = Array.from(e.dataTransfer.files);
+            if (files.length) void uploadFiles(files);
+          }}
+        >
+          <p className="text-sm text-white/40">
+            Glissez plusieurs images ici — chaque fichier devient un post Instagram séparé
+          </p>
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              const files = Array.from(e.target.files ?? []);
+              if (files.length) void uploadFiles(files);
+            }}
+          />
+        </label>
+      )}
+
+      {items.length > 0 && (
         <div className="space-y-2">
-          {draft.map((item, index) => (
+          {items.map((item, index) => (
             <div
               key={item.id}
-              draggable
+              draggable={!isBlocked}
               onDragStart={() => onDragStart(index)}
               onDragOver={(e) => onDragOver(e, index)}
               onDragEnd={onDragEnd}
               className={cn(
-                "flex items-center gap-4 rounded-xl border border-white/10 bg-[#0d0d0d] p-3 transition-opacity",
-                !item.enabled && "opacity-45",
-                dragIndex === index && "ring-1 ring-neon-pink/50"
+                "flex flex-wrap items-center gap-3 rounded-xl border bg-[#0d0d0d] p-3 transition-all",
+                item.enabled ? "border-white/10" : "border-white/5 opacity-50",
+                dragIndex === index && "ring-1 ring-neon-pink/50 opacity-70"
               )}
             >
-              <span className="cursor-grab select-none text-white/25 active:cursor-grabbing">
+              <span className="cursor-grab select-none text-lg text-white/20 active:cursor-grabbing">
                 ⠿
               </span>
-              <input
-                type="checkbox"
-                checked={selected.has(item.id)}
-                onChange={() => toggleSelect(item.id)}
-              />
-              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-white/10">
+
+              <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-black">
                 {item.image ? (
                   <Image
                     src={item.image}
-                    alt=""
+                    alt={item.altText || ""}
                     fill
                     className="object-cover"
-                    sizes="64px"
+                    sizes="56px"
                     unoptimized
                   />
                 ) : (
-                  <div className="flex h-full items-center justify-center text-[10px] text-white/30">
-                    Image
+                  <div className="flex h-full items-center justify-center text-[9px] text-white/20">
+                    ?
                   </div>
                 )}
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-white/80">
-                  {item.caption || "Sans légende"}
-                </p>
-                <p className="truncate text-xs text-white/35">
-                  {item.instagramUrl || "URL Instagram non définie"}
-                  {(item.carouselImages?.length ?? 0) > 0
-                    ? ` · ${(item.carouselImages?.length ?? 0) + 1} image(s)`
-                    : " · 1 image"}
-                </p>
+
+              <div className="min-w-0 flex-1 space-y-1">
+                <p className="text-sm text-white/70">#{index + 1}</p>
+                {editingUrlId === item.id ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <input
+                      type="url"
+                      value={urlDraft}
+                      onChange={(e) => setUrlDraft(e.target.value)}
+                      placeholder="https://www.instagram.com/p/..."
+                      className="min-w-[220px] flex-1 rounded-lg border border-white/15 bg-black px-3 py-1.5 text-xs text-white"
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") commitUrl();
+                        if (e.key === "Escape") setEditingUrlId(null);
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={commitUrl}
+                      disabled={isBlocked}
+                      className="rounded-lg bg-neon-pink/20 px-2 py-1 text-xs text-neon-pink"
+                    >
+                      Enregistrer
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingUrlId(null)}
+                      className="rounded-lg px-2 py-1 text-xs text-white/45"
+                    >
+                      Annuler
+                    </button>
+                  </div>
+                ) : (
+                  <p className="truncate text-xs text-white/35">
+                    {item.instagramUrl || "URL Instagram non définie"}
+                  </p>
+                )}
               </div>
-              <div className="flex shrink-0 flex-wrap gap-2">
+
+              <div className="flex shrink-0 flex-wrap items-center gap-1.5">
                 <button
                   type="button"
-                  onClick={() => setEditing(item)}
-                  className="text-xs text-neon-pink hover:underline"
+                  disabled={isBlocked || index === 0}
+                  onClick={() => move(index, -1)}
+                  className="rounded-lg border border-white/10 px-2 py-1 text-xs text-white/50 disabled:opacity-30"
                 >
-                  Modifier
+                  ↑
                 </button>
                 <button
                   type="button"
+                  disabled={isBlocked || index === items.length - 1}
+                  onClick={() => move(index, 1)}
+                  className="rounded-lg border border-white/10 px-2 py-1 text-xs text-white/50 disabled:opacity-30"
+                >
+                  ↓
+                </button>
+                <button
+                  type="button"
+                  disabled={isBlocked}
+                  onClick={() => startEditUrl(item)}
+                  className="rounded-lg border border-white/10 px-2 py-1 text-xs text-white/60 hover:text-white"
+                >
+                  URL
+                </button>
+                <button
+                  type="button"
+                  disabled={isBlocked}
                   onClick={() => toggleEnabled(item.id)}
-                  className="text-xs text-white/45 hover:text-white"
+                  className={cn(
+                    "rounded-lg px-2 py-1 text-xs font-medium",
+                    item.enabled
+                      ? "bg-green-500/15 text-green-400"
+                      : "bg-white/5 text-white/40"
+                  )}
                 >
-                  {item.enabled ? "Masquer" : "Activer"}
+                  {item.enabled ? "Public" : "Masqué"}
                 </button>
-                <span className="text-xs text-white/25">#{index + 1}</span>
+                <button
+                  type="button"
+                  disabled={isBlocked}
+                  onClick={() => deleteItem(item.id)}
+                  className="rounded-lg border border-red-500/20 px-2 py-1 text-xs text-red-400/80 hover:bg-red-500/10"
+                >
+                  Supprimer
+                </button>
               </div>
             </div>
           ))}
-        </div>
-      )}
-
-      {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-white/10 bg-[#0d0d0d] p-5">
-            <h3 className="font-display text-lg font-semibold">
-              {draft.some((p) => p.id === editing.id)
-                ? "Modifier la publication"
-                : "Nouvelle publication"}
-            </h3>
-            <div className="mt-4 space-y-4">
-              <GalleryUploadField
-                label="Images de la publication"
-                value={[editing.image, ...(editing.carouselImages ?? [])].filter(Boolean)}
-                onChange={(urls) =>
-                  setEditing({
-                    ...editing,
-                    image: urls[0] ?? "",
-                    carouselImages: urls.slice(1),
-                  })
-                }
-                hint="La première image devient la miniature. Sélection multiple, glisser-déposer pour réordonner."
-              />
-              <AdminField label="Texte alternatif (accessibilité)">
-                <AdminInput
-                  value={editing.altText ?? ""}
-                  onChange={(e) =>
-                    setEditing({ ...editing, altText: e.target.value || undefined })
-                  }
-                  placeholder="Optionnel — décrit l'image pour les lecteurs d'écran"
-                />
-              </AdminField>
-              <AdminField label="Légende">
-                <AdminTextarea
-                  value={editing.caption}
-                  onChange={(e) =>
-                    setEditing({ ...editing, caption: e.target.value })
-                  }
-                  className="min-h-[88px]"
-                />
-              </AdminField>
-              <AdminField label="URL Instagram" required>
-                <AdminInput
-                  value={editing.instagramUrl}
-                  onChange={(e) =>
-                    setEditing({ ...editing, instagramUrl: e.target.value })
-                  }
-                  placeholder="https://www.instagram.com/p/..."
-                  type="url"
-                />
-              </AdminField>
-              <label className="flex items-center gap-2 text-sm text-white/70">
-                <input
-                  type="checkbox"
-                  checked={editing.enabled}
-                  onChange={(e) =>
-                    setEditing({ ...editing, enabled: e.target.checked })
-                  }
-                />
-                Actif (visible sur le site)
-              </label>
-            </div>
-            <div className="mt-5 flex justify-end gap-2">
-              <AdminButton variant="ghost" onClick={() => setEditing(null)}>
-                Annuler
-              </AdminButton>
-              <AdminButton variant="primary" onClick={applyEdit}>
-                Appliquer
-              </AdminButton>
-            </div>
-          </div>
         </div>
       )}
     </div>

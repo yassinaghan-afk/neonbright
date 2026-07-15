@@ -59,6 +59,8 @@ function mapPresetToCategory(preset: string): UploadCategory {
   switch (preset) {
     case "hero":
       return "hero";
+    case "instagram":
+      return "instagram";
     case "gallery":
     case "thumbnail":
     case "video":

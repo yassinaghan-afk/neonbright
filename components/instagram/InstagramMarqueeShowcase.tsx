@@ -9,7 +9,8 @@ import type { CMSInstagramPost } from "@/lib/cms/types";
 import type { InstagramShowcaseData } from "@/lib/instagram/showcase";
 import { cn } from "@/lib/utils";
 
-const DEFAULT_PROFILE_URL = "https://www.instagram.com/_neonbright_/";
+const DEFAULT_PROFILE_URL =
+  "https://www.instagram.com/_neonbright_?igsh=NHQxN3MzcjJhdGZ0";
 
 function InstagramIcon({ className }: { className?: string }) {
   return (
@@ -105,10 +106,11 @@ export function InstagramMarqueeShowcase({ data }: Props) {
           </SectionReveal>
         </Container>
 
-        <div className="relative mt-12 sm:mt-16">
+        <div className="relative mt-12 w-full sm:mt-16">
           <InstagramPostsMarqueeRow
             posts={galleryPosts}
             onPostSelect={handlePostSelect}
+            paused={activePostIndex !== null}
           />
         </div>
 

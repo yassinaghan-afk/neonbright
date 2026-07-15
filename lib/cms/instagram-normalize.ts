@@ -56,10 +56,50 @@ export function normalizeInstagramReel(
   };
 }
 
+/**
+ * Expand legacy carouselImages into one independent post per image.
+ * Used so multi-upload never collapses into a single featured image.
+ * Does not invent CMS writes by itself — callers persist the result.
+ */
+export function expandCarouselIntoPosts(
+  posts: CMSInstagramPost[]
+): CMSInstagramPost[] {
+  const out: CMSInstagramPost[] = [];
+
+  for (const post of posts) {
+    const urls = postSlideUrls(post);
+    if (urls.length === 0) continue;
+
+    if (urls.length === 1) {
+      out.push({
+        ...post,
+        image: urls[0],
+        carouselImages: undefined,
+        sortOrder: out.length,
+      });
+      continue;
+    }
+
+    urls.forEach((url, i) => {
+      out.push({
+        ...post,
+        id: i === 0 ? post.id : `${post.id}__slide_${i}`,
+        image: url,
+        carouselImages: undefined,
+        sortOrder: out.length,
+      });
+    });
+  }
+
+  return out.map((post, i) => ({ ...post, sortOrder: i }));
+}
+
 export function normalizeInstagramPosts(
   items: LegacyPost[]
 ): CMSInstagramPost[] {
-  return items.map((item, i) => normalizeInstagramPost(item, i));
+  const normalized = items.map((item, i) => normalizeInstagramPost(item, i));
+  // Persist-ready shape: one post record per image (never a collapsed gallery).
+  return expandCarouselIntoPosts(normalized);
 }
 
 export function normalizeInstagramReels(

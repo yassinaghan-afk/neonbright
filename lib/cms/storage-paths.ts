@@ -8,7 +8,7 @@ import path from "path";
  *
  * Layout:
  *   ${STORAGE_ROOT}/cms-content.json
- *   ${STORAGE_ROOT}/uploads/{hero,events,brands,reviews,testimonials,logos,cms}/
+ *   ${STORAGE_ROOT}/uploads/{hero,events,brands,reviews,testimonials,logos,instagram,cms}/
  */
 
 const DEFAULT_LOCAL_STORAGE = path.join(process.cwd(), "storage");
@@ -20,6 +20,7 @@ export const UPLOAD_CATEGORIES = [
   "reviews",
   "testimonials",
   "logos",
+  "instagram",
   "cms",
 ] as const;
 

@@ -251,7 +251,10 @@ export function InstagramShowcasePostModal({
                   )}
                 </div>
 
-                <div className="flex flex-col items-center gap-4 border-t border-white/8 bg-black/40 px-6 py-5 sm:gap-5 sm:py-6">
+                <div className="flex flex-col items-center gap-3 border-t border-white/8 bg-black/40 px-6 py-5 sm:gap-4 sm:py-6">
+                  <p className="text-xs font-medium tracking-wide text-white/45 sm:text-sm">
+                    {(activeIndex ?? 0) + 1} / {posts.length}
+                  </p>
                   <p className="font-display text-sm font-semibold tracking-[0.22em] text-white/90 sm:text-base">
                     {HANDLE}
                   </p>

@@ -556,19 +556,23 @@ body {
   }
 }
 
-/* ── Instagram premium marquee showcase ── */
+/* ── Instagram full-width continuous marquee ── */
+/*
+ * Translate by exactly one original set: track has N equal copies,
+ * so distance = 100% / N. With N>=2 and track >= 2× viewport, no blank gap.
+ */
 @keyframes instagram-marquee-rtl {
   0% {
     transform: translate3d(0, 0, 0);
   }
   100% {
-    transform: translate3d(-50%, 0, 0);
+    transform: translate3d(calc(-100% / var(--ig-marquee-copies, 2)), 0, 0);
   }
 }
 
 @keyframes instagram-marquee-ltr {
   0% {
-    transform: translate3d(-50%, 0, 0);
+    transform: translate3d(calc(-100% / var(--ig-marquee-copies, 2)), 0, 0);
   }
   100% {
     transform: translate3d(0, 0, 0);
@@ -579,15 +583,15 @@ body {
   mask-image: linear-gradient(
     to right,
     transparent,
-    black 6%,
-    black 94%,
+    black 4%,
+    black 96%,
     transparent
   );
   -webkit-mask-image: linear-gradient(
     to right,
     transparent,
-    black 6%,
-    black 94%,
+    black 4%,
+    black 96%,
     transparent
   );
 }
@@ -598,11 +602,11 @@ body {
 }
 
 .instagram-marquee-track--rtl {
-  animation: instagram-marquee-rtl 50s linear infinite;
+  animation: instagram-marquee-rtl var(--ig-marquee-duration, 50s) linear infinite;
 }
 
 .instagram-marquee-track--ltr {
-  animation: instagram-marquee-ltr 55s linear infinite;
+  animation: instagram-marquee-ltr var(--ig-marquee-duration, 55s) linear infinite;
 }
 
 .instagram-marquee-row:hover .instagram-marquee-track {
@@ -614,18 +618,10 @@ body {
 }
 
 .instagram-marquee-item {
+  flex-shrink: 0;
   pointer-events: auto;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
-}
-
-@media (max-width: 640px) {
-  .instagram-marquee-track--rtl {
-    animation-duration: 70s;
-  }
-  .instagram-marquee-track--ltr {
-    animation-duration: 75s;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
