@@ -8,22 +8,14 @@ import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { EventProjectCard } from "@/components/portfolio/EventProjectCard";
 import { BrandProjectGallery } from "@/components/portfolio/BrandProjectGallery";
-import {
-  getBrandSlugs,
-  getResolvedBrand,
-  getResolvedBrands,
-} from "@/lib/brands/server";
+import { getResolvedBrand, getResolvedBrands } from "@/lib/brands/server";
 import { getEventProjectsForPage } from "@/lib/events/server";
 import { localImageUnoptimized } from "@/lib/media/local-image";
 
 type Props = { params: Promise<{ slug: string }> };
 
-export const revalidate = 3600;
-
-export async function generateStaticParams() {
-  const slugs = await getBrandSlugs();
-  return slugs.map((slug) => ({ slug }));
-}
+/** Runtime CMS at STORAGE_ROOT — must not be baked at build time. */
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;

@@ -230,6 +230,8 @@ type LoadCMSOptions = {
 };
 
 async function loadCMSContent(options?: LoadCMSOptions): Promise<CMSContent> {
+  // CRITICAL: noStore() must be called BEFORE any try/catch to ensure Next.js
+  // dynamic-rendering error propagates correctly. If caught, pages return 500.
   noStore();
 
   try {

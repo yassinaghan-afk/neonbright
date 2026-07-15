@@ -7,20 +7,13 @@ import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { EventProjectGallery } from "@/components/portfolio/EventProjectGallery";
-import {
-  getEventProjectForPage,
-  getEventSlugsForPage,
-} from "@/lib/events/server";
+import { getEventProjectForPage } from "@/lib/events/server";
 import { localImageUnoptimized } from "@/lib/media/local-image";
 
 type Props = { params: Promise<{ slug: string }> };
 
-export const revalidate = 3600;
-
-export async function generateStaticParams() {
-  const slugs = await getEventSlugsForPage();
-  return slugs.map((slug) => ({ slug }));
-}
+/** Runtime CMS at STORAGE_ROOT — must not be baked at build time. */
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
