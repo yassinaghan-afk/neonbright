@@ -1,5 +1,6 @@
 import { requireOwner, jsonError, jsonOk } from "@/lib/cms/api";
 import { updateCMSContent } from "@/lib/cms/store";
+import { safeUpdateService } from "@/lib/cms/safe-update";
 import type { CMSService } from "@/lib/cms/types";
 
 type Params = { params: Promise<{ id: string }> };
@@ -16,7 +17,7 @@ export async function PUT(request: Request, { params }: Params) {
     ...c,
     services: c.services.map((s) => {
       if (s.id !== id) return s;
-      const updated: CMSService = { ...s, ...body, id: s.id };
+      const updated = safeUpdateService(s, body);
       found = updated;
       return updated;
     }),

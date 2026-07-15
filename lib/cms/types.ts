@@ -303,6 +303,12 @@ export type CMSContent = {
   social: SocialLinks;
   seo: SEOMetadata;
   updatedAt: string;
+  /**
+   * Monotonically increasing revision number for optimistic concurrency control.
+   * Incremented on each write. Clients can include this in mutation requests
+   * to detect stale writes (HTTP 409 Conflict if revision doesn't match).
+   */
+  revision?: number;
 };
 
 export type CMSSection =

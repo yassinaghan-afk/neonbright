@@ -23,12 +23,18 @@ import {
   getStorageRoot,
 } from "@/lib/cms/storage-paths";
 import { ensureUploadDirectories } from "@/lib/cms/upload-storage";
+import { FileLock } from "@/lib/cms/file-lock";
+import { createBackup } from "@/lib/cms/backup";
 
 const LEGACY_TESTIMONIALS_HEADLINE = "La confiance des grandes marques";
 const TESTIMONIALS_HEADLINE = "Ils nous font confiance";
 
-let memoryCMS: CMSContent | null = null;
+/**
+ * Module-level state for bootstrap and lock.
+ * NOTE: memoryCMS removed to prevent stale reads across requests.
+ */
 let bootstrapPromise: Promise<void> | null = null;
+const cmsLock = new FileLock(getCmsContentPath());
 
 function applyContentMigrations(content: CMSContent): CMSContent {
   if (content.sectionCopy.testimonials.headline !== LEGACY_TESTIMONIALS_HEADLINE) {
@@ -238,15 +244,7 @@ async function loadCMSContent(options?: LoadCMSOptions): Promise<CMSContent> {
     await ensureCmsBootstrap();
     const parsed = await readCMSFileFromDisk();
 
-    if (!options?.bypassMemory && memoryCMS) {
-      return applyContentMigrations(memoryCMS);
-    }
-
     if (!parsed) {
-      if (memoryCMS) {
-        console.warn("[cms-store] file unreadable — serving in-memory overlay");
-        return applyContentMigrations(memoryCMS);
-      }
       console.warn(
         "[cms-store] runtime CMS missing — serving defaults (read-only; not persisted)"
       );
@@ -270,11 +268,10 @@ async function loadCMSContent(options?: LoadCMSOptions): Promise<CMSContent> {
     if (persistNeeded) {
       try {
         content = await writeCMSContent(content);
-      } catch {
-        memoryCMS = content;
+      } catch (err) {
+        console.error("[cms-store] auto-persist failed:", err);
+        // Return content anyway, will retry on next load
       }
-    } else {
-      memoryCMS = content;
     }
 
     return content;
@@ -293,50 +290,122 @@ export async function readCMSContentFresh(): Promise<CMSContent> {
 }
 
 export async function writeCMSContent(content: CMSContent): Promise<CMSContent> {
-  const next = applyContentMigrations({
-    ...content,
-    updatedAt: new Date().toISOString(),
-  });
+  // Acquire exclusive lock to prevent concurrent writes.
+  return await cmsLock.withLock(async () => {
+    await ensureCmsBootstrap();
+    const contentPath = getCmsContentPath();
 
-  logCmsSync("save", {
-    updatedAt: next.updatedAt,
-    testimonials: next.testimonials.length,
-    reviews: next.reviews?.length ?? 0,
-    portfolioProjects: next.portfolioProjects?.length ?? 0,
-    publishedProjects: next.portfolioProjects?.filter((p) => p.published).length ?? 0,
-  });
+    // Increment revision for optimistic concurrency control.
+    const currentRevision = content.revision ?? 0;
+    const next = applyContentMigrations({
+      ...content,
+      updatedAt: new Date().toISOString(),
+      revision: currentRevision + 1,
+    });
 
-  memoryCMS = next;
-  await ensureCmsBootstrap();
-  await atomicWriteFile(
-    getCmsContentPath(),
-    JSON.stringify(next, null, 2),
-    "utf-8"
-  );
+    logCmsSync("save", {
+      revision: next.revision,
+      updatedAt: next.updatedAt,
+      testimonials: next.testimonials.length,
+      reviews: next.reviews?.length ?? 0,
+      portfolioProjects: next.portfolioProjects?.length ?? 0,
+      publishedProjects: next.portfolioProjects?.filter((p) => p.published).length ?? 0,
+    });
 
-  revalidatePublicSite();
+    // Create backup before writing (non-fatal if it fails).
+    try {
+      await createBackup(contentPath);
+    } catch (err) {
+      console.warn("[cms-store] backup failed (continuing anyway):", err);
+    }
 
-  logCmsSync("storage-updated", {
-    storage: "local",
-    path: getCmsContentPath(),
-    updatedAt: next.updatedAt,
-    testimonials: next.testimonials.length,
-    reviews: next.reviews?.length ?? 0,
-    portfolioProjects: next.portfolioProjects?.length ?? 0,
-    publishedProjects: next.portfolioProjects?.filter((p) => p.published).length ?? 0,
-    projectIds: next.portfolioProjects
-      ?.map((p) => `${p.id}:${p.published ? "pub" : "hid"}`)
-      .join(","),
-  });
+    // Atomic write: temp file + rename.
+    await atomicWriteFile(
+      contentPath,
+      JSON.stringify(next, null, 2),
+      "utf-8"
+    );
 
-  return next;
+    // Invalidate public caches.
+    revalidatePublicSite();
+
+    logCmsSync("storage-updated", {
+      storage: "local",
+      path: contentPath,
+      revision: next.revision,
+      updatedAt: next.updatedAt,
+      testimonials: next.testimonials.length,
+      reviews: next.reviews?.length ?? 0,
+      portfolioProjects: next.portfolioProjects?.length ?? 0,
+      publishedProjects: next.portfolioProjects?.filter((p) => p.published).length ?? 0,
+      projectIds: next.portfolioProjects
+        ?.map((p) => `${p.id}:${p.published ? "pub" : "hid"}`)
+        .join(","),
+    });
+
+    return next;
+  }, { timeout: 30000 });
 }
 
 export async function updateCMSContent(
   updater: (current: CMSContent) => CMSContent
 ): Promise<CMSContent> {
-  const current = await readCMSContentFresh();
-  const next = await writeCMSContent(updater(current));
-  memoryCMS = next;
-  return next;
+  // CRITICAL: Lock must cover BOTH read and write to prevent lost updates.
+  return await cmsLock.withLock(async () => {
+    const current = await readCMSContentFresh();
+    const updated = updater(current);
+    
+    await ensureCmsBootstrap();
+    const contentPath = getCmsContentPath();
+
+    // Increment revision.
+    const currentRevision = updated.revision ?? current.revision ?? 0;
+    const next = applyContentMigrations({
+      ...updated,
+      updatedAt: new Date().toISOString(),
+      revision: currentRevision + 1,
+    });
+
+    logCmsSync("save", {
+      revision: next.revision,
+      updatedAt: next.updatedAt,
+      testimonials: next.testimonials.length,
+      reviews: next.reviews?.length ?? 0,
+      portfolioProjects: next.portfolioProjects?.length ?? 0,
+      publishedProjects: next.portfolioProjects?.filter((p) => p.published).length ?? 0,
+    });
+
+    // Create backup before writing (non-fatal if it fails).
+    try {
+      await createBackup(contentPath);
+    } catch (err) {
+      console.warn("[cms-store] backup failed (continuing anyway):", err);
+    }
+
+    // Atomic write.
+    await atomicWriteFile(
+      contentPath,
+      JSON.stringify(next, null, 2),
+      "utf-8"
+    );
+
+    // Invalidate public caches.
+    revalidatePublicSite();
+
+    logCmsSync("storage-updated", {
+      storage: "local",
+      path: contentPath,
+      revision: next.revision,
+      updatedAt: next.updatedAt,
+      testimonials: next.testimonials.length,
+      reviews: next.reviews?.length ?? 0,
+      portfolioProjects: next.portfolioProjects?.length ?? 0,
+      publishedProjects: next.portfolioProjects?.filter((p) => p.published).length ?? 0,
+      projectIds: next.portfolioProjects
+        ?.map((p) => `${p.id}:${p.published ? "pub" : "hid"}`)
+        .join(","),
+    });
+
+    return next;
+  }, { timeout: 30000 });
 }

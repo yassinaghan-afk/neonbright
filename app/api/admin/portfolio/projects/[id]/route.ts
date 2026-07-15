@@ -3,6 +3,7 @@ import { jsonOk, jsonError, requireOwner } from "@/lib/cms/api";
 import { updateCMSContent } from "@/lib/cms/store";
 import { logCmsSync } from "@/lib/cms/sync-log";
 import { deleteUploadFile } from "@/lib/cms/upload-storage";
+import { safeUpdatePortfolioProject } from "@/lib/cms/safe-update";
 import type { CMSPortfolioProject } from "@/lib/cms/types";
 
 function normalizeBrandProjectUpdate(
@@ -10,7 +11,8 @@ function normalizeBrandProjectUpdate(
   body: Partial<CMSPortfolioProject>,
   categorySlug: string | undefined
 ): CMSPortfolioProject {
-  const next: CMSPortfolioProject = { ...item, ...body, id: item.id };
+  // Use safe update to preserve unchanged fields.
+  const next = safeUpdatePortfolioProject(item, body);
 
   if (categorySlug !== "marques-clients") {
     return next;

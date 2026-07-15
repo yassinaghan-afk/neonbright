@@ -1,5 +1,6 @@
 import { requireOwner, jsonError, jsonOk } from "@/lib/cms/api";
 import { updateCMSContent } from "@/lib/cms/store";
+import { safeUpdateHeroSlide } from "@/lib/cms/safe-update";
 import type { CMSHeroSlide } from "@/lib/cms/types";
 
 type Params = { params: Promise<{ id: string }> };
@@ -16,11 +17,8 @@ export async function PUT(request: Request, { params }: Params) {
     ...c,
     heroSlides: c.heroSlides.map((s) => {
       if (s.id !== id) return s;
-      const updated: CMSHeroSlide = {
-        ...s,
-        ...body,
-        id: s.id,
-      };
+      // Use safe update to preserve unchanged fields.
+      const updated = safeUpdateHeroSlide(s, body);
       found = updated;
       return updated;
     }),

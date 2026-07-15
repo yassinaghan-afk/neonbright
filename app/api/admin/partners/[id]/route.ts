@@ -1,6 +1,7 @@
 import { requireOwner, jsonError, jsonOk } from "@/lib/cms/api";
 import { updateCMSContent } from "@/lib/cms/store";
 import { revalidatePublicSite } from "@/lib/cms/revalidate-public";
+import { safeUpdatePartner } from "@/lib/cms/safe-update";
 import type { CMSPartner } from "@/lib/cms/types";
 
 type Params = { params: Promise<{ id: string }> };
@@ -17,7 +18,8 @@ export async function PUT(request: Request, { params }: Params) {
     ...c,
     partners: c.partners.map((p) => {
       if (p.id !== id) return p;
-      const updated: CMSPartner = { ...p, ...body, id: p.id };
+      // Use safe update to preserve unchanged fields.
+      const updated = safeUpdatePartner(p, body);
       found = updated;
       return updated;
     }),

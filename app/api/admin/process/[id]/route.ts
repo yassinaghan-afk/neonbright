@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { jsonOk, jsonError, requireOwner } from "@/lib/cms/api";
 import { updateCMSContent } from "@/lib/cms/store";
+import { safeUpdateProcessStep } from "@/lib/cms/safe-update";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { error } = await requireOwner();
@@ -12,7 +13,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const updated = await updateCMSContent((c) => ({
     ...c,
     processSteps: (c.processSteps ?? []).map((item) =>
-      item.id === id ? { ...item, ...body, id } : item
+      item.id === id ? safeUpdateProcessStep(item, body) : item
     ),
   }));
 
