@@ -14,7 +14,7 @@ type ReviewCardProps = {
 };
 
 function ReviewCard({ review, onSelect, imageFailed, onImageError }: ReviewCardProps) {
-  const src = review.image?.trim() ?? "";
+  const src = (review.thumbnailUrl ?? review.image)?.trim() ?? "";
 
   return (
     <button

@@ -20,7 +20,11 @@
     "images:static:verify": "node scripts/optimize-static-images.mjs verify",
     "images:uploads:dry": "node scripts/migrate-existing-images-to-webp.mjs dry",
     "images:uploads:apply": "node scripts/migrate-existing-images-to-webp.mjs apply",
-    "images:uploads:verify": "node scripts/migrate-existing-images-to-webp.mjs verify"
+    "images:uploads:verify": "node scripts/migrate-existing-images-to-webp.mjs verify",
+    "images:dry": "node scripts/convert-images-to-webp.mjs",
+    "images:apply": "node scripts/convert-images-to-webp.mjs apply",
+    "images:vps:dry": "node scripts/convert-vps-uploads-to-webp.mjs",
+    "images:vps:apply": "node scripts/convert-vps-uploads-to-webp.mjs apply"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",

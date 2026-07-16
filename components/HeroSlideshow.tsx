@@ -130,7 +130,7 @@ export function HeroSlideshow({ slides }: HeroSlideshowProps) {
               }}
             >
               <Image
-                src={slide.src}
+                src={slide.desktopImageUrl ?? slide.mobileImageUrl ?? slide.src}
                 alt={slide.alt}
                 fill
                 priority={i === 0}

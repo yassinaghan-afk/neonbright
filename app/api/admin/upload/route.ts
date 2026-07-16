@@ -6,8 +6,8 @@ import {
   jsonSuccess,
   requireOwner,
 } from "@/lib/cms/api";
-import { optimizeUploadedImage } from "@/lib/cms/image-process";
 import { filenameToLabel } from "@/lib/cms/filename-utils";
+import { optimizeUploadedImage } from "@/lib/cms/image-process";
 import {
   writeUploadFile,
   extOf,
@@ -39,11 +39,11 @@ const ALLOWED_VIDEO_TYPES = new Set([
   "video/quicktime",
 ]);
 
-/** MIME types that carry their own validated magic bytes from the server.  */
+/** Magic-byte signatures for raster formats. */
 const IMAGE_MAGIC: Array<{ bytes: number[]; mime: string }> = [
   { bytes: [0xff, 0xd8, 0xff], mime: "image/jpeg" },
   { bytes: [0x89, 0x50, 0x4e, 0x47], mime: "image/png" },
-  { bytes: [0x52, 0x49, 0x46, 0x46], mime: "image/webp" }, // RIFF….WEBP
+  { bytes: [0x52, 0x49, 0x46, 0x46], mime: "image/webp" }, // RIFF header
   { bytes: [0x47, 0x49, 0x46], mime: "image/gif" },
 ];
 
@@ -51,7 +51,6 @@ function detectMimeFromBuffer(buf: Buffer): string | null {
   for (const sig of IMAGE_MAGIC) {
     if (sig.bytes.every((b, i) => buf[i] === b)) return sig.mime;
   }
-  // SVG heuristic: starts with <? or <svg
   const head = buf.slice(0, 64).toString("utf8");
   if (head.includes("<svg") || head.startsWith("<?xml")) return "image/svg+xml";
   return null;
@@ -76,31 +75,34 @@ function resolveCategory(
 
 function mapPresetToCategory(preset: string): UploadCategory {
   switch (preset) {
-    case "hero":
-      return "hero";
-    case "instagram":
-      return "instagram";
-    case "gallery":
-    case "thumbnail":
-    case "video":
-      return "cms";
-    default:
-      return "cms";
+    case "hero":       return "hero";
+    case "instagram":  return "instagram";
+    case "reviews":    return "reviews";
+    case "events":     return "events";
+    case "brands":     return "brands";
+    case "logos":      return "logos";
+    case "testimonials": return "testimonials";
+    default:           return "cms";
   }
 }
 
-async function processOneFile(
-  file: File,
-  category: UploadCategory
-): Promise<{
+type ProcessedFileResult = {
   url: string;
-  thumbnailUrl?: string;
   filename: string;
   label: string;
   type: "image" | "video" | "audio";
   size: number;
   contentType: string;
-}> {
+  // Optional optimised variants — absent when not applicable.
+  thumbnailUrl?: string;
+  mobileImageUrl?: string;
+  desktopImageUrl?: string;
+};
+
+async function processOneFile(
+  file: File,
+  category: UploadCategory
+): Promise<ProcessedFileResult> {
   if (!isAllowedUploadExtension(file.name)) {
     throw new Error(
       "Type de fichier non autorisé. Utilisez PNG, JPG, WEBP, GIF, SVG, AVIF, MP4, WebM ou MOV."
@@ -109,8 +111,8 @@ async function processOneFile(
 
   const ext = extOf(file.name);
   const declaredType = file.type || "";
-  const isVideo = VIDEO_EXTS_BY_NAME(ext);
-  const isImage = IMAGE_EXTS_BY_NAME(ext);
+  const isVideo = VIDEO_EXTS(ext);
+  const isImage = IMAGE_EXTS(ext);
 
   if (!isVideo && !isImage) {
     throw new Error("Seules les images et vidéos sont autorisées");
@@ -123,36 +125,36 @@ async function processOneFile(
     }
   }
 
-  if (isVideo && file.size > MAX_VIDEO_SIZE) {
-    throw new Error("Vidéos max 200 Mo");
-  }
-  if (isImage && file.size > MAX_IMAGE_SIZE) {
-    throw new Error("Images max 10 Mo");
-  }
+  if (isVideo && file.size > MAX_VIDEO_SIZE) throw new Error("Vidéos max 200 Mo");
+  if (isImage && file.size > MAX_IMAGE_SIZE) throw new Error("Images max 10 Mo");
 
   const rawBuffer = Buffer.from(await file.arrayBuffer());
 
-  // For images, validate magic bytes against declared MIME.
+  // Validate magic bytes for raster images (not SVG, not video).
   if (isImage && ext !== "svg") {
-    const detectedMime = detectMimeFromBuffer(rawBuffer);
-    if (detectedMime && declaredType && declaredType !== "application/octet-stream") {
-      // WEBP magic: RIFF header, verify WEBP marker at offset 8
-      const effectiveDetected =
-        detectedMime === "image/webp"
-          ? rawBuffer.slice(8, 12).toString("ascii") === "WEBP"
-            ? "image/webp"
-            : null
-          : detectedMime;
-      if (effectiveDetected && effectiveDetected !== declaredType) {
-        throw new Error("Le contenu du fichier ne correspond pas au type déclaré");
+    const detected = detectMimeFromBuffer(rawBuffer);
+    if (detected) {
+      const effectiveDeclared =
+        declaredType && declaredType !== "application/octet-stream"
+          ? declaredType
+          : null;
+      if (effectiveDeclared && detected !== effectiveDeclared) {
+        // WebP has a secondary WEBP marker at bytes 8–12; verify it.
+        const isWebP =
+          detected === "image/webp" &&
+          rawBuffer.slice(8, 12).toString("ascii") === "WEBP";
+        if (!isWebP && detected !== effectiveDeclared) {
+          throw new Error(
+            "Le contenu du fichier ne correspond pas au type déclaré"
+          );
+        }
       }
     }
   }
 
-  // Videos: store as-is.
+  // Videos pass through unchanged.
   if (isVideo) {
-    const prefix = "vid";
-    const filename = `${createId(prefix)}.${ext}`;
+    const filename = `${createId("vid")}.${ext}`;
     const url = await writeUploadFile(filename, rawBuffer, category);
     const kind = mediaTypeOf(filename);
     return {
@@ -165,7 +167,7 @@ async function processOneFile(
     };
   }
 
-  // SVG: store as-is.
+  // SVG passes through unchanged.
   if (ext === "svg" || declaredType === "image/svg+xml") {
     const filename = `${createId("img")}.svg`;
     const url = await writeUploadFile(filename, rawBuffer, category);
@@ -179,57 +181,74 @@ async function processOneFile(
     };
   }
 
-  // Raster images: convert to WebP via Sharp.
+  // Raster images → Sharp WebP pipeline.
   const effectiveMime = declaredType || "image/jpeg";
   const processed = await optimizeUploadedImage(rawBuffer, effectiveMime, category);
 
   const mainFilename = `${createId("img")}.${processed.main.ext}`;
   const mainUrl = await writeUploadFile(mainFilename, processed.main.buffer, category);
 
-  let thumbnailUrl: string | undefined;
-  if (processed.thumbnail) {
-    const thumbFilename = `thumb_${mainFilename}`;
-    thumbnailUrl = await writeUploadFile(thumbFilename, processed.thumbnail.buffer, category);
-  }
-
-  return {
+  const result: ProcessedFileResult = {
     url: mainUrl,
-    thumbnailUrl,
     filename: mainFilename,
     label: filenameToLabel(file.name),
     type: "image",
     size: processed.main.buffer.byteLength,
     contentType: processed.main.mime,
   };
+
+  // Thumbnail (reviews, instagram, events, brands).
+  if (processed.thumbnail) {
+    const thumbFilename = `thumb_${mainFilename}`;
+    result.thumbnailUrl = await writeUploadFile(
+      thumbFilename,
+      processed.thumbnail.buffer,
+      category
+    );
+  }
+
+  // Mobile variant (hero only).
+  if (processed.mobile) {
+    const mobileFilename = `mobile_${mainFilename}`;
+    result.mobileImageUrl = await writeUploadFile(
+      mobileFilename,
+      processed.mobile.buffer,
+      category
+    );
+    // The main image is the desktop variant for hero.
+    result.desktopImageUrl = mainUrl;
+  }
+
+  return result;
 }
 
-function VIDEO_EXTS_BY_NAME(ext: string): boolean {
+function VIDEO_EXTS(ext: string): boolean {
   return ext === "mp4" || ext === "webm" || ext === "mov";
 }
 
-function IMAGE_EXTS_BY_NAME(ext: string): boolean {
+function IMAGE_EXTS(ext: string): boolean {
   return ["png", "jpg", "jpeg", "webp", "gif", "svg", "avif"].includes(ext);
 }
 
 /**
- * Direct multipart upload → STORAGE_ROOT/uploads/[category]/
+ * Multipart upload → STORAGE_ROOT/uploads/[category]/
  * POST /api/admin/upload
  */
 export async function POST(request: NextRequest) {
   try {
     const { error } = await requireOwner();
-    if (error) {
-      return jsonFailure("Unauthorized", 401);
-    }
+    if (error) return jsonFailure("Unauthorized", 401);
 
     const formData = await request.formData();
     const category = resolveCategory(request, formData);
 
     const single = formData.get("file");
-    const many = formData.getAll("files").filter((f): f is File => f instanceof File);
+    const many = formData
+      .getAll("files")
+      .filter((f): f is File => f instanceof File);
 
     if (many.length > 0) {
-      const files = [];
+      const files: ProcessedFileResult[] = [];
       for (const file of many) {
         files.push(await processOneFile(file, category));
       }
@@ -240,12 +259,9 @@ export async function POST(request: NextRequest) {
       return jsonFailure("No file provided", 400);
     }
 
-    const result = await processOneFile(single, category);
-    return jsonSuccess(result);
+    return jsonSuccess(await processOneFile(single, category));
   } catch (err) {
-    if (err instanceof Error) {
-      return jsonFailure(err.message, 400);
-    }
+    if (err instanceof Error) return jsonFailure(err.message, 400);
     return jsonFailureFromUnknown(err, 500);
   }
 }

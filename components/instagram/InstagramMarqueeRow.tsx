@@ -67,7 +67,7 @@ function PostCard({
           <PostImagePlaceholder />
         ) : (
           <Image
-            src={post.image}
+            src={post.thumbnailUrl ?? post.image}
             alt={alt}
             fill
             loading="lazy"
@@ -75,7 +75,7 @@ function PostCard({
             className="pointer-events-none object-cover"
             draggable={false}
             onError={() => onImageError(post.id)}
-            {...localImageUnoptimized(post.image)}
+            {...localImageUnoptimized(post.thumbnailUrl ?? post.image)}
           />
         )}
       </div>

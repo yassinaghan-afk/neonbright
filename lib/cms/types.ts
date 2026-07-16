@@ -26,6 +26,10 @@ export type CMSHeroSlide = {
   alt: string;
   enabled: boolean;
   sortOrder: number;
+  /** Optimised WebP for desktop (≤1920px). Falls back to src when absent. */
+  desktopImageUrl?: string;
+  /** Optimised WebP for mobile (≤1080px). Falls back to src when absent. */
+  mobileImageUrl?: string;
 };
 
 /** @deprecated Legacy homepage projects — use portfolioProjects */
@@ -194,6 +198,8 @@ export type CMSInstagramSettings = {
 export type CMSReview = {
   id: string;
   image: string;
+  /** Smaller WebP for the marquee card. Falls back to image when absent. */
+  thumbnailUrl?: string;
   enabled: boolean;
   sortOrder: number;
 };
@@ -203,6 +209,8 @@ export type CMSInstagramPost = {
   id: string;
   /** Primary cover image (required for display). */
   image: string;
+  /** Smaller WebP for the marquee card. Falls back to image when absent. */
+  thumbnailUrl?: string;
   /** Optional additional carousel images. */
   carouselImages?: string[];
   /** Optional alt text for accessibility. Falls back to caption. */
