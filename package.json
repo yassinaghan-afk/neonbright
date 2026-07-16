@@ -24,7 +24,9 @@
     "images:dry": "node scripts/convert-images-to-webp.mjs",
     "images:apply": "node scripts/convert-images-to-webp.mjs apply",
     "images:vps:dry": "node scripts/convert-vps-uploads-to-webp.mjs",
-    "images:vps:apply": "node scripts/convert-vps-uploads-to-webp.mjs apply"
+    "images:vps:apply": "node scripts/convert-vps-uploads-to-webp.mjs apply",
+    "cms:clear-media:dry": "node scripts/clear-events-brands-media.mjs",
+    "cms:clear-media:apply": "node scripts/clear-events-brands-media.mjs apply"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",
