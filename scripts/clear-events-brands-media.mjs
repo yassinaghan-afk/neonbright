@@ -24,7 +24,7 @@ import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
-const APPLY = process.argv[2] === "apply";
+const APPLY = process.argv.includes("--apply") || process.argv[2] === "apply";
 
 const STORAGE_ROOT = process.env.STORAGE_ROOT
   ? path.resolve(process.env.STORAGE_ROOT)
