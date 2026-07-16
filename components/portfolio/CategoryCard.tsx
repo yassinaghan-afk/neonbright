@@ -22,16 +22,18 @@ export function CategoryCard({ category, className, priority = false }: Category
         transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
       >
         <div className="relative aspect-[4/3] overflow-hidden sm:aspect-[21/9] md:aspect-[2.4/1]">
-          <Image
-            src={category.coverImage}
-            alt={category.coverAlt}
-            fill
-            sizes="(max-width: 768px) 100vw, 1280px"
-            className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-            priority={priority}
-            loading={priority ? undefined : "lazy"}
-            {...localImageUnoptimized(category.coverImage)}
-          />
+          {category.coverImage ? (
+            <Image
+              src={category.coverImage}
+              alt={category.coverAlt}
+              fill
+              sizes="(max-width: 768px) 100vw, 1280px"
+              className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+              priority={priority}
+              loading={priority ? undefined : "lazy"}
+              {...localImageUnoptimized(category.coverImage)}
+            />
+          ) : null}
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/10" />
 
           <div className="absolute inset-0 flex items-center px-6 sm:px-10 md:px-16 lg:px-20">

@@ -58,7 +58,7 @@ export const brandsCategory: PortfolioCategory = {
   titleAccent: "marques",
   description:
     "Plus de 200 clients satisfaits nous ont fait confiance pour leurs enseignes, néons et installations lumineuses au Maroc et à l'international.",
-  coverImage: "/media/hero-slider/c465b19f-3967-4486-b3eb-d4eda34b9c7b.jpg",
+  coverImage: "",
   coverAlt: "Installations néon LED pour marques et clients premium",
   href: "/realisations/brands",
 };
