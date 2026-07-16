@@ -914,6 +914,7 @@ export function AdminPortfolioCollectionEditor({
                           accept="image/*,.svg"
                           fileHint="PNG, JPG, WEBP, SVG — max 10 Mo"
                           preset="gallery"
+                          category="logos"
                         />
                       </div>
                       <AdminField label="Technologies (virgule)">

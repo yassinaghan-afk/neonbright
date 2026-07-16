@@ -24,7 +24,13 @@ export {
 } from "@/lib/brands/types";
 
 function isDirectUrl(value: string): boolean {
-  return value.startsWith("http://") || value.startsWith("https://");
+  // Absolute http(s) URLs and root-relative public URLs (e.g. /uploads/logos/x.webp)
+  // are used as-is. Bare legacy filenames are resolved through /media/logo/.
+  return (
+    value.startsWith("http://") ||
+    value.startsWith("https://") ||
+    value.startsWith("/")
+  );
 }
 
 async function buildLogoMap(): Promise<Map<string, string>> {

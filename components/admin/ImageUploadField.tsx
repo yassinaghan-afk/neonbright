@@ -12,6 +12,8 @@ type ImageUploadFieldProps = {
   hint?: string;
   className?: string;
   preset?: "gallery" | "thumbnail" | "hero";
+  /** Storage category (e.g. "logos") — takes precedence over preset mapping. */
+  category?: string;
   accept?: string;
   fileHint?: string;
 };
@@ -23,6 +25,7 @@ export function ImageUploadField({
   hint,
   className,
   preset = "gallery",
+  category,
   accept = "image/*",
   fileHint = "PNG, JPG, WebP — max 10 Mo",
 }: ImageUploadFieldProps) {
@@ -35,7 +38,7 @@ export function ImageUploadField({
     setUploading(true);
     setError("");
     try {
-      const result = await uploadAdminFile(file, { preset });
+      const result = await uploadAdminFile(file, { preset, category });
       onChange(result.url);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur upload");

@@ -23,15 +23,22 @@ export function BrandCard({ brand, className }: BrandCardProps) {
         transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
       >
         <div className="partner-white-strip flex h-32 items-center justify-center px-8 sm:h-36">
-          <Image
-            src={brand.logoSrc}
-            alt={`Logo ${brand.name}`}
-            width={220}
-            height={80}
-            className="max-h-14 w-auto max-w-[180px] object-contain object-center sm:max-h-16 sm:max-w-[200px]"
-            sizes="200px"
-            {...localImageUnoptimized(brand.logoSrc)}
-          />
+          {brand.logoSrc ? (
+            <Image
+              src={brand.logoSrc}
+              alt={`Logo ${brand.name}`}
+              width={220}
+              height={80}
+              className="max-h-14 w-auto max-w-[180px] object-contain object-center sm:max-h-16 sm:max-w-[200px]"
+              sizes="200px"
+              {...localImageUnoptimized(brand.logoSrc)}
+            />
+          ) : (
+            <div
+              className="h-14 w-full max-w-[180px] sm:h-16 sm:max-w-[200px]"
+              aria-hidden
+            />
+          )}
         </div>
 
         <div className="border-t border-white/10 p-5 sm:p-6">
