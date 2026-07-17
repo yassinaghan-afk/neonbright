@@ -68,14 +68,14 @@ export default async function Home() {
         <Hero slides={heroSlides} hero={hero} />
         <PartnerLogoStrip logos={partnerLogos} label={trustStripLabel} />
         <FeaturedProjects copy={sectionCopy.portfolio} categories={portfolioCategories} />
+        <InstagramMarqueeShowcase data={instagramShowcase} />
+        <ReviewsShowcase reviews={reviews} />
         <WhyChooseUs items={features} copy={sectionCopy.services} />
         <Industries items={industries} copy={sectionCopy.industries} />
         <Testimonials items={testimonials} copy={sectionCopy.testimonials} />
         <Process steps={processSteps} copy={sectionCopy.process} />
         <FAQ items={faq} copy={sectionCopy.faq} />
         <QuoteCTA />
-        <InstagramMarqueeShowcase data={instagramShowcase} />
-        <ReviewsShowcase reviews={reviews} />
       </main>
       <Footer />
     </>
