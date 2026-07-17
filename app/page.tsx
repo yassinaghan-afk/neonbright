@@ -5,16 +5,10 @@ import { PartnerLogoStrip } from "@/components/PartnerLogoStrip";
 import { FeaturedProjects } from "@/components/FeaturedProjects";
 import { QuoteCTA } from "@/components/quote/QuoteCTA";
 import { Footer } from "@/components/Footer";
+import { InstagramMarqueeShowcase } from "@/components/instagram/InstagramMarqueeShowcase";
+import { ReviewsShowcase } from "@/components/ReviewsShowcase";
 import { getPublicHomepageContent } from "@/lib/cms/public";
 import { getInstagramShowcase } from "@/lib/instagram/showcase";
-
-const InstagramMarqueeShowcase = dynamic(
-  () =>
-    import("@/components/instagram/InstagramMarqueeShowcase").then(
-      (m) => m.InstagramMarqueeShowcase
-    ),
-  { loading: () => null }
-);
 
 const WhyChooseUs = dynamic(
   () => import("@/components/WhyChooseUs").then((m) => m.WhyChooseUs),
@@ -23,11 +17,6 @@ const WhyChooseUs = dynamic(
 
 const Industries = dynamic(
   () => import("@/components/Industries").then((m) => m.Industries),
-  { loading: () => null }
-);
-
-const ReviewsShowcase = dynamic(
-  () => import("@/components/ReviewsShowcase").then((m) => m.ReviewsShowcase),
   { loading: () => null }
 );
 
@@ -79,14 +68,14 @@ export default async function Home() {
         <Hero slides={heroSlides} hero={hero} />
         <PartnerLogoStrip logos={partnerLogos} label={trustStripLabel} />
         <FeaturedProjects copy={sectionCopy.portfolio} categories={portfolioCategories} />
-        <InstagramMarqueeShowcase data={instagramShowcase} />
         <WhyChooseUs items={features} copy={sectionCopy.services} />
         <Industries items={industries} copy={sectionCopy.industries} />
-        <ReviewsShowcase reviews={reviews} />
         <Testimonials items={testimonials} copy={sectionCopy.testimonials} />
         <Process steps={processSteps} copy={sectionCopy.process} />
         <FAQ items={faq} copy={sectionCopy.faq} />
         <QuoteCTA />
+        <InstagramMarqueeShowcase data={instagramShowcase} />
+        <ReviewsShowcase reviews={reviews} />
       </main>
       <Footer />
     </>
