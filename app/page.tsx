@@ -8,7 +8,6 @@ import { Footer } from "@/components/Footer";
 import { InstagramMarqueeShowcase } from "@/components/instagram/InstagramMarqueeShowcase";
 import { ReviewsShowcase } from "@/components/ReviewsShowcase";
 import { getPublicHomepageContent } from "@/lib/cms/public";
-import { getInstagramShowcase } from "@/lib/instagram/showcase";
 
 const WhyChooseUs = dynamic(
   () => import("@/components/WhyChooseUs").then((m) => m.WhyChooseUs),
@@ -38,12 +37,11 @@ const FAQ = dynamic(
 export const revalidate = 3600;
 
 export default async function Home() {
-  const [homepage, instagramShowcase] = await Promise.all([
-    // Fresh CMS read so Admin Reviews (and other) edits appear on the live
-    // homepage immediately after revalidation — no stale ISR/data-cache gap.
-    getPublicHomepageContent({ fresh: true }),
-    getInstagramShowcase(),
-  ]);
+  // Single fresh CMS read for the whole homepage — Instagram showcase data is
+  // derived from this same object (see lib/cms/public.ts) instead of issuing
+  // a second independent CMS read, so Admin edits still appear immediately
+  // after revalidation with only one disk read per request.
+  const homepage = await getPublicHomepageContent({ fresh: true });
 
   const {
     hero,
@@ -58,6 +56,7 @@ export default async function Home() {
     processSteps,
     faq,
     sectionCopy,
+    instagramShowcase,
     nav,
   } = homepage;
 

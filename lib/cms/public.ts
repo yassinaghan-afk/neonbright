@@ -5,6 +5,8 @@ import { toPortfolioCategory } from "@/lib/cms/portfolio";
 import { normalizeHeroSlides, normalizePartners, sortByOrder } from "@/lib/cms/normalize";
 import { getPublicTestimonials } from "@/lib/cms/testimonials";
 import { filterPublicReviews, normalizeReviews } from "@/lib/cms/reviews";
+import { buildInstagramShowcase } from "@/lib/instagram/showcase";
+import type { InstagramShowcaseData } from "@/lib/instagram/showcase";
 import type { PortfolioCategory } from "@/lib/portfolio/types";
 import type {
   CMSFAQItem,
@@ -40,6 +42,8 @@ export type PublicHomepageContent = {
   faq: CMSFAQItem[];
   sectionCopy: CMSSectionCopy;
   instagram: CMSInstagramSettings;
+  /** Derived from the same CMS read below — avoids a second independent read. */
+  instagramShowcase: InstagramShowcaseData;
   nav: CMSNavLink[];
   company: CompanyInfo;
   contact: ContactInfo;
@@ -112,6 +116,7 @@ export async function getPublicHomepageContent(
     faq,
     sectionCopy: content.sectionCopy,
     instagram: content.instagram,
+    instagramShowcase: buildInstagramShowcase(content),
     nav,
     company: content.company,
     contact: content.contact,

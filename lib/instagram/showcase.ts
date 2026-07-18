@@ -5,7 +5,7 @@ import {
 } from "@/lib/cms/instagram-normalize";
 import { sortByOrder } from "@/lib/cms/normalize";
 import { readCMSContent } from "@/lib/cms/store";
-import type { CMSInstagramPost, CMSInstagramSettings } from "@/lib/cms/types";
+import type { CMSContent, CMSInstagramPost, CMSInstagramSettings } from "@/lib/cms/types";
 
 export type InstagramShowcaseData = {
   settings: CMSInstagramSettings;
@@ -14,9 +14,13 @@ export type InstagramShowcaseData = {
   isEmpty: boolean;
 };
 
-/** Homepage entry point — posts only, always fresh from CMS storage. */
-export async function getInstagramShowcase(): Promise<InstagramShowcaseData> {
-  const content = await readCMSContent();
+/**
+ * Pure derivation from already-loaded CMS content — no additional disk read.
+ * Callers that already hold a `CMSContent` (e.g. the homepage Server
+ * Component) should use this instead of `getInstagramShowcase()` to avoid a
+ * second independent CMS read on the same request.
+ */
+export function buildInstagramShowcase(content: CMSContent): InstagramShowcaseData {
   const profileUrl = resolveInstagramUrl(content.social, content.instagram.url);
   const posts = filterPublicPosts(
     normalizeInstagramPosts(sortByOrder(content.instagramPosts ?? []))
@@ -28,4 +32,10 @@ export async function getInstagramShowcase(): Promise<InstagramShowcaseData> {
     profileUrl,
     isEmpty: posts.length === 0,
   };
+}
+
+/** Standalone entry point (API routes, etc.) — reads CMS storage itself. */
+export async function getInstagramShowcase(): Promise<InstagramShowcaseData> {
+  const content = await readCMSContent();
+  return buildInstagramShowcase(content);
 }
