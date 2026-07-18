@@ -10,13 +10,18 @@ export function normalizeHeroSlides(
 ): CMSHeroSlide[] {
   if (!slides?.length) return fallback;
   return sortByOrder(
-    slides.map((s, i) => ({
-      id: s.id ?? `slide_${i}`,
-      src: s.src ?? "",
-      alt: s.alt ?? "",
-      enabled: s.enabled ?? true,
-      sortOrder: s.sortOrder ?? i,
-    }))
+    slides.map((s, i) => {
+      const slide: CMSHeroSlide = {
+        id: s.id ?? `slide_${i}`,
+        src: s.src ?? "",
+        alt: s.alt ?? "",
+        enabled: s.enabled ?? true,
+        sortOrder: s.sortOrder ?? i,
+      };
+      if (s.desktopImageUrl) slide.desktopImageUrl = s.desktopImageUrl;
+      if (s.mobileImageUrl) slide.mobileImageUrl = s.mobileImageUrl;
+      return slide;
+    })
   ).filter((s) => s.src);
 }
 

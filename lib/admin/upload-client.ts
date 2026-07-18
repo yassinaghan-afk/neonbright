@@ -5,6 +5,9 @@ export type UploadFileResult = {
   filename: string;
   label: string;
   type: "image" | "video" | "audio";
+  mobileImageUrl?: string;
+  desktopImageUrl?: string;
+  thumbnailUrl?: string;
 };
 
 const MAX_VIDEO_SIZE = 200 * 1024 * 1024;

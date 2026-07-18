@@ -17,6 +17,16 @@ export function isBrandHeroUrl(src: string): boolean {
   return src.startsWith("/media/hero-slider/");
 }
 
+/** Admin Hero Slider uploads land under STORAGE_ROOT/uploads/hero/. */
+export function isAdminHeroUploadUrl(src: string): boolean {
+  return src.startsWith("/uploads/hero/");
+}
+
+/** Any hero URL managed by Admin or the MEDIA seed folder. */
+export function isManagedHeroUrl(src: string): boolean {
+  return isBrandHeroUrl(src) || isAdminHeroUploadUrl(src);
+}
+
 export function heroSlideSrc(slide: CMSHeroSlide): string {
   const raw = slide.src.split("?")[0];
   return resolvePublicAsset(raw) ?? raw;
@@ -27,19 +37,28 @@ export function isHeroMediaSyncEnabled(): boolean {
   return process.env.NODE_ENV === "development";
 }
 
+/**
+ * Seed from MEDIA/ only when CMS has no real hero slides yet.
+ * Never treat Admin `/uploads/hero/` slides as "invalid" — that wiped uploads.
+ */
 export function shouldSeedBrandHeroSlides(
   slides: Partial<CMSHeroSlide>[] | undefined
 ): boolean {
   if (!slides?.length) return true;
   if (slides.every((s) => !s.src || isUnsplashHeroUrl(s.src))) return true;
-  if (slides.some((s) => s.src && !isBrandHeroUrl(s.src))) return true;
-  return false;
+  // Admin uploads are authoritative — do not reseeds over them.
+  if (slides.some((s) => s.src && isAdminHeroUploadUrl(s.src))) return false;
+  // Keep existing managed /media/hero-slider/ slides as-is.
+  if (slides.some((s) => s.src && isManagedHeroUrl(s.src))) return false;
+  return true;
 }
 
 export function brandHeroSlidesStale(
   slides: Partial<CMSHeroSlide>[] | undefined,
   freshSlides: CMSHeroSlide[]
 ): boolean {
+  // Admin-managed uploads must never be overwritten by MEDIA sync.
+  if (slides?.some((s) => s.src && isAdminHeroUploadUrl(s.src))) return false;
   if (!slides?.length || !freshSlides.length) return true;
   const current = slides
     .filter((s) => s.src && isBrandHeroUrl(s.src))

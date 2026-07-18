@@ -63,14 +63,29 @@ export async function PUT(request: Request) {
 
   let saved: CMSHeroSlide[] = [];
   await updateCMSContent((c) => {
-    saved = (body.slides as Partial<CMSHeroSlide>[]).map((s, i) => ({
-      id: s.id ?? createId("slide"),
-      src: s.src ?? "",
-      alt: s.alt ?? "",
-      enabled: s.enabled ?? true,
-      sortOrder: i,
-    }));
-    return { ...c, heroSlides: saved };
+    saved = (body.slides as Partial<CMSHeroSlide>[]).map((s, i) => {
+      const slide: CMSHeroSlide = {
+        id: s.id ?? createId("slide"),
+        src: s.src ?? "",
+        alt: s.alt ?? "",
+        enabled: s.enabled ?? true,
+        sortOrder: i,
+      };
+      // Keep Sharp mobile/desktop variants from Admin upload — required for
+      // public HeroSlideshow art-direction and correct public URLs.
+      if (s.desktopImageUrl) slide.desktopImageUrl = s.desktopImageUrl;
+      if (s.mobileImageUrl) slide.mobileImageUrl = s.mobileImageUrl;
+      return slide;
+    });
+    const firstEnabled = saved.find((s) => s.enabled && s.src);
+    return {
+      ...c,
+      heroSlides: saved,
+      hero: {
+        ...c.hero,
+        backgroundImage: firstEnabled?.src || c.hero.backgroundImage,
+      },
+    };
   });
 
   return jsonOk(saved);

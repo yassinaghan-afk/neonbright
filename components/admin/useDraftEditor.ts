@@ -133,8 +133,22 @@ export function useDraftEditor<T>(fetchUrl: string) {
 export async function uploadMediaFiles(
   files: File[],
   preset: "hero" | "logo" | "gallery"
-): Promise<{ url: string; filename: string; label: string }[]> {
+): Promise<
+  {
+    url: string;
+    filename: string;
+    label: string;
+    mobileImageUrl?: string;
+    desktopImageUrl?: string;
+  }[]
+> {
   const { uploadAdminFiles } = await import("@/lib/admin/upload-client");
   const results = await uploadAdminFiles(files, preset);
-  return results.map(({ url, filename, label }) => ({ url, filename, label }));
+  return results.map(({ url, filename, label, mobileImageUrl, desktopImageUrl }) => ({
+    url,
+    filename,
+    label,
+    ...(mobileImageUrl ? { mobileImageUrl } : {}),
+    ...(desktopImageUrl ? { desktopImageUrl } : {}),
+  }));
 }

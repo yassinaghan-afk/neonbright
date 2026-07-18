@@ -6,7 +6,7 @@
     "subheadline": "D'une idée à la réalisation, nous illuminons vos évènements, commerces et établissements avec des solutions sur-mesure.",
     "primaryCta": "Créer Mon Néon",
     "secondaryCta": "Créer Mon Enseigne",
-    "backgroundImage": "/media/hero-slider/13978eaa-af3e-422b-afce-217b5298c6ed.jpg",
+    "backgroundImage": "",
     "trustBlock": {
       "enabled": true,
       "value": "200+",
@@ -38,64 +38,7 @@
       }
     ]
   },
-  "heroSlides": [
-    {
-      "id": "slide_brand_13978eaa-af3",
-      "src": "/media/hero-slider/13978eaa-af3e-422b-afce-217b5298c6ed.jpg",
-      "alt": "Enseigne néon LED sur mesure — vitrine commerciale illuminée",
-      "enabled": true,
-      "sortOrder": 0
-    },
-    {
-      "id": "slide_brand_2842fb6b-da2",
-      "src": "/media/hero-slider/2842fb6b-da2c-4af8-92f4-e4ed440c7183.jpg",
-      "alt": "Néon LED personnalisé — enseigne lumineuse restaurant",
-      "enabled": true,
-      "sortOrder": 1
-    },
-    {
-      "id": "slide_brand_64550da3-666",
-      "src": "/media/hero-slider/64550da3-6666-41e4-ae29-6d8422853ffd.jpg",
-      "alt": "Enseigne lumineuse LED — façade hôtel et hospitality",
-      "enabled": true,
-      "sortOrder": 2
-    },
-    {
-      "id": "slide_brand_82efd0d2-291",
-      "src": "/media/hero-slider/82efd0d2-2918-440b-9d23-41974d6cbb59.jpg",
-      "alt": "Logo néon LED monté sur mur — installation sur mesure",
-      "enabled": true,
-      "sortOrder": 3
-    },
-    {
-      "id": "slide_brand_c465b19f-396",
-      "src": "/media/hero-slider/c465b19f-3967-4486-b3eb-d4eda34b9c7b.jpg",
-      "alt": "Enseigne néon script — commerce et retail",
-      "enabled": true,
-      "sortOrder": 4
-    },
-    {
-      "id": "slide_brand_d35fa705-f3f",
-      "src": "/media/hero-slider/d35fa705-f3f5-4435-a878-d6d3f99c92cc.jpg",
-      "alt": "Néon LED multicolore — enseigne lumineuse professionnelle",
-      "enabled": true,
-      "sortOrder": 5
-    },
-    {
-      "id": "slide_brand_d4aa5e68-81c",
-      "src": "/media/hero-slider/d4aa5e68-81c9-4331-8a8f-83b20958ef85.jpg",
-      "alt": "Enseigne lumineuse sur mesure — néon LED intérieur",
-      "enabled": true,
-      "sortOrder": 6
-    },
-    {
-      "id": "slide_brand_efa6a01f-04f",
-      "src": "/media/hero-slider/efa6a01f-04f7-4220-8080-c35519c6539f.jpg",
-      "alt": "Signalétique néon LED — enseigne de magasin",
-      "enabled": true,
-      "sortOrder": 7
-    }
-  ],
+  "heroSlides": [],
   "portfolioCategories": [
     {
       "id": "cat_evenements",

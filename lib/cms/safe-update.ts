@@ -181,7 +181,7 @@ export function safeUpdatePortfolioProject(
 
 /**
  * Safely update a hero slide, preserving unchanged fields.
- * Schema: id, src, alt, enabled, sortOrder (no link).
+ * Schema: id, src, alt, enabled, sortOrder, desktopImageUrl?, mobileImageUrl?
  */
 export function safeUpdateHeroSlide(
   existing: CMSHeroSlide,
@@ -189,13 +189,26 @@ export function safeUpdateHeroSlide(
 ): CMSHeroSlide {
   const bodyRecord = body as Record<string, unknown>;
 
-  return {
+  const next: CMSHeroSlide = {
     id: existing.id,
     src: safeString(bodyRecord, "src", existing.src),
     alt: safeString(bodyRecord, "alt", existing.alt),
     enabled: safeBoolean(bodyRecord, "enabled", existing.enabled),
     sortOrder: safeNumber(bodyRecord, "sortOrder", existing.sortOrder),
   };
+
+  const desktop =
+    typeof bodyRecord.desktopImageUrl === "string"
+      ? bodyRecord.desktopImageUrl
+      : existing.desktopImageUrl;
+  const mobile =
+    typeof bodyRecord.mobileImageUrl === "string"
+      ? bodyRecord.mobileImageUrl
+      : existing.mobileImageUrl;
+  if (desktop) next.desktopImageUrl = desktop;
+  if (mobile) next.mobileImageUrl = mobile;
+
+  return next;
 }
 
 /**

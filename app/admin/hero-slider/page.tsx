@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminDraftToolbar } from "@/components/admin/AdminDraftToolbar";
@@ -14,7 +14,36 @@ import {
 } from "@/components/admin/ui/AdminForm";
 import { createId } from "@/lib/cms/id";
 import type { CMSHeroSlide } from "@/lib/cms/types";
+import { localServeDirect } from "@/lib/media/local-image";
 import { cn } from "@/lib/utils";
+
+const HERO_ACCEPT =
+  "image/jpeg,image/png,image/webp,image/avif,.jpg,.jpeg,.png,.webp,.avif";
+const HERO_EXT = /\.(jpe?g|png|webp|avif)$/i;
+const HERO_MIME = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/avif",
+]);
+const MAX_PENDING_BYTES = 10 * 1024 * 1024;
+
+type PendingHeroFile = {
+  id: string;
+  file: File;
+  previewUrl: string;
+};
+
+function fileKey(file: File): string {
+  return `${file.name}::${file.size}::${file.lastModified}`;
+}
+
+function isAllowedHeroImage(file: File): boolean {
+  if (HERO_MIME.has(file.type)) return true;
+  // Some browsers leave type empty for HEIC→JPEG exports or odd pickers.
+  if (!file.type && HERO_EXT.test(file.name)) return true;
+  return HERO_EXT.test(file.name);
+}
 
 function reorderDraft(items: CMSHeroSlide[], from: number, to: number): CMSHeroSlide[] {
   const next = [...items];
@@ -25,8 +54,10 @@ function reorderDraft(items: CMSHeroSlide[], from: number, to: number): CMSHeroS
 
 export default function AdminHeroSliderPage() {
   const fileRef = useRef<HTMLInputElement>(null);
+  const pendingFilesRef = useRef<PendingHeroFile[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [pendingFiles, setPendingFiles] = useState<PendingHeroFile[]>([]);
+  const [selectionError, setSelectionError] = useState("");
   const [uploading, setUploading] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [preview, setPreview] = useState<CMSHeroSlide | null>(null);
@@ -44,6 +75,14 @@ export default function AdminHeroSliderPage() {
     commit,
   } = useDraftEditor<CMSHeroSlide>("/api/admin/hero-slider");
 
+  pendingFilesRef.current = pendingFiles;
+
+  useEffect(() => {
+    return () => {
+      pendingFilesRef.current.forEach((p) => URL.revokeObjectURL(p.previewUrl));
+    };
+  }, []);
+
   const toggleSelect = (id: string) => {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -58,27 +97,101 @@ export default function AdminHeroSliderPage() {
     else setSelected(new Set(draft.map((s) => s.id)));
   };
 
-  const onFilesPicked = (files: FileList | null) => {
-    if (!files?.length) return;
-    setPendingFiles((prev) => [...prev, ...Array.from(files)]);
+  /**
+   * Snapshot FileList to a real File[] BEFORE clearing the input.
+   * FileList is live — resetting input.value empties it, so deferring
+   * Array.from(files) inside setState used to append [] every time.
+   */
+  const onFilesPicked = useCallback((fileList: FileList | File[] | null) => {
+    if (!fileList) return;
+
+    // Critical: copy now, while the input still owns the FileList.
+    const picked = Array.from(fileList as ArrayLike<File>);
+    if (picked.length === 0) return;
+
+    const rejected: string[] = [];
+    const accepted: File[] = [];
+
+    for (const file of picked) {
+      if (!isAllowedHeroImage(file)) {
+        rejected.push(`${file.name}: format non supporté (JPG, PNG, WebP, AVIF)`);
+        continue;
+      }
+      if (file.size > MAX_PENDING_BYTES) {
+        rejected.push(`${file.name}: max 10 Mo`);
+        continue;
+      }
+      accepted.push(file);
+    }
+
+    setSelectionError(rejected.length ? rejected.join(" · ") : "");
+
+    if (accepted.length === 0) return;
+
+    setPendingFiles((prev) => {
+      const existing = new Set(prev.map((p) => fileKey(p.file)));
+      const additions: PendingHeroFile[] = [];
+      for (const file of accepted) {
+        const key = fileKey(file);
+        if (existing.has(key)) continue;
+        existing.add(key);
+        additions.push({
+          id: createId("pending"),
+          file,
+          previewUrl: URL.createObjectURL(file),
+        });
+      }
+      return additions.length ? [...prev, ...additions] : prev;
+    });
+  }, []);
+
+  const removePending = (id: string) => {
+    setPendingFiles((prev) => {
+      const target = prev.find((p) => p.id === id);
+      if (target) URL.revokeObjectURL(target.previewUrl);
+      return prev.filter((p) => p.id !== id);
+    });
+  };
+
+  const clearPendingSelection = () => {
+    setPendingFiles((prev) => {
+      prev.forEach((p) => URL.revokeObjectURL(p.previewUrl));
+      return [];
+    });
+    setSelectionError("");
+    if (fileRef.current) fileRef.current.value = "";
   };
 
   const uploadPending = async () => {
     if (pendingFiles.length === 0) return;
     setUploading(true);
+    setSelectionError("");
+    const batch = [...pendingFiles];
     try {
-      const uploaded = await uploadMediaFiles(pendingFiles, "hero");
-      const newSlides: CMSHeroSlide[] = uploaded.map((u, i) => ({
-        id: createId("slide"),
-        src: u.url,
-        alt: `Néon LED — ${u.label}`,
-        enabled: true,
-        sortOrder: draft.length + i,
-      }));
+      const uploaded = await uploadMediaFiles(
+        batch.map((p) => p.file),
+        "hero"
+      );
+      const newSlides: CMSHeroSlide[] = uploaded.map((u, i) => {
+        const slide: CMSHeroSlide = {
+          id: createId("slide"),
+          src: u.url,
+          alt: `Néon LED — ${u.label}`,
+          enabled: true,
+          sortOrder: draft.length + i,
+        };
+        if (u.desktopImageUrl) slide.desktopImageUrl = u.desktopImageUrl;
+        if (u.mobileImageUrl) slide.mobileImageUrl = u.mobileImageUrl;
+        return slide;
+      });
       setDraft([...draft, ...newSlides]);
-      setPendingFiles([]);
+      // Only clear after server confirmed success.
+      batch.forEach((p) => URL.revokeObjectURL(p.previewUrl));
+      setPendingFiles((prev) =>
+        prev.filter((p) => !batch.some((b) => b.id === p.id))
+      );
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Upload échoué");
+      setSelectionError(e instanceof Error ? e.message : "Upload échoué");
     } finally {
       setUploading(false);
     }
@@ -146,6 +259,13 @@ export default function AdminHeroSliderPage() {
             : `Uploader (${pendingFiles.length})`}
         </AdminButton>
         <AdminButton
+          variant="ghost"
+          onClick={clearPendingSelection}
+          disabled={pendingFiles.length === 0 || uploading}
+        >
+          Annuler la sélection
+        </AdminButton>
+        <AdminButton
           variant="danger"
           onClick={deleteSelected}
           disabled={selected.size === 0}
@@ -162,23 +282,55 @@ export default function AdminHeroSliderPage() {
       <input
         ref={fileRef}
         type="file"
-        accept="image/*"
+        accept={HERO_ACCEPT}
         multiple
         className="hidden"
         onChange={(e) => {
-          onFilesPicked(e.target.files);
+          // Snapshot FileList BEFORE clearing — FileList is live.
+          const snapshot = e.target.files ? Array.from(e.target.files) : [];
           e.target.value = "";
+          onFilesPicked(snapshot);
         }}
       />
 
+      {selectionError && (
+        <p className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+          {selectionError}
+        </p>
+      )}
+
       {pendingFiles.length > 0 && (
         <AdminCard
-          title="Fichiers en attente d'upload"
-          description="Ces fichiers seront optimisés en WebP puis ajoutés au brouillon."
+          title={`Fichiers en attente d'upload (${pendingFiles.length})`}
+          description="Aperçu local — les fichiers seront optimisés en WebP puis ajoutés au brouillon après Upload."
         >
-          <ul className="space-y-1 text-sm text-white/60">
-            {pendingFiles.map((f) => (
-              <li key={f.name + f.size}>{f.name}</li>
+          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {pendingFiles.map((item) => (
+              <li
+                key={item.id}
+                className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.03] p-2"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={item.previewUrl}
+                  alt={item.file.name}
+                  className="h-14 w-20 shrink-0 rounded object-cover"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm text-white/80">{item.file.name}</p>
+                  <p className="text-xs text-white/40">
+                    {(item.file.size / 1024).toFixed(0)} Ko
+                  </p>
+                </div>
+                <AdminButton
+                  variant="ghost"
+                  className="shrink-0 text-xs"
+                  onClick={() => removePending(item.id)}
+                  disabled={uploading}
+                >
+                  Retirer
+                </AdminButton>
+              </li>
             ))}
           </ul>
         </AdminCard>
@@ -231,7 +383,14 @@ export default function AdminHeroSliderPage() {
               </div>
               <div className="flex gap-4 p-4">
                 <div className="relative h-20 w-36 shrink-0 overflow-hidden rounded-lg border border-white/10">
-                  <Image src={slide.src} alt={slide.alt} fill className="object-cover" sizes="144px" />
+                  <Image
+                    src={slide.src}
+                    alt={slide.alt}
+                    fill
+                    className="object-cover"
+                    sizes="144px"
+                    {...localServeDirect(slide.src)}
+                  />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-white">{slide.alt || "Sans description"}</p>
@@ -266,7 +425,16 @@ export default function AdminHeroSliderPage() {
                         if (!file) return;
                         try {
                           const [u] = await uploadMediaFiles([file], "hero");
-                          setEditing({ ...editing, src: u.url });
+                          setEditing({
+                            ...editing,
+                            src: u.url,
+                            ...(u.desktopImageUrl
+                              ? { desktopImageUrl: u.desktopImageUrl }
+                              : {}),
+                            ...(u.mobileImageUrl
+                              ? { mobileImageUrl: u.mobileImageUrl }
+                              : {}),
+                          });
                         } catch (err) {
                           alert(err instanceof Error ? err.message : "Upload échoué");
                         }
@@ -289,7 +457,14 @@ export default function AdminHeroSliderPage() {
               </AdminField>
               {editing.src && (
                 <div className="relative h-40 overflow-hidden rounded-lg border border-white/10">
-                  <Image src={editing.src} alt="Preview" fill className="object-cover" sizes="512px" />
+                  <Image
+                    src={editing.src}
+                    alt="Preview"
+                    fill
+                    className="object-cover"
+                    sizes="512px"
+                    {...localServeDirect(editing.src)}
+                  />
                 </div>
               )}
             </div>
@@ -321,6 +496,7 @@ export default function AdminHeroSliderPage() {
               height={675}
               className="h-auto w-full object-cover"
               sizes="(max-width: 768px) 100vw, 768px"
+              {...localServeDirect(preview.src)}
             />
             <p className="mt-2 text-center text-sm text-white/60">{preview.alt}</p>
             <AdminButton variant="ghost" className="mt-3 w-full" onClick={() => setPreview(null)}>

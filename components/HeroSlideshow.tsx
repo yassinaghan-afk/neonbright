@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getImageProps } from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
 import type { CMSHeroSlide } from "@/lib/cms/types";
-import { localImageUnoptimized } from "@/lib/media/local-image";
+import { localServeDirect } from "@/lib/media/local-image";
 
 /**
  * Browser-native art direction via <picture>: the browser evaluates the
@@ -37,7 +37,7 @@ function HeroSlideImage({
   const { props: desktopImgProps } = getImageProps({
     ...shared,
     src: desktopSrc,
-    ...localImageUnoptimized(desktopSrc),
+    ...localServeDirect(desktopSrc),
   });
 
   if (mobileSrc === desktopSrc) {
@@ -49,7 +49,7 @@ function HeroSlideImage({
   const { props: mobileImgProps } = getImageProps({
     ...shared,
     src: mobileSrc,
-    ...localImageUnoptimized(mobileSrc),
+    ...localServeDirect(mobileSrc),
   });
 
   return (
