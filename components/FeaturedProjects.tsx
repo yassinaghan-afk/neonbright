@@ -33,7 +33,7 @@ export function FeaturedProjects({ copy, categories }: FeaturedProjectsProps) {
         />
 
         <Container>
-          <SectionReveal className="relative mx-auto max-w-4xl text-center">
+          <div className="relative mx-auto max-w-4xl text-center">
             <div className="flex flex-col items-center justify-center">
               <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-neon-pink sm:text-xs sm:tracking-[0.32em]">
                 {sectionsCopy.title}
@@ -45,7 +45,7 @@ export function FeaturedProjects({ copy, categories }: FeaturedProjectsProps) {
                 </span>
               </h2>
             </div>
-          </SectionReveal>
+          </div>
 
           <div className="mt-14 space-y-6 sm:mt-16 sm:space-y-7 md:mt-20 md:space-y-8">
             {categoryItems.map((category, index) => (

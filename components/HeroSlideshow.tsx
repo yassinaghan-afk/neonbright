@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
 import type { CMSHeroSlide } from "@/lib/cms/types";
+import { localImageUnoptimized } from "@/lib/media/local-image";
 
 const SLIDE_MS = 5500;
 const FADE_S = 2;
@@ -130,7 +131,7 @@ export function HeroSlideshow({ slides }: HeroSlideshowProps) {
               }}
             >
               <Image
-                src={slide.desktopImageUrl ?? slide.mobileImageUrl ?? slide.src}
+                src={slide.mobileImageUrl ?? slide.desktopImageUrl ?? slide.src}
                 alt={slide.alt}
                 fill
                 priority={i === 0}
@@ -138,6 +139,9 @@ export function HeroSlideshow({ slides }: HeroSlideshowProps) {
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 100vw"
                 quality={i === 0 ? 75 : 60}
                 className="object-cover object-center"
+                {...localImageUnoptimized(
+                  slide.mobileImageUrl ?? slide.desktopImageUrl ?? slide.src
+                )}
               />
             </motion.div>
           </motion.div>
