@@ -1,10 +1,65 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Image from "next/image";
+import { getImageProps } from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
 import type { CMSHeroSlide } from "@/lib/cms/types";
 import { localImageUnoptimized } from "@/lib/media/local-image";
+
+/**
+ * Browser-native art direction via <picture>: the browser evaluates the
+ * media query and downloads only the matching source — never both. No
+ * client-side device detection, no hydration wait, first slide stays
+ * server-rendered.
+ */
+const MOBILE_BREAKPOINT = "(max-width: 640px)";
+
+function HeroSlideImage({
+  slide,
+  priority,
+}: {
+  slide: CMSHeroSlide;
+  priority: boolean;
+}) {
+  const mobileSrc = slide.mobileImageUrl ?? slide.desktopImageUrl ?? slide.src;
+  const desktopSrc = slide.desktopImageUrl ?? slide.mobileImageUrl ?? slide.src;
+
+  const shared = {
+    alt: slide.alt,
+    fill: true as const,
+    sizes: "100vw",
+    quality: priority ? 75 : 60,
+    priority,
+    loading: priority ? undefined : ("lazy" as const),
+    className: "object-cover object-center",
+  };
+
+  const { props: desktopImgProps } = getImageProps({
+    ...shared,
+    src: desktopSrc,
+    ...localImageUnoptimized(desktopSrc),
+  });
+
+  if (mobileSrc === desktopSrc) {
+    // Only one real variant exists — render it directly, no <picture> needed.
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img {...desktopImgProps} />;
+  }
+
+  const { props: mobileImgProps } = getImageProps({
+    ...shared,
+    src: mobileSrc,
+    ...localImageUnoptimized(mobileSrc),
+  });
+
+  return (
+    <picture>
+      <source media={MOBILE_BREAKPOINT} srcSet={mobileImgProps.srcSet} />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img {...desktopImgProps} />
+    </picture>
+  );
+}
 
 const SLIDE_MS = 5500;
 const FADE_S = 2;
@@ -130,19 +185,7 @@ export function HeroSlideshow({ slides }: HeroSlideshowProps) {
                 y: { duration: motionDuration, ease: "linear" },
               }}
             >
-              <Image
-                src={slide.mobileImageUrl ?? slide.desktopImageUrl ?? slide.src}
-                alt={slide.alt}
-                fill
-                priority={i === 0}
-                loading={i === 0 ? undefined : "lazy"}
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 100vw"
-                quality={i === 0 ? 75 : 60}
-                className="object-cover object-center"
-                {...localImageUnoptimized(
-                  slide.mobileImageUrl ?? slide.desktopImageUrl ?? slide.src
-                )}
-              />
+              <HeroSlideImage slide={slide} priority={i === 0} />
             </motion.div>
           </motion.div>
         );
