@@ -53,10 +53,7 @@ export function Navbar({ nav }: NavbarProps) {
 
   return (
     <>
-      <motion.header
-        initial={{ y: -100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+      <header
         className={cn(
           "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
           scrolled ? "glass py-3" : "bg-transparent py-5"
@@ -122,7 +119,7 @@ export function Navbar({ nav }: NavbarProps) {
             />
           </button>
         </Container>
-      </motion.header>
+      </header>
 
       <AnimatePresence>
         {mobileOpen && (

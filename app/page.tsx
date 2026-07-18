@@ -2,30 +2,12 @@ import dynamic from "next/dynamic";
 import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
 import { PartnerLogoStrip } from "@/components/PartnerLogoStrip";
+import { FeaturedProjects } from "@/components/FeaturedProjects";
+import { InstagramMarqueeShowcase } from "@/components/instagram/InstagramMarqueeShowcase";
+import { ReviewsShowcase } from "@/components/ReviewsShowcase";
 import { QuoteCTA } from "@/components/quote/QuoteCTA";
 import { Footer } from "@/components/Footer";
 import { getPublicHomepageContent } from "@/lib/cms/public";
-
-// Below-fold sections — split into separate JS chunks so their download does
-// not compete with the Hero image on initial mobile load. SSR is preserved
-// (ssr:true by default), so HTML content is present from the first response.
-const FeaturedProjects = dynamic(
-  () => import("@/components/FeaturedProjects").then((m) => m.FeaturedProjects),
-  { loading: () => null }
-);
-
-const InstagramMarqueeShowcase = dynamic(
-  () =>
-    import("@/components/instagram/InstagramMarqueeShowcase").then(
-      (m) => m.InstagramMarqueeShowcase
-    ),
-  { loading: () => null }
-);
-
-const ReviewsShowcase = dynamic(
-  () => import("@/components/ReviewsShowcase").then((m) => m.ReviewsShowcase),
-  { loading: () => null }
-);
 
 const WhyChooseUs = dynamic(
   () => import("@/components/WhyChooseUs").then((m) => m.WhyChooseUs),

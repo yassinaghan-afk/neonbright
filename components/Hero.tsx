@@ -38,7 +38,7 @@ export function Hero({ slides = [], hero }: HeroProps) {
     target: ref,
     offset: ["start start", "end start"],
   });
-  // Scroll-based parallax — only active after hydration, does not hide initial content
+  // Scroll-based parallax only — starts at opacity 1 (no entrance hide).
   const y = useTransform(scrollYProgress, [0, 1], [0, 120]);
   const opacity = useTransform(scrollYProgress, [0, 0.75], [1, 0]);
 
@@ -54,44 +54,29 @@ export function Hero({ slides = [], hero }: HeroProps) {
         <div className="absolute top-1/3 -right-24 h-80 w-80 rounded-full bg-neon-purple/8 blur-[100px]" />
       </div>
 
-      {/*
-       * motion.div only drives the scroll-based parallax (y + opacity).
-       * It does NOT set initial opacity to 0, so SSR HTML is fully visible.
-       * All entrance animations use CSS @keyframes via hero-*-animated classes.
-       */}
       <Container className="relative z-10">
         <motion.div className="max-w-3xl" style={{ y, opacity }}>
           <h1 className="display-headline">
-            <span className="block overflow-hidden">
-              {headlineWords.map((word, i) => (
+            <span className="block">
+              {headlineWords.map((word) => (
                 <span
                   key={word}
-                  className="hero-word-animated mr-[0.2em] inline-block text-4xl sm:text-6xl md:text-7xl lg:text-[5.5rem] xl:text-[6.5rem]"
-                  style={{ animationDelay: `${0.15 + i * 0.08}s` }}
+                  className="mr-[0.2em] inline-block text-4xl sm:text-6xl md:text-7xl lg:text-[5.5rem] xl:text-[6.5rem]"
                 >
                   {word}
                 </span>
               ))}
             </span>
-            <span
-              className="hero-blur-animated mt-1 block text-4xl sm:text-6xl md:text-7xl lg:text-[5.5rem] xl:text-[6.5rem] neon-text-gradient"
-              style={{ animationDelay: "0.45s" }}
-            >
+            <span className="mt-1 block text-4xl sm:text-6xl md:text-7xl lg:text-[5.5rem] xl:text-[6.5rem] neon-text-gradient">
               {content.headlineAccent}
             </span>
           </h1>
 
-          <p
-            className="hero-text-animated mt-8 max-w-xl text-base leading-relaxed text-white/75 sm:text-xl"
-            style={{ animationDelay: "0.55s" }}
-          >
+          <p className="mt-8 max-w-xl text-base leading-relaxed text-white/75 sm:text-xl">
             {content.subheadline}
           </p>
 
-          <div
-            className="hero-text-animated mt-10 flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:gap-4"
-            style={{ animationDelay: "0.65s" }}
-          >
+          <div className="mt-10 flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:gap-4">
             <Button href="/designer" size="lg" className="w-full sm:w-auto">
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -107,10 +92,7 @@ export function Hero({ slides = [], hero }: HeroProps) {
           </div>
 
           {content.trustBlock.enabled && (
-            <div
-              className="hero-text-animated mt-14 grid grid-cols-2 gap-6 border-t border-white/10 pt-10 sm:grid-cols-4 sm:gap-8"
-              style={{ animationDelay: "0.9s" }}
-            >
+            <div className="mt-14 grid grid-cols-2 gap-6 border-t border-white/10 pt-10 sm:grid-cols-4 sm:gap-8">
               <div className="col-span-2 text-center sm:col-span-4">
                 <p className="font-display text-2xl font-bold text-white sm:text-3xl">
                   {content.trustBlock.value}

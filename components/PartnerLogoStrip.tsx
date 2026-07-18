@@ -9,7 +9,7 @@ import {
   type CSSProperties,
 } from "react";
 import type { PartnerLogo } from "@/lib/cms/logo-media";
-import { localServeDirect } from "@/lib/media/local-image";
+import { localImageUnoptimized } from "@/lib/media/local-image";
 import { cn } from "@/lib/utils";
 
 type PartnerLogoStripProps = {
@@ -59,7 +59,7 @@ function LogoItem({ logo, eager }: { logo: PartnerLogo; eager: boolean }) {
         sizes="(max-width: 640px) 130px, (max-width: 1024px) 200px, 240px"
         className="partner-strip-logo"
         draggable={false}
-        {...localServeDirect(logo.src)}
+        {...localImageUnoptimized(logo.src)}
       />
     </div>
   );
