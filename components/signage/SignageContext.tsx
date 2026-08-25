@@ -15,6 +15,7 @@ import {
   type SignageTypeId,
   type TimeOfDay,
 } from "@/lib/signage/types";
+import { ENSEIGNE_SIZE_OPTIONS, type EnseigneSizeId } from "@/lib/signage/sizes";
 
 type SignageContextValue = {
   state: SignageState;
@@ -22,6 +23,7 @@ type SignageContextValue = {
   setBusinessName: (name: string) => void;
   setLogo: (file: File | null) => void;
   clearLogo: () => void;
+  setSizePreset: (id: EnseigneSizeId) => void;
   setSignWidthCm: (cm: number) => void;
   setSignHeightCm: (cm: number) => void;
   setPositionX: (pct: number) => void;
@@ -74,15 +76,37 @@ export function SignageProvider({ children }: { children: ReactNode }) {
 
   const clearLogo = useCallback(() => setLogo(null), [setLogo]);
 
+  const setSizePreset = useCallback(
+    (id: EnseigneSizeId) => {
+      const tier = ENSEIGNE_SIZE_OPTIONS.find((o) => o.id === id);
+      if (!tier) return;
+      mutate((p) => ({
+        ...p,
+        sizePreset: id,
+        signWidthCm: tier.widthCm,
+        signHeightCm: tier.heightCm,
+      }));
+    },
+    [mutate]
+  );
+
   const setSignWidthCm = useCallback(
     (signWidthCm: number) =>
-      mutate((p) => ({ ...p, signWidthCm: Math.round(signWidthCm) })),
+      mutate((p) => ({
+        ...p,
+        signWidthCm: Math.round(signWidthCm),
+        sizePreset: null,
+      })),
     [mutate]
   );
 
   const setSignHeightCm = useCallback(
     (signHeightCm: number) =>
-      mutate((p) => ({ ...p, signHeightCm: Math.round(signHeightCm) })),
+      mutate((p) => ({
+        ...p,
+        signHeightCm: Math.round(signHeightCm),
+        sizePreset: null,
+      })),
     [mutate]
   );
 
@@ -132,6 +156,7 @@ export function SignageProvider({ children }: { children: ReactNode }) {
       setBusinessName,
       setLogo,
       clearLogo,
+      setSizePreset,
       setSignWidthCm,
       setSignHeightCm,
       setPositionX,
@@ -147,6 +172,7 @@ export function SignageProvider({ children }: { children: ReactNode }) {
       setBusinessName,
       setLogo,
       clearLogo,
+      setSizePreset,
       setSignWidthCm,
       setSignHeightCm,
       setPositionX,

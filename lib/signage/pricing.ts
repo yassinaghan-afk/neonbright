@@ -1,3 +1,4 @@
+import { ENSEIGNE_SIZE_OPTIONS } from "./sizes";
 import type { SignageState } from "./types";
 
 const SIGN_TYPE_MULTIPLIER: Record<string, number> = {
@@ -12,6 +13,12 @@ const SIGN_TYPE_MULTIPLIER: Record<string, number> = {
 };
 
 export function estimateSignagePrice(state: SignageState): number {
+  // Confirmed fixed-tier prices take priority (e.g. 50–70 cm → 1 210 DH).
+  if (state.sizePreset) {
+    const tier = ENSEIGNE_SIZE_OPTIONS.find((o) => o.id === state.sizePreset);
+    if (tier?.priceDh != null) return tier.priceDh;
+  }
+
   const areaM2 = (state.signWidthCm * state.signHeightCm) / 10_000;
   const base = 1200 + areaM2 * 2800;
   const typeFactor = SIGN_TYPE_MULTIPLIER[state.signType] ?? 1;
@@ -21,10 +28,7 @@ export function estimateSignagePrice(state: SignageState): number {
   return Math.round(base * typeFactor * lightingFactor * logoFactor);
 }
 
+/** French/Moroccan dirham display — e.g. "1 210 DH" (never USD). */
 export function formatSignagePrice(amount: number): string {
-  return new Intl.NumberFormat("fr-MA", {
-    style: "currency",
-    currency: "MAD",
-    maximumFractionDigits: 0,
-  }).format(amount);
+  return `${new Intl.NumberFormat("fr-FR").format(amount)} DH`;
 }

@@ -1,3 +1,5 @@
+import type { EnseigneSizeId } from "./sizes";
+
 export type SignageTypeId =
   | "lettres-boitiers"
   | "enseigne-lumineuse"
@@ -17,6 +19,8 @@ export type SignageState = {
   businessName: string;
   logoUrl: string | null;
   logoFile: File | null;
+  /** Fixed size tier when selected; null = free / formula dimensions */
+  sizePreset: EnseigneSizeId | null;
   signWidthCm: number;
   signHeightCm: number;
   positionX: number;
@@ -31,6 +35,7 @@ export const INITIAL_SIGNAGE_STATE: SignageState = {
   businessName: "VOTRE MARQUE",
   logoUrl: null,
   logoFile: null,
+  sizePreset: null,
   signWidthCm: 180,
   signHeightCm: 60,
   positionX: 50,
@@ -44,6 +49,7 @@ export type SignageSnapshot = {
   product: "commercial-signage";
   signType: SignageTypeId;
   businessName: string;
+  sizePreset: EnseigneSizeId | null;
   signWidthCm: number;
   signHeightCm: number;
   positionX: number;
@@ -63,6 +69,7 @@ export function toSignageSnapshot(
     product: "commercial-signage",
     signType: state.signType,
     businessName: state.businessName,
+    sizePreset: state.sizePreset,
     signWidthCm: state.signWidthCm,
     signHeightCm: state.signHeightCm,
     positionX: state.positionX,
