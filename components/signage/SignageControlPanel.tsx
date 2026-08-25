@@ -1,10 +1,13 @@
 "use client";
 
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import { useSignage } from "./SignageContext";
 import { SIGN_TYPE_OPTIONS, FACADE_OPTIONS } from "@/lib/signage/signTypes";
 import { ENSEIGNE_SIZE_OPTIONS } from "@/lib/signage/sizes";
-import { formatSignagePrice } from "@/lib/signage/pricing";
+import {
+  estimateSignagePrice,
+  formatSignagePrice,
+} from "@/lib/signage/pricing";
 import { cn } from "@/lib/utils";
 
 function StepHeading({ step, title }: { step: number; title: string }) {
@@ -13,9 +16,14 @@ function StepHeading({ step, title }: { step: number; title: string }) {
       <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-neon-purple/20 text-[11px] font-bold text-neon-purple">
         {step}
       </span>
-      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55">
-        {title}
-      </p>
+      <div>
+        <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-neon-purple/80">
+          Étape {step}
+        </p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55">
+          {title}
+        </p>
+      </div>
     </div>
   );
 }
@@ -81,6 +89,7 @@ export function SignageControlPanel() {
     setFacadeType,
   } = useSignage();
   const fileRef = useRef<HTMLInputElement>(null);
+  const livePrice = useMemo(() => estimateSignagePrice(state), [state]);
 
   const onLogoPick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -218,24 +227,22 @@ export function SignageControlPanel() {
                         : "border-white/10 bg-white/[0.03] hover:border-white/20"
                     )}
                   >
-                    <div className="flex items-baseline justify-between gap-3">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white">
-                        Taille — {opt.label}
-                      </p>
-                      {opt.priceDh != null && (
-                        <p
-                          className={cn(
-                            "font-mono text-sm font-bold",
-                            active ? "text-neon-purple" : "text-white/70"
-                          )}
-                        >
-                          {formatSignagePrice(opt.priceDh)}
-                        </p>
-                      )}
-                    </div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white">
+                      Taille — {opt.label}
+                    </p>
                     <p className="mt-1 text-sm font-medium text-white/80">
                       {opt.rangeLabel}
                     </p>
+                    {opt.priceDh != null && (
+                      <p
+                        className={cn(
+                          "mt-2 font-mono text-base font-bold",
+                          active ? "text-neon-purple" : "text-white/70"
+                        )}
+                      >
+                        {formatSignagePrice(opt.priceDh)}
+                      </p>
+                    )}
                   </button>
                 );
               })}
@@ -329,6 +336,25 @@ export function SignageControlPanel() {
                 </button>
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* ── Étape 4 — Prix ──────────────────────────────────────────── */}
+        <section>
+          <StepHeading step={4} title="Prix" />
+          <div className="rounded-xl border border-neon-purple/30 bg-neon-purple/8 px-4 py-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
+              Prix
+            </p>
+            <p className="mt-1 font-mono text-2xl font-bold text-neon-purple">
+              {formatSignagePrice(livePrice)}
+            </p>
+            {state.sizePreset && (
+              <p className="mt-1.5 text-xs text-white/45">
+                {ENSEIGNE_SIZE_OPTIONS.find((o) => o.id === state.sizePreset)
+                  ?.rangeLabel ?? null}
+              </p>
+            )}
           </div>
         </section>
       </div>
